@@ -12,10 +12,10 @@ import {
   StepDescription,
   DescriptionList,
   DescriptionItem,
+  FileItem,
   Tag,
   Separator,
 } from '@qijenchen/design-system'
-import { FileText, Image as ImageIcon } from 'lucide-react'
 import type { ApprovalRecord } from './data'
 
 interface ApprovalModalProps {
@@ -58,14 +58,14 @@ export function ApprovalModal({ record, open, onClose, mode }: ApprovalModalProp
 
   return (
     <Dialog open={open} onOpenChange={(o: boolean) => !o && onClose()}>
-      <DialogContent className="max-w-4xl w-full" onOpenAutoFocus={(e) => e.preventDefault()}>
+      <DialogContent maxWidth="920px" onOpenAutoFocus={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <span className="truncate">{record.title}</span>
-            <Tag color={STATUS_COLOR[record.status]} solid={record.status === 'approved'}>
+            <Tag size="sm" color={STATUS_COLOR[record.status]} solid={record.status === 'approved'}>
               {STATUS_LABEL[record.status]}
             </Tag>
-            <Tag color={URGENCY_COLOR[record.urgency]}>
+            <Tag size="sm" color={URGENCY_COLOR[record.urgency]}>
               {URGENCY_LABEL[record.urgency]}
             </Tag>
           </DialogTitle>
@@ -77,7 +77,7 @@ export function ApprovalModal({ record, open, onClose, mode }: ApprovalModalProp
             {/* Fixed fields */}
             <section>
               <p className="text-caption text-fg-secondary mb-2">基本資訊</p>
-              <DescriptionList direction="horizontal">
+              <DescriptionList direction="vertical">
                 {record.fixedFields.map((f) => (
                   <DescriptionItem key={f.label} label={f.label}>
                     {f.value}
@@ -91,7 +91,7 @@ export function ApprovalModal({ record, open, onClose, mode }: ApprovalModalProp
             {/* Custom fields */}
             <section>
               <p className="text-caption text-fg-secondary mb-2">申請內容</p>
-              <DescriptionList direction="horizontal">
+              <DescriptionList direction="vertical">
                 {record.customFields.map((f) => (
                   <DescriptionItem key={f.label} label={f.label}>
                     {f.value}
@@ -108,23 +108,16 @@ export function ApprovalModal({ record, open, onClose, mode }: ApprovalModalProp
               {record.attachments.length === 0 ? (
                 <p className="text-body text-fg-placeholder">無附件</p>
               ) : (
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-1">
                   {record.attachments.map((att) => (
-                    <a
+                    <FileItem
                       key={att.id}
-                      href={att.url}
-                      className="flex items-center gap-2 text-body text-fg-link hover:underline"
-                    >
-                      {att.type === 'image' ? (
-                        <ImageIcon size={16} className="text-fg-secondary shrink-0" />
-                      ) : (
-                        <FileText size={16} className="text-fg-secondary shrink-0" />
-                      )}
-                      <span className="truncate">{att.name}</span>
-                      <span className="text-caption text-fg-placeholder shrink-0">
-                        {att.size}
-                      </span>
-                    </a>
+                      name={att.name}
+                      mode="rich"
+                      status="completed"
+                      description={att.size}
+                      onDownload={() => {}}
+                    />
                   ))}
                 </div>
               )}

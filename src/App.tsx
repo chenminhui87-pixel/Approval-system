@@ -186,7 +186,7 @@ function RecordList({
     <div className="rounded-lg border border-divider overflow-hidden">
       <table className="w-full text-body">
         <thead>
-          <tr className="border-b border-divider bg-surface-subtle">
+          <tr className="border-b border-divider bg-muted">
             {['單號', '標題', '申請者', '緊急程度', '狀態', '申請時間'].map((h) => (
               <th
                 key={h}
