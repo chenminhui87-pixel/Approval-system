@@ -49,16 +49,16 @@ export const MOCK_RECORDS: ApprovalRecord[] = [
     id: 'REQ-2026-0001',
     category: 'article',
     title: '2026 年 Q2 產品發布公告',
-    applicant: '陳美惠',
+    applicant: '黃建偉',
     submittedAt: '2026-05-28 14:32',
     urgency: 'high',
     status: 'pending',
-    currentStep: 1,
+    currentStep: 0,
     steps: [
       {
         id: 's1',
         label: '部門審核',
-        approvers: ['王大明', '李小花'],
+        approvers: ['陳美惠', '王大明'],
         parallel: true,
         status: 'current',
         approvedBy: ['王大明'],
@@ -80,7 +80,7 @@ export const MOCK_RECORDS: ApprovalRecord[] = [
       { label: '單號', value: 'REQ-2026-0001' },
       { label: '申請時間', value: '2026-05-28 14:32' },
       { label: '緊急程度', value: '緊急' },
-      { label: '申請者', value: '陳美惠' },
+      { label: '申請者', value: '黃建偉' },
     ],
     customFields: [
       { label: '發布平台', value: '官網 / Medium / LinkedIn' },
@@ -105,7 +105,7 @@ export const MOCK_RECORDS: ApprovalRecord[] = [
       {
         id: 's1',
         label: '直屬主管',
-        approvers: ['張主管'],
+        approvers: ['陳美惠'],
         status: 'current',
       },
       {
@@ -150,10 +150,10 @@ export const MOCK_RECORDS: ApprovalRecord[] = [
       {
         id: 's1',
         label: '部門審核',
-        approvers: ['王大明', '李小花'],
+        approvers: ['陳美惠', '王大明'],
         parallel: true,
         status: 'completed',
-        approvedBy: ['王大明', '李小花'],
+        approvedBy: ['陳美惠', '王大明'],
         approvedAt: '2026-05-27 10:00',
       },
       {
