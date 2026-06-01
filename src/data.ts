@@ -4,15 +4,35 @@ export type UrgencyLevel = 'low' | 'medium' | 'high'
 
 export type ApprovalStatus = 'pending' | 'approved' | 'rejected'
 
+export type AvatarColor =
+  | 'neutral' | 'blue' | 'red' | 'green' | 'yellow' | 'turquoise' | 'purple' | 'magenta' | 'indigo'
+
+export type PersonStatus = 'signed' | 'pending' | 'rejected'
+
+export interface ApprovalPerson {
+  name: string
+  avatarColor?: AvatarColor
+  status: PersonStatus
+  signedAt?: string
+  comment?: string
+}
+
+/** single = 單簽 / parallel-any = 平簽（任一人即過）/ parallel-all = 並簽（全員必簽）*/
+export type StepMode = 'single' | 'parallel-any' | 'parallel-all'
+
 export interface ApprovalStep {
   id: string
   label: string
   description?: string
+  /** kept for backwards compat with simple Steps */
   approvers: string[]
   parallel?: boolean
   status: 'upcoming' | 'current' | 'completed' | 'error'
   approvedBy?: string[]
   approvedAt?: string
+  /** new — used by ApprovalRoute */
+  mode?: StepMode
+  people?: ApprovalPerson[]
 }
 
 export interface Attachment {
@@ -56,24 +76,64 @@ export const MOCK_RECORDS: ApprovalRecord[] = [
     currentStep: 0,
     steps: [
       {
+        id: 's0',
+        label: '起草',
+        approvers: ['黃建偉'],
+        status: 'completed',
+        approvedBy: ['黃建偉'],
+        approvedAt: '2026-05-28 14:32',
+        mode: 'single',
+        people: [
+          {
+            name: '黃建偉',
+            avatarColor: 'green',
+            status: 'signed',
+            signedAt: '05-28 14:32',
+            comment: '本季 Q2 主打方案的對外公告稿，已附帶 banner 與發布平台清單，麻煩各位審閱。',
+          },
+        ],
+      },
+      {
         id: 's1',
         label: '部門審核',
         approvers: ['陳美惠', '王大明'],
         parallel: true,
         status: 'current',
         approvedBy: ['王大明'],
+        mode: 'parallel-all',
+        people: [
+          {
+            name: '王大明',
+            avatarColor: 'blue',
+            status: 'signed',
+            signedAt: '05-29 09:12',
+            comment: '內容方向 OK，但第三段 KPI 數字請對齊財務上週公告的版本，避免不一致。',
+          },
+          {
+            name: '陳美惠',
+            avatarColor: 'neutral',
+            status: 'pending',
+          },
+        ],
       },
       {
         id: 's2',
         label: '法務審閱',
-        approvers: ['張法務'],
+        approvers: ['張法務', '林法務'],
         status: 'upcoming',
+        mode: 'parallel-any',
+        people: [
+          { name: '張法務', avatarColor: 'neutral', status: 'pending' },
+          { name: '林法務', avatarColor: 'neutral', status: 'pending' },
+        ],
       },
       {
         id: 's3',
         label: '處長核准',
         approvers: ['林處長'],
         status: 'upcoming',
+        mode: 'single',
+        people: [{ name: '林處長', avatarColor: 'neutral', status: 'pending' }],
       },
     ],
     fixedFields: [

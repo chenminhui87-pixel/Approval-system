@@ -17,6 +17,7 @@ import {
   Separator,
 } from '@qijenchen/design-system'
 import type { ApprovalRecord } from './data'
+import { ApprovalRoute } from './ApprovalRoute'
 
 interface ApprovalModalProps {
   record: ApprovalRecord | null
@@ -55,6 +56,7 @@ export function ApprovalModal({ record, open, onClose, mode }: ApprovalModalProp
   const currentStep = record.steps.find((s) => s.status === 'current')
   const completedValues = record.steps.filter((s) => s.status === 'completed').map((s) => s.id)
   const errorValues = record.steps.filter((s) => s.status === 'error').map((s) => s.id)
+  const hasRichRoute = record.steps.some((s) => s.people && s.people.length > 0)
 
   return (
     <Dialog open={open} onOpenChange={(o: boolean) => !o && onClose()}>
@@ -130,31 +132,35 @@ export function ApprovalModal({ record, open, onClose, mode }: ApprovalModalProp
           {/* Right — approval route */}
           <div className="flex-[1.5] min-w-0 px-5 py-5 overflow-y-auto">
             <p className="text-caption text-fg-secondary mb-4">簽核流程</p>
-            <Steps
-              value={currentStep?.id}
-              completedValues={completedValues}
-              errorValues={errorValues}
-              orientation="vertical"
-              size="sm"
-            >
-              {record.steps.map((step) => (
-                <StepItem key={step.id} value={step.id}>
-                  <StepLabel>{step.label}</StepLabel>
-                  <StepDescription>
-                    {step.parallel ? '平行簽核：' : ''}
-                    {step.approvers.join('、')}
-                    {step.approvedBy && step.approvedBy.length > 0 && (
-                      <span className="block text-fg-success">
-                        已簽：{step.approvedBy.join('、')}
-                      </span>
-                    )}
-                    {step.approvedAt && (
-                      <span className="block text-fg-placeholder">{step.approvedAt}</span>
-                    )}
-                  </StepDescription>
-                </StepItem>
-              ))}
-            </Steps>
+            {hasRichRoute ? (
+              <ApprovalRoute steps={record.steps} />
+            ) : (
+              <Steps
+                value={currentStep?.id}
+                completedValues={completedValues}
+                errorValues={errorValues}
+                orientation="vertical"
+                size="sm"
+              >
+                {record.steps.map((step) => (
+                  <StepItem key={step.id} value={step.id}>
+                    <StepLabel>{step.label}</StepLabel>
+                    <StepDescription>
+                      {step.parallel ? '平行簽核：' : ''}
+                      {step.approvers.join('、')}
+                      {step.approvedBy && step.approvedBy.length > 0 && (
+                        <span className="block text-fg-success">
+                          已簽：{step.approvedBy.join('、')}
+                        </span>
+                      )}
+                      {step.approvedAt && (
+                        <span className="block text-fg-placeholder">{step.approvedAt}</span>
+                      )}
+                    </StepDescription>
+                  </StepItem>
+                ))}
+              </Steps>
+            )}
           </div>
         </DialogBody>
 
