@@ -60,3 +60,21 @@ Vite + React 19 + TypeScript + Tailwind v4 + `@qijenchen/design-system`。
 ## Deploy
 
 Netlify 連 GitHub repo，自動部署。安全設定走 Netlify dashboard → Visitor access → Password Protection（free-tier 可用）。
+
+## Storybook + ds-devmode（設計檢視工具）
+
+本 repo 配置了 `@qijenchen/storybook-config` shared preset，含 DS 自製 **ds-devmode** addon（Figma Dev Mode 等級的元件 inspect）：
+
+```bash
+npm run storybook         # 本機 dev,localhost:6006
+npm run build-storybook   # 產 static,輸出到 storybook-static/(gitignore)
+```
+
+Storybook 內可以：
+- 左側 navigation 瀏覽元件 stories
+- 底部「DS Devmode」tab → Off / Live / Pin 三模式
+- 點任何元件 → 看 computed CSS、token 反查、anatomy box、distance label
+- Alt+I 快捷切換
+
+新增 story：在 `src/*.stories.tsx`，title 格式 `App / X` 或 `Components / X`。
+

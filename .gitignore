@@ -3,3 +3,4 @@ dist
 *.tsbuildinfo
 .DS_Store
 tsconfig.tsbuildinfo
+storybook-static

@@ -1,1 +1,1 @@
-{"root":["./src/app.tsx","./src/approvalmodal.tsx","./src/data.ts","./src/main.tsx","./src/vite-env.d.ts"],"version":"5.9.3"}
+{"root":["./src/app.stories.tsx","./src/app.tsx","./src/approvalmodal.tsx","./src/approvalroute.stories.tsx","./src/approvalroute.tsx","./src/data.ts","./src/main.tsx","./src/vite-env.d.ts"],"version":"5.9.3"}
