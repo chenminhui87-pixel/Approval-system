@@ -26,7 +26,6 @@ import {
 } from '@qijenchen/design-system'
 import {
   ClipboardList,
-  Settings,
   LayoutGrid,
   List,
   AlertCircle,
@@ -39,15 +38,14 @@ import {
   CATEGORIES,
   CURRENT_USER,
   getTabRecords,
+  approveRecord,
+  rejectRecord,
   type ApprovalRecord,
   type CategoryId,
 } from './data'
 import { ApprovalModal } from './ApprovalModal'
 
-const NAV = [
-  { id: 'approval', label: '簽核管理', icon: ClipboardList },
-  { id: 'settings', label: '設定', icon: Settings },
-] as const
+const NAV = [{ id: 'approval', label: '簽核管理', icon: ClipboardList }] as const
 
 const URGENCY_COLOR = {
   high: 'red',
@@ -149,9 +147,11 @@ function RecordCard({
     >
       <div className="flex items-start justify-between gap-2">
         <span className="text-body font-medium line-clamp-2 flex-1">{record.title}</span>
-        <Tag color={URGENCY_COLOR[record.urgency]} className="shrink-0">
-          {URGENCY_LABEL[record.urgency]}
-        </Tag>
+        {record.urgency !== 'low' && (
+          <Tag size="sm" color={URGENCY_COLOR[record.urgency]} className="shrink-0">
+            {URGENCY_LABEL[record.urgency]}
+          </Tag>
+        )}
       </div>
 
       <div className="flex items-center gap-1.5 text-caption text-fg-secondary">
@@ -208,10 +208,16 @@ function RecordList({
               <td className="px-4 py-3 font-medium max-w-xs truncate">{r.title}</td>
               <td className="px-4 py-3 text-fg-secondary">{r.applicant}</td>
               <td className="px-4 py-3">
-                <Tag color={URGENCY_COLOR[r.urgency]}>{URGENCY_LABEL[r.urgency]}</Tag>
+                {r.urgency !== 'low' && (
+                  <Tag size="sm" color={URGENCY_COLOR[r.urgency]}>
+                    {URGENCY_LABEL[r.urgency]}
+                  </Tag>
+                )}
               </td>
               <td className="px-4 py-3">
-                <Tag color={STATUS_COLOR[r.status]}>{STATUS_LABEL[r.status]}</Tag>
+                <Tag size="sm" color={STATUS_COLOR[r.status]}>
+                  {STATUS_LABEL[r.status]}
+                </Tag>
               </td>
               <td className="px-4 py-3 text-caption text-fg-secondary">{r.submittedAt}</td>
             </tr>
@@ -244,16 +250,33 @@ function ApprovalPage() {
   const [tab, setTab] = useState<TabId>('pending-me')
   const [category, setCategory] = useState<CategoryId | 'all'>('all')
   const [view, setView] = useState<ViewMode>('card')
-  const [selectedRecord, setSelectedRecord] = useState<ApprovalRecord | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
+  const [records, setRecords] = useState<ApprovalRecord[]>(MOCK_RECORDS)
 
-  const tabRecords = getTabRecords(tab, MOCK_RECORDS, CURRENT_USER)
+  const tabRecords = getTabRecords(tab, records, CURRENT_USER)
   const filtered =
     category === 'all' ? tabRecords : tabRecords.filter((r) => r.category === category)
+  // Re-derive the selected record from state so it reflects latest changes
+  const selectedRecord = selectedId ? records.find((r) => r.id === selectedId) ?? null : null
 
   function openRecord(r: ApprovalRecord) {
-    setSelectedRecord(r)
+    setSelectedId(r.id)
     setModalOpen(true)
+  }
+
+  function handleApprove(id: string, comment?: string) {
+    setRecords((prev) =>
+      prev.map((r) => (r.id === id ? approveRecord(r, CURRENT_USER, comment) : r)),
+    )
+    setModalOpen(false)
+  }
+
+  function handleReject(id: string, comment: string) {
+    setRecords((prev) =>
+      prev.map((r) => (r.id === id ? rejectRecord(r, CURRENT_USER, comment) : r)),
+    )
+    setModalOpen(false)
   }
 
   return (
@@ -318,6 +341,8 @@ function ApprovalPage() {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         mode={tab === 'pending-me' ? 'approve' : 'view'}
+        onApprove={handleApprove}
+        onReject={handleReject}
       />
     </div>
   )

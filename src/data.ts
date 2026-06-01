@@ -249,6 +249,103 @@ export const MOCK_RECORDS: ApprovalRecord[] = [
     ],
   },
   {
+    id: 'REQ-2026-0005',
+    category: 'article',
+    title: '新版隱私權政策公告',
+    applicant: '陳美惠',
+    submittedAt: '2026-05-29 10:08',
+    urgency: 'medium',
+    status: 'pending',
+    currentStep: 1,
+    steps: [
+      {
+        id: 's1',
+        label: '部門審核',
+        approvers: ['王大明'],
+        status: 'completed',
+        approvedBy: ['王大明'],
+        approvedAt: '2026-05-29 11:00',
+      },
+      {
+        id: 's2',
+        label: '法務審閱',
+        approvers: ['張法務'],
+        status: 'current',
+      },
+      {
+        id: 's3',
+        label: '處長核准',
+        approvers: ['林處長'],
+        status: 'upcoming',
+      },
+    ],
+    fixedFields: [
+      { label: '單號', value: 'REQ-2026-0005' },
+      { label: '申請時間', value: '2026-05-29 10:08' },
+      { label: '緊急程度', value: '一般' },
+      { label: '申請者', value: '陳美惠' },
+    ],
+    customFields: [
+      { label: '發布平台', value: '官網 / App' },
+      { label: '目標受眾', value: '全體會員' },
+      { label: '預計發布時間', value: '2026-06-05 00:00' },
+    ],
+    attachments: [
+      { id: 'a7', name: '隱私權政策 v2.pdf', url: '#', type: 'file', size: '780 KB' },
+    ],
+  },
+  {
+    id: 'REQ-2026-0006',
+    category: 'computer',
+    title: 'iPad Pro 11" 採購申請 × 2',
+    applicant: '林志明',
+    submittedAt: '2026-05-20 09:00',
+    urgency: 'low',
+    status: 'approved',
+    currentStep: 2,
+    steps: [
+      {
+        id: 's1',
+        label: '直屬主管',
+        approvers: ['陳美惠'],
+        status: 'completed',
+        approvedBy: ['陳美惠'],
+        approvedAt: '2026-05-20 14:20',
+      },
+      {
+        id: 's2',
+        label: '採購部門',
+        approvers: ['採購王'],
+        status: 'completed',
+        approvedBy: ['採購王'],
+        approvedAt: '2026-05-21 10:00',
+      },
+      {
+        id: 's3',
+        label: '財務長',
+        approvers: ['劉財務'],
+        status: 'completed',
+        approvedBy: ['劉財務'],
+        approvedAt: '2026-05-22 16:00',
+      },
+    ],
+    fixedFields: [
+      { label: '單號', value: 'REQ-2026-0006' },
+      { label: '申請時間', value: '2026-05-20 09:00' },
+      { label: '緊急程度', value: '低' },
+      { label: '申請者', value: '林志明' },
+    ],
+    customFields: [
+      { label: '規格', value: 'iPad Pro 11" M4 256GB' },
+      { label: '數量', value: '2 台' },
+      { label: '預估金額', value: 'NT$ 68,000' },
+      { label: '用途說明', value: '行銷團隊外出展演' },
+    ],
+    attachments: [
+      { id: 'a8', name: '報價單.pdf', url: '#', type: 'file', size: '512 KB' },
+    ],
+  },
+  {
     id: 'REQ-2026-0004',
     category: 'computer',
     title: 'Dell 顯示器採購申請 × 5',
@@ -315,10 +412,81 @@ export function getTabRecords(
         r.steps.some((s) => s.approvedBy?.includes(currentUser))
     )
   }
-  // pending-me: 待我簽核 — 目前 step 有我且 status pending
+  // pending-me: 待我簽核 — 目前 step 有我、status pending、且我還沒簽過
   return records.filter(
     (r) =>
       r.status === 'pending' &&
-      r.steps.some((s) => s.status === 'current' && s.approvers.includes(currentUser))
+      r.steps.some(
+        (s) =>
+          s.status === 'current' &&
+          s.approvers.includes(currentUser) &&
+          !s.approvedBy?.includes(currentUser),
+      ),
   )
+}
+
+// ── Action helpers — update record after approve/reject ─────────────────────
+const now = () => {
+  const d = new Date()
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  const hh = String(d.getHours()).padStart(2, '0')
+  const mi = String(d.getMinutes()).padStart(2, '0')
+  return `${d.getFullYear()}-${mm}-${dd} ${hh}:${mi}`
+}
+
+export function approveRecord(
+  record: ApprovalRecord,
+  user: string,
+  comment?: string,
+): ApprovalRecord {
+  const ts = now()
+  const steps = record.steps.map((s) => ({ ...s, people: s.people ? [...s.people] : undefined }))
+  const currentIdx = steps.findIndex((s) => s.status === 'current')
+  if (currentIdx < 0) return record
+  const current = steps[currentIdx]
+  const newApprovedBy = [...(current.approvedBy ?? []), user]
+  current.approvedBy = newApprovedBy
+  current.approvedAt = ts
+  if (current.people) {
+    current.people = current.people.map((p) =>
+      p.name === user
+        ? { ...p, status: 'signed' as const, signedAt: ts, comment: comment || p.comment }
+        : p,
+    )
+  }
+  const mode = current.mode ?? 'single'
+  const requiredCount = mode === 'parallel-any' ? 1 : current.approvers.length
+  const stepComplete = newApprovedBy.length >= requiredCount
+  if (stepComplete) {
+    current.status = 'completed'
+    if (currentIdx + 1 < steps.length) {
+      steps[currentIdx + 1].status = 'current'
+      return { ...record, steps }
+    }
+    return { ...record, steps, status: 'approved' as const }
+  }
+  return { ...record, steps }
+}
+
+export function rejectRecord(
+  record: ApprovalRecord,
+  user: string,
+  comment: string,
+): ApprovalRecord {
+  const ts = now()
+  const steps = record.steps.map((s) => ({ ...s, people: s.people ? [...s.people] : undefined }))
+  const currentIdx = steps.findIndex((s) => s.status === 'current')
+  if (currentIdx >= 0) {
+    steps[currentIdx].status = 'error'
+    steps[currentIdx].approvedAt = ts
+    if (steps[currentIdx].people) {
+      steps[currentIdx].people = steps[currentIdx].people!.map((p) =>
+        p.name === user
+          ? { ...p, status: 'rejected' as const, signedAt: ts, comment }
+          : p,
+      )
+    }
+  }
+  return { ...record, steps, status: 'rejected' as const }
 }

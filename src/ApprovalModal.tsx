@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -14,6 +15,7 @@ import {
   DescriptionItem,
   FileItem,
   Tag,
+  Textarea,
   Separator,
 } from '@qijenchen/design-system'
 import type { ApprovalRecord } from './data'
@@ -24,6 +26,8 @@ interface ApprovalModalProps {
   open: boolean
   onClose: () => void
   mode: 'approve' | 'view'
+  onApprove?: (id: string, comment?: string) => void
+  onReject?: (id: string, comment: string) => void
 }
 
 const URGENCY_COLOR = {
@@ -50,13 +54,45 @@ const STATUS_LABEL = {
   rejected: '已退件',
 } as const
 
-export function ApprovalModal({ record, open, onClose, mode }: ApprovalModalProps) {
+export function ApprovalModal({
+  record,
+  open,
+  onClose,
+  mode,
+  onApprove,
+  onReject,
+}: ApprovalModalProps) {
+  const [confirmAction, setConfirmAction] = useState<'approve' | 'reject' | null>(null)
+  const [comment, setComment] = useState('')
+
   if (!record) return null
 
   const currentStep = record.steps.find((s) => s.status === 'current')
   const completedValues = record.steps.filter((s) => s.status === 'completed').map((s) => s.id)
   const errorValues = record.steps.filter((s) => s.status === 'error').map((s) => s.id)
   const hasRichRoute = record.steps.some((s) => s.people && s.people.length > 0)
+
+  function openConfirm(action: 'approve' | 'reject') {
+    setComment('')
+    setConfirmAction(action)
+  }
+
+  function closeConfirm() {
+    setConfirmAction(null)
+    setComment('')
+  }
+
+  function submit() {
+    if (!confirmAction || !record) return
+    if (confirmAction === 'approve') {
+      onApprove?.(record.id, comment.trim() || undefined)
+    } else {
+      onReject?.(record.id, comment.trim())
+    }
+    closeConfirm()
+  }
+
+  const submitDisabled = confirmAction === 'reject' && comment.trim().length === 0
 
   return (
     <Dialog open={open} onOpenChange={(o: boolean) => !o && onClose()}>
@@ -67,9 +103,11 @@ export function ApprovalModal({ record, open, onClose, mode }: ApprovalModalProp
             <Tag size="sm" color={STATUS_COLOR[record.status]} solid={record.status === 'approved'}>
               {STATUS_LABEL[record.status]}
             </Tag>
-            <Tag size="sm" color={URGENCY_COLOR[record.urgency]}>
-              {URGENCY_LABEL[record.urgency]}
-            </Tag>
+            {record.urgency !== 'low' && (
+              <Tag size="sm" color={URGENCY_COLOR[record.urgency]}>
+                {URGENCY_LABEL[record.urgency]}
+              </Tag>
+            )}
           </DialogTitle>
         </DialogHeader>
 
@@ -115,10 +153,8 @@ export function ApprovalModal({ record, open, onClose, mode }: ApprovalModalProp
                     <FileItem
                       key={att.id}
                       name={att.name}
-                      mode="rich"
-                      status="completed"
+                      mode="compact"
                       description={att.size}
-                      onDownload={() => {}}
                     />
                   ))}
                 </div>
@@ -166,15 +202,72 @@ export function ApprovalModal({ record, open, onClose, mode }: ApprovalModalProp
 
         {mode === 'approve' && record.status === 'pending' && (
           <DialogFooter>
-            <Button variant="outline" color="danger" onClick={onClose}>
+            <Button variant="secondary" danger onClick={() => openConfirm('reject')}>
               退件
             </Button>
-            <Button variant="primary" onClick={onClose}>
+            <Button variant="secondary" onClick={() => openConfirm('approve')}>
               核准
             </Button>
           </DialogFooter>
         )}
       </DialogContent>
+
+      {/* Confirm dialog — header(close X) + body(comment textarea) + footer(送出) */}
+      <Dialog
+        open={confirmAction !== null}
+        onOpenChange={(o: boolean) => !o && closeConfirm()}
+      >
+        <DialogContent
+          maxWidth="480px"
+          autoHeight
+          onOpenAutoFocus={(e) => e.preventDefault()}
+        >
+          <DialogHeader>
+            <DialogTitle>
+              {confirmAction === 'approve' ? '核准簽核' : '退件簽核'}
+            </DialogTitle>
+          </DialogHeader>
+          <DialogBody className="flex flex-col gap-3">
+            <p className="text-body text-fg-secondary">
+              單據：<span className="text-foreground font-medium">{record.title}</span>
+            </p>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-body">
+                簽核意見
+                {confirmAction === 'reject' && (
+                  <span className="text-fg-danger ml-1">*</span>
+                )}
+                {confirmAction === 'approve' && (
+                  <span className="text-fg-placeholder ml-1 text-caption">（選填）</span>
+                )}
+              </span>
+              <Textarea
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                rows={4}
+                placeholder={
+                  confirmAction === 'reject'
+                    ? '請說明退件原因，讓申請人能依此修正再送'
+                    : '可補充核准意見供下一站簽核人參考'
+                }
+              />
+            </label>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="tertiary" onClick={closeConfirm}>
+              取消
+            </Button>
+            <Button
+              variant="primary"
+              danger={confirmAction === 'reject'}
+              disabled={submitDisabled}
+              onClick={submit}
+            >
+              送出
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   )
 }
