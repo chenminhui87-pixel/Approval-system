@@ -210,7 +210,7 @@ function StepNode({ step, isLast, defaultOpen }: StepNodeProps) {
             className={
               'mt-2 rounded-md' +
               (step.status === 'current' && isMulti
-                ? ' p-3 bg-warning-subtle'
+                ? ' p-3 bg-muted'
                 : '')
             }
           >
