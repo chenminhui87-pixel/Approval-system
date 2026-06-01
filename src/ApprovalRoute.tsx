@@ -145,9 +145,11 @@ function StepNode({ step, isLast, defaultOpen }: StepNodeProps) {
 
   return (
     <li className="relative flex gap-3">
-      {/* Left rail: chevron toggle (for multi) + dot + connector */}
-      <div className="flex flex-col items-center pt-1 shrink-0">
-        <div className="flex items-center gap-1">
+      {/* Left rail: chevron slot (always reserved) + dot column (dot + connector,
+          both centered to dot's X so single 和 multi step 的 dot/line 都在同一條垂直線)。 */}
+      <div className="flex gap-1 shrink-0">
+        {/* Chevron slot — 固定 14px 寬 reservation,單人 step 留白 padding */}
+        <div className="w-[14px] shrink-0 flex items-start pt-1">
           {isMulti && (
             <button
               type="button"
@@ -158,19 +160,22 @@ function StepNode({ step, isLast, defaultOpen }: StepNodeProps) {
               <HeaderChevron size={14} />
             </button>
           )}
-          <StepDot state={step.status} />
         </div>
-        {!isLast && (
-          <div
-            className="w-px flex-1 mt-1"
-            style={{
-              background:
-                step.status === 'completed'
-                  ? 'var(--color-blue-6)'
-                  : 'var(--color-neutral-4)',
-            }}
-          />
-        )}
+        {/* Dot + connector column — items-center 對齊 dot 中軸,line 自動跟著 */}
+        <div className="flex flex-col items-center pt-1">
+          <StepDot state={step.status} />
+          {!isLast && (
+            <div
+              className="w-px flex-1 mt-1"
+              style={{
+                background:
+                  step.status === 'completed'
+                    ? 'var(--color-blue-6)'
+                    : 'var(--color-neutral-4)',
+              }}
+            />
+          )}
+        </div>
       </div>
 
       {/* Right side: header + body */}
