@@ -1,4 +1,10 @@
-export type CategoryId = 'article' | 'computer'
+export type CategoryId =
+  | 'article'
+  | 'computer'
+  | 'expense'
+  | 'travel'
+  | 'vacation'
+  | 'recruit'
 
 export type UrgencyLevel = 'low' | 'medium' | 'high'
 
@@ -62,6 +68,10 @@ export interface ApprovalRecord {
 export const CATEGORIES: { id: CategoryId; label: string }[] = [
   { id: 'article', label: '文章發布審核' },
   { id: 'computer', label: '電腦採購申請' },
+  { id: 'expense', label: '費用報銷' },
+  { id: 'travel', label: '出差申請' },
+  { id: 'vacation', label: '請假申請' },
+  { id: 'recruit', label: '人力招募' },
 ]
 
 export const MOCK_RECORDS: ApprovalRecord[] = [
@@ -392,6 +402,217 @@ export const MOCK_RECORDS: ApprovalRecord[] = [
       { id: 'a5', name: '報價單.pdf', url: '#', type: 'file', size: '654 KB' },
       { id: 'a6', name: '產品規格.png', url: '#', type: 'image', size: '210 KB' },
     ],
+  },
+  {
+    id: 'REQ-2026-0007',
+    category: 'expense',
+    title: '5 月份客戶招待餐費報銷',
+    applicant: '陳美惠',
+    submittedAt: '2026-05-30 16:20',
+    urgency: 'medium',
+    status: 'pending',
+    currentStep: 0,
+    steps: [
+      {
+        id: 's1',
+        label: '直屬主管',
+        approvers: ['陳美惠'],
+        status: 'current',
+      },
+      {
+        id: 's2',
+        label: '財務複核',
+        approvers: ['財務美'],
+        status: 'upcoming',
+      },
+    ],
+    fixedFields: [
+      { label: '單號', value: 'REQ-2026-0007' },
+      { label: '申請時間', value: '2026-05-30 16:20' },
+      { label: '緊急程度', value: '一般' },
+      { label: '申請者', value: '陳美惠' },
+    ],
+    customFields: [
+      { label: '報銷類別', value: '客戶招待' },
+      { label: '報銷金額', value: 'NT$ 8,640' },
+      { label: '消費日期', value: '2026-05-22' },
+      { label: '備註', value: '與 Acme 客戶用餐 4 人，已附發票' },
+    ],
+    attachments: [
+      { id: 'a9', name: '發票 INV-0522.pdf', url: '#', type: 'file', size: '320 KB' },
+    ],
+  },
+  {
+    id: 'REQ-2026-0008',
+    category: 'travel',
+    title: '日本東京 6/15-6/18 客戶拜訪出差',
+    applicant: '黃建偉',
+    submittedAt: '2026-05-29 11:40',
+    urgency: 'high',
+    status: 'pending',
+    currentStep: 0,
+    steps: [
+      {
+        id: 's1',
+        label: '直屬主管',
+        approvers: ['陳美惠'],
+        status: 'current',
+      },
+      {
+        id: 's2',
+        label: '部門主管',
+        approvers: ['周總監'],
+        status: 'upcoming',
+      },
+      {
+        id: 's3',
+        label: '財務長',
+        approvers: ['劉財務'],
+        status: 'upcoming',
+      },
+    ],
+    fixedFields: [
+      { label: '單號', value: 'REQ-2026-0008' },
+      { label: '申請時間', value: '2026-05-29 11:40' },
+      { label: '緊急程度', value: '緊急' },
+      { label: '申請者', value: '黃建偉' },
+    ],
+    customFields: [
+      { label: '出差地點', value: '日本 東京' },
+      { label: '出差期間', value: '2026-06-15 ~ 2026-06-18（4 天）' },
+      { label: '預估總費用', value: 'NT$ 85,000' },
+      { label: '出差目的', value: '與 Sony 客戶面對面討論 Q3 合約細節' },
+    ],
+    attachments: [
+      { id: 'a10', name: '行程規劃.pdf', url: '#', type: 'file', size: '480 KB' },
+    ],
+  },
+  {
+    id: 'REQ-2026-0009',
+    category: 'vacation',
+    title: '年假申請 6/10-6/14',
+    applicant: '林志明',
+    submittedAt: '2026-05-28 17:55',
+    urgency: 'low',
+    status: 'approved',
+    currentStep: 1,
+    steps: [
+      {
+        id: 's1',
+        label: '直屬主管',
+        approvers: ['陳美惠'],
+        status: 'completed',
+        approvedBy: ['陳美惠'],
+        approvedAt: '2026-05-29 09:30',
+      },
+      {
+        id: 's2',
+        label: '人資備案',
+        approvers: ['人資李'],
+        status: 'completed',
+        approvedBy: ['人資李'],
+        approvedAt: '2026-05-29 14:00',
+      },
+    ],
+    fixedFields: [
+      { label: '單號', value: 'REQ-2026-0009' },
+      { label: '申請時間', value: '2026-05-28 17:55' },
+      { label: '緊急程度', value: '低' },
+      { label: '申請者', value: '林志明' },
+    ],
+    customFields: [
+      { label: '請假類別', value: '年假' },
+      { label: '請假期間', value: '2026-06-10 ~ 2026-06-14（5 天）' },
+      { label: '代理人', value: '黃建偉' },
+      { label: '備註', value: '回鄉探親' },
+    ],
+    attachments: [],
+  },
+  {
+    id: 'REQ-2026-0010',
+    category: 'recruit',
+    title: '前端工程師招募職缺開放',
+    applicant: '周總監',
+    submittedAt: '2026-05-27 13:10',
+    urgency: 'medium',
+    status: 'pending',
+    currentStep: 1,
+    steps: [
+      {
+        id: 's1',
+        label: '部門主管',
+        approvers: ['周總監'],
+        status: 'completed',
+        approvedBy: ['周總監'],
+        approvedAt: '2026-05-27 13:10',
+      },
+      {
+        id: 's2',
+        label: '人資審核',
+        approvers: ['陳美惠'],
+        status: 'current',
+      },
+      {
+        id: 's3',
+        label: '處長核准',
+        approvers: ['林處長'],
+        status: 'upcoming',
+      },
+    ],
+    fixedFields: [
+      { label: '單號', value: 'REQ-2026-0010' },
+      { label: '申請時間', value: '2026-05-27 13:10' },
+      { label: '緊急程度', value: '一般' },
+      { label: '申請者', value: '周總監' },
+    ],
+    customFields: [
+      { label: '職稱', value: '資深前端工程師' },
+      { label: '部門', value: '產品研發部' },
+      { label: '招募名額', value: '2 人' },
+      { label: '薪資級距', value: 'NT$ 80,000 ~ 120,000' },
+      { label: '到職期望', value: '2026-08 起' },
+    ],
+    attachments: [
+      { id: 'a11', name: '職務說明書.pdf', url: '#', type: 'file', size: '210 KB' },
+    ],
+  },
+  {
+    id: 'REQ-2026-0011',
+    category: 'expense',
+    title: '差旅交通費報銷',
+    applicant: '黃建偉',
+    submittedAt: '2026-05-24 10:05',
+    urgency: 'low',
+    status: 'rejected',
+    currentStep: 0,
+    steps: [
+      {
+        id: 's1',
+        label: '直屬主管',
+        approvers: ['陳美惠'],
+        status: 'error',
+        approvedBy: ['陳美惠'],
+        approvedAt: '2026-05-24 15:00',
+      },
+      {
+        id: 's2',
+        label: '財務複核',
+        approvers: ['財務美'],
+        status: 'upcoming',
+      },
+    ],
+    fixedFields: [
+      { label: '單號', value: 'REQ-2026-0011' },
+      { label: '申請時間', value: '2026-05-24 10:05' },
+      { label: '緊急程度', value: '低' },
+      { label: '申請者', value: '黃建偉' },
+    ],
+    customFields: [
+      { label: '報銷類別', value: '差旅交通' },
+      { label: '報銷金額', value: 'NT$ 2,180' },
+      { label: '消費日期', value: '2026-05-18' },
+    ],
+    attachments: [],
   },
 ]
 

@@ -76,7 +76,8 @@ function PersonRow({ person }: { person: ApprovalPerson }) {
             <button
               type="button"
               onClick={() => setExpanded((v) => !v)}
-              className="text-caption text-fg-link hover:underline mt-0.5"
+              className="text-caption hover:underline mt-0.5"
+              style={{ color: 'var(--color-neutral-7)' }}
             >
               {expanded ? '收合' : '查看全部'}
             </button>

@@ -1,20 +1,7 @@
 import { useState } from 'react'
 import {
-  AppShell,
-  SidebarProvider,
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarTrigger,
   TooltipProvider,
   Avatar,
-  ItemAvatar,
   Tabs,
   TabsList,
   TabsTrigger,
@@ -25,7 +12,6 @@ import {
   Tag,
 } from '@qijenchen/design-system'
 import {
-  ClipboardList,
   LayoutGrid,
   List,
   AlertCircle,
@@ -44,8 +30,6 @@ import {
   type CategoryId,
 } from './data'
 import { ApprovalModal } from './ApprovalModal'
-
-const NAV = [{ id: 'approval', label: '簽核管理', icon: ClipboardList }] as const
 
 const URGENCY_COLOR = {
   high: 'red',
@@ -77,55 +61,19 @@ const STATUS_ICON = {
   rejected: XCircle,
 }
 
-function AppSidebar() {
-  return (
-    <Sidebar collapsible="icon">
-      <SidebarHeader>
-        <div className="flex items-center gap-2 min-w-0 group-data-[collapsible=icon]:justify-center">
-          <Avatar alt="簽核系統" size={24} shape="square" color="blue" solid />
-          <span className="text-body-lg font-medium truncate group-data-[collapsible=icon]:hidden">
-            簽核系統
-          </span>
-        </div>
-      </SidebarHeader>
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {NAV.map(({ id, label, icon }) => (
-                <SidebarMenuItem key={id}>
-                  <SidebarMenuButton id={id} startIcon={icon} tooltip={label}>
-                    {label}
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-      <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild>
-              <div role="group" aria-label="當前使用者">
-                <ItemAvatar alt={CURRENT_USER} color="blue" />
-                <span data-sidebar="menu-label" className="min-w-0 flex-1 truncate">
-                  {CURRENT_USER}
-                </span>
-              </div>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
-    </Sidebar>
-  )
-}
-
 function PageHeader({ title }: { title: string }) {
+  // 用戶頭像放右側,預留之後 click 開設定的入口(目前 button 無 onClick)。
   return (
-    <header className="flex items-center gap-2 h-[var(--chrome-header-height)] px-[var(--layout-space-loose)] bg-surface border-b border-divider">
-      <SidebarTrigger />
+    <header className="flex items-center gap-3 h-[var(--chrome-header-height)] px-[var(--layout-space-loose)] bg-surface border-b border-divider">
+      <Avatar alt="簽核系統" size={24} shape="square" color="blue" solid />
       <h1 className="text-body-lg font-medium flex-1 truncate">{title}</h1>
+      <button
+        type="button"
+        aria-label={`${CURRENT_USER}（個人設定）`}
+        className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <Avatar alt={CURRENT_USER} size={32} color="blue" />
+      </button>
     </header>
   )
 }
@@ -310,14 +258,26 @@ function ApprovalPage() {
           ))}
         </ChipGroup>
 
+        {/* iconOnly + Tooltip wrap 會讓 data-state="closed" 蓋掉 Toggle 的 "on"，
+            DS active 樣式失效;改用 aria-checked: variant 重新套 active 樣式。 */}
         <SegmentedControl
           value={view}
           onValueChange={(v: string | undefined) => v && setView(v as ViewMode)}
           size="sm"
           iconOnly
         >
-          <SegmentedControlItem value="card" startIcon={LayoutGrid} aria-label="卡片模式" />
-          <SegmentedControlItem value="list" startIcon={List} aria-label="列表模式" />
+          <SegmentedControlItem
+            value="card"
+            startIcon={LayoutGrid}
+            aria-label="卡片模式"
+            className="aria-checked:text-primary-hover aria-checked:border-primary-hover aria-checked:relative aria-checked:z-10"
+          />
+          <SegmentedControlItem
+            value="list"
+            startIcon={List}
+            aria-label="列表模式"
+            className="aria-checked:text-primary-hover aria-checked:border-primary-hover aria-checked:relative aria-checked:z-10"
+          />
         </SegmentedControl>
       </div>
 
@@ -349,19 +309,14 @@ function ApprovalPage() {
 }
 
 export default function App() {
-  const [activeId, setActiveId] = useState<string>('approval')
-
   return (
     <TooltipProvider delayDuration={500} skipDelayDuration={300}>
-      <SidebarProvider activeId={activeId} onActiveChange={setActiveId}>
-        <AppShell
-          layout="primary-sidebar"
-          sidebar={<AppSidebar />}
-          header={<PageHeader title="簽核管理" />}
-        >
+      <div className="flex flex-col h-svh bg-canvas">
+        <PageHeader title="簽核管理" />
+        <main className="flex-1 min-h-0 overflow-y-auto">
           <ApprovalPage />
-        </AppShell>
-      </SidebarProvider>
+        </main>
+      </div>
     </TooltipProvider>
   )
 }

@@ -13,11 +13,11 @@ import {
   StepDescription,
   DescriptionList,
   DescriptionItem,
-  FileItem,
   Tag,
   Textarea,
   Separator,
 } from '@qijenchen/design-system'
+import { Paperclip } from 'lucide-react'
 import type { ApprovalRecord } from './data'
 import { ApprovalRoute } from './ApprovalRoute'
 
@@ -111,12 +111,13 @@ export function ApprovalModal({
           </DialogTitle>
         </DialogHeader>
 
-        <DialogBody className="flex flex-row gap-0 !p-0">
+        {/* Custom body — bypass DialogBody ScrollArea wrap 讓 divider 能撐滿到底 */}
+        <div data-dialog-body className="flex-1 min-h-0 flex flex-row gap-0">
           {/* Left — form details */}
           <div className="flex-[3] min-w-0 flex flex-col gap-5 px-6 py-5 overflow-y-auto">
             {/* Fixed fields */}
             <section>
-              <p className="text-caption text-fg-secondary mb-2">基本資訊</p>
+              <p className="text-h4 font-medium mb-3">基本資訊</p>
               <DescriptionList direction="vertical">
                 {record.fixedFields.map((f) => (
                   <DescriptionItem key={f.label} label={f.label}>
@@ -130,7 +131,7 @@ export function ApprovalModal({
 
             {/* Custom fields */}
             <section>
-              <p className="text-caption text-fg-secondary mb-2">申請內容</p>
+              <p className="text-h4 font-medium mb-3">申請內容</p>
               <DescriptionList direction="vertical">
                 {record.customFields.map((f) => (
                   <DescriptionItem key={f.label} label={f.label}>
@@ -144,20 +145,26 @@ export function ApprovalModal({
 
             {/* Attachments */}
             <section>
-              <p className="text-caption text-fg-secondary mb-2">附件</p>
+              <p className="text-h4 font-medium mb-3">附件</p>
               {record.attachments.length === 0 ? (
                 <p className="text-body text-fg-placeholder">無附件</p>
               ) : (
-                <div className="flex flex-col gap-1">
+                <ul className="flex flex-col gap-2 list-none m-0 p-0">
                   {record.attachments.map((att) => (
-                    <FileItem
-                      key={att.id}
-                      name={att.name}
-                      mode="compact"
-                      description={att.size}
-                    />
+                    <li key={att.id}>
+                      <a
+                        href={att.url}
+                        className="inline-flex items-center gap-1.5 text-body text-fg-link hover:underline"
+                      >
+                        <Paperclip size={16} className="shrink-0" />
+                        <span>{att.name}</span>
+                        <span className="text-fg-placeholder text-caption">
+                          {att.size}
+                        </span>
+                      </a>
+                    </li>
                   ))}
-                </div>
+                </ul>
               )}
             </section>
           </div>
@@ -167,7 +174,7 @@ export function ApprovalModal({
 
           {/* Right — approval route */}
           <div className="flex-[1.5] min-w-0 px-5 py-5 overflow-y-auto">
-            <p className="text-caption text-fg-secondary mb-4">簽核流程</p>
+            <p className="text-h4 font-medium mb-4">簽核流程</p>
             {hasRichRoute ? (
               <ApprovalRoute steps={record.steps} />
             ) : (
@@ -198,7 +205,7 @@ export function ApprovalModal({
               </Steps>
             )}
           </div>
-        </DialogBody>
+        </div>
 
         {mode === 'approve' && record.status === 'pending' && (
           <DialogFooter>

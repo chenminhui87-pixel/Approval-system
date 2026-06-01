@@ -4,3 +4,17 @@
 
 [build.environment]
   NODE_VERSION = "22"
+
+# Per-branch deploy preview 預設啟用（任何 branch push → 自動 preview URL）
+
+# ── 安全 headers（對齊 ds-product-template）────────────────────────────────
+# 1️⃣ 反 SEO indexing：未公開的內部產品 demo 不該被 Google 收錄
+# 2️⃣ 一般 web 安全（防 click-jacking、MIME sniff、referrer leak）
+# 真正的 access control 走 Netlify dashboard → Visitor access → Password Protection
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "SAMEORIGIN"
