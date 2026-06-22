@@ -16,6 +16,7 @@ import {
   SegmentedControlItem,
   Checkbox,
   Badge,
+  Input,
   toast as dsToast,
   Toaster,
 } from '@qijenchen/design-system'
@@ -930,13 +931,16 @@ export function ApprovalCenterMobile({
           )}
 
           {screen === 'requests' && searchVisible ? (
-            <input
-              type="search"
+            <Input
+              variant="bare"
+              size="sm"
+              startIcon={Search}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="搜尋單據、申請人…"
               autoFocus
-              className="flex-1 min-w-0 text-body text-foreground bg-transparent focus-visible:outline-none placeholder:text-fg-placeholder"
+              endAction={search ? { icon: X, label: '清除搜尋', onClick: () => setSearch('') } : undefined}
+              className="flex-1 !bg-muted"
             />
           ) : (
             <h1 className="text-body font-semibold flex-1 truncate">
@@ -987,22 +991,16 @@ export function ApprovalCenterMobile({
 
         {/* ── subfilter: search filter row ── */}
         {searchPlacement === 'subfilter' && screen === 'requests' && (
-          <div className="flex items-center h-12 px-3 gap-2 bg-surface border-b border-divider shrink-0">
-            <div className="flex items-center gap-2 flex-1 min-w-0 h-8 px-3 rounded-lg bg-muted">
-              <Search size={14} className="text-fg-placeholder shrink-0" />
-              <input
-                type="search"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="搜尋單據、申請人…"
-                className="flex-1 min-w-0 text-body text-foreground bg-transparent focus-visible:outline-none placeholder:text-fg-placeholder"
-              />
-              {search && (
-                <button onClick={() => setSearch('')} className="text-fg-placeholder hover:text-fg-secondary shrink-0" aria-label="清除搜尋">
-                  <X size={14} />
-                </button>
-              )}
-            </div>
+          <div className="px-3 py-2 bg-surface border-b border-divider shrink-0">
+            <Input
+              size="sm"
+              startIcon={Search}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="搜尋單據、申請人…"
+              endAction={search ? { icon: X, label: '清除搜尋', onClick: () => setSearch('') } : undefined}
+              className="!bg-muted"
+            />
           </div>
         )}
 

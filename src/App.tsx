@@ -373,6 +373,7 @@ function ApprovalPage() {
           onChange={(e) => setSearch(e.target.value)}
           placeholder="搜尋單號、標題、申請者…"
           endAction={search ? { icon: X, label: '清除搜尋', onClick: () => setSearch('') } : undefined}
+          className="!bg-muted"
         />
 
         {/* Chips + view toggle row */}
