@@ -251,9 +251,9 @@ function ListRow({
   const submittedDate = record.submittedAt.slice(0, 10).replace(/-/g, '/')
 
   return (
-    <div className={`flex items-stretch border-b border-divider ${selected ? 'bg-muted' : 'bg-surface'}`}>
+    <div className={`flex items-stretch border-b border-divider pl-3 ${selected ? 'bg-muted' : 'bg-surface'}`}>
       <div
-        className="flex items-start justify-center w-12 pt-3.5 shrink-0"
+        className="flex items-start justify-start w-12 pt-3.5 shrink-0"
         onClick={onToggleSelect}
       >
         <Checkbox checked={selected} onCheckedChange={onToggleSelect} onClick={(e) => e.stopPropagation()} />
@@ -1006,25 +1006,23 @@ export function ApprovalCenterMobile({
 
         {/* ── V2: Gmail-style select-all sub-toolbar ── */}
         {selectAllPlacement === 'subbar' && screen === 'requests' && (
-          <div className="flex items-center h-10 pr-3 bg-surface border-b border-divider shrink-0">
+          <div className="flex items-center h-10 px-3 bg-surface border-b border-divider shrink-0">
             <div
               onClick={handleSelectAll}
               className="flex items-center gap-2.5 text-fg-secondary hover:text-foreground active:text-foreground transition-colors cursor-pointer"
               aria-label={allVisibleSelected ? '取消全選' : '全選'}
             >
-              <div className="w-12 flex items-center justify-center shrink-0">
-                <Checkbox
-                  checked={
-                    allVisibleSelected && filtered.length > 0
-                      ? true
-                      : someSelected
-                        ? 'indeterminate'
-                        : false
-                  }
-                  onCheckedChange={handleSelectAll}
-                  onClick={(e) => e.stopPropagation()}
-                />
-              </div>
+              <Checkbox
+                checked={
+                  allVisibleSelected && filtered.length > 0
+                    ? true
+                    : someSelected
+                      ? 'indeterminate'
+                      : false
+                }
+                onCheckedChange={handleSelectAll}
+                onClick={(e) => e.stopPropagation()}
+              />
               <span className="text-body">
                 {isSelecting ? `已選取 ${selectedIds.size} 項` : '全選'}
               </span>
