@@ -638,8 +638,15 @@ function DetailSheet({
             className="bg-canvas rounded-t-2xl overflow-hidden shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="px-4 py-3 border-b border-divider">
-              <p className="text-caption text-fg-secondary text-center">更多操作</p>
+            <div className="flex items-center justify-between px-4 py-3 border-b border-divider">
+              <p className="text-caption text-fg-secondary">更多操作</p>
+              <button
+                onClick={() => setSingleMoreOpen(false)}
+                className="flex items-center justify-center w-7 h-7 rounded-full hover:bg-surface-hover active:bg-surface-hover text-fg-secondary"
+                aria-label="關閉"
+              >
+                <X size={16} />
+              </button>
             </div>
             {([
               { Icon: Share2, label: '轉寄', action: '轉寄', danger: false },
@@ -656,12 +663,6 @@ function DetailSheet({
                 {label}
               </button>
             ))}
-            <button
-              className="w-full px-4 py-3.5 text-body text-fg-secondary text-center hover:bg-surface-hover active:bg-surface-hover"
-              onClick={() => setSingleMoreOpen(false)}
-            >
-              關閉
-            </button>
           </div>
         </div>
       )}
@@ -1225,10 +1226,17 @@ export function ApprovalCenterMobile({
               className="bg-canvas rounded-t-2xl overflow-hidden shadow-xl"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="px-4 py-3 border-b border-divider">
-                <p className="text-caption text-fg-secondary text-center">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-divider">
+                <p className="text-caption text-fg-secondary">
                   已選取 {selectedIds.size} 項
                 </p>
+                <button
+                  onClick={() => setMoreMenuOpen(false)}
+                  className="flex items-center justify-center w-7 h-7 rounded-full hover:bg-surface-hover active:bg-surface-hover text-fg-secondary"
+                  aria-label="關閉"
+                >
+                  <X size={16} />
+                </button>
               </div>
               {([
                 { Icon: Share2, label: '轉寄', action: '轉寄', danger: false },
@@ -1251,12 +1259,6 @@ export function ApprovalCenterMobile({
               >
                 <X size={18} className="text-fg-secondary shrink-0" />
                 取消選取
-              </button>
-              <button
-                className="w-full px-4 py-3.5 text-body text-fg-secondary text-center hover:bg-surface-hover active:bg-surface-hover"
-                onClick={() => setMoreMenuOpen(false)}
-              >
-                關閉
               </button>
             </div>
           </div>

@@ -14,6 +14,7 @@ import {
   Textarea,
   Checkbox,
   Input,
+  Badge,
   toast,
   Toaster,
 } from '@qijenchen/design-system'
@@ -154,6 +155,7 @@ function RecordList({
   onToggleSelectAll,
   onToggleSelect,
   onClick,
+  fullHeight,
 }: {
   records: ApprovalRecord[]
   selectedIds: Set<string>
@@ -162,65 +164,79 @@ function RecordList({
   onToggleSelectAll: () => void
   onToggleSelect: (id: string) => void
   onClick: (r: ApprovalRecord) => void
+  fullHeight?: boolean
 }) {
   const thCls = 'text-left px-4 py-2.5 text-caption text-fg-secondary font-medium whitespace-nowrap'
   const tdBase = 'px-4 py-3 cursor-pointer'
 
+  const tableEl = (
+    <table className="w-full text-body min-w-[860px]">
+      <thead>
+        <tr className="border-b border-divider bg-muted">
+          <th className="px-4 py-2.5 w-10">
+            <RowCheckbox checked={allSelected} indeterminate={someSelected} onChange={onToggleSelectAll} />
+          </th>
+          <th className={thCls}>標題</th>
+          <th className={thCls}>申請人</th>
+          <th className={`${thCls} hidden md:table-cell`}>代理人</th>
+          <th className={thCls}>申請時間</th>
+          <th className={thCls}>狀態</th>
+          <th className={`${thCls} hidden sm:table-cell`}>緊急程度</th>
+          <th className={`${thCls} hidden md:table-cell`}>到期時間</th>
+        </tr>
+      </thead>
+      <tbody>
+        {records.map((r) => {
+          const { text: dlText, urgent: dlUrgent } = deadlineDisplay(r.dueDate)
+          const submittedDate = r.submittedAt.slice(0, 10).replace(/-/g, '/')
+          return (
+            <tr
+              key={r.id}
+              onClick={() => onClick(r)}
+              className={`border-b border-divider last:border-0 transition-colors cursor-pointer ${
+                selectedIds.has(r.id) ? 'bg-primary/5' : 'hover:bg-surface-hover'
+              }`}
+            >
+              <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                <RowCheckbox checked={selectedIds.has(r.id)} onChange={() => onToggleSelect(r.id)} />
+              </td>
+              <td className={`${tdBase} font-medium max-w-xs`}>
+                <span className="line-clamp-2">{r.title}</span>
+              </td>
+              <td className={`${tdBase} text-fg-secondary whitespace-nowrap`}>{r.applicant}</td>
+              <td className={`${tdBase} text-fg-secondary hidden md:table-cell`}>
+                {r.agents && r.agents.length > 0 ? r.agents.join('、') : '-'}
+              </td>
+              <td className={`${tdBase} text-caption text-fg-secondary whitespace-nowrap`}>{submittedDate}</td>
+              <td className={tdBase}>
+                <Tag size="sm" color={STATUS_COLOR[r.status]}>{STATUS_LABEL[r.status]}</Tag>
+              </td>
+              <td className={`${tdBase} hidden sm:table-cell`}>
+                {r.urgency === 'high' ? <Tag size="sm" color="red">緊急</Tag> : <span className="text-fg-placeholder">-</span>}
+              </td>
+              <td className={`${tdBase} text-caption hidden md:table-cell ${dlUrgent ? 'text-fg-danger' : 'text-fg-secondary'}`}>
+                {dlText}
+              </td>
+            </tr>
+          )
+        })}
+      </tbody>
+    </table>
+  )
+
+  if (fullHeight) {
+    return (
+      <div className="h-full overflow-auto">
+        {tableEl}
+        <div className="h-4" />
+      </div>
+    )
+  }
+
   return (
     <div className="rounded-lg border border-divider overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="w-full text-body min-w-[860px]">
-          <thead>
-            <tr className="border-b border-divider bg-muted">
-              <th className="px-4 py-2.5 w-10">
-                <RowCheckbox checked={allSelected} indeterminate={someSelected} onChange={onToggleSelectAll} />
-              </th>
-              <th className={thCls}>標題</th>
-              <th className={thCls}>申請人</th>
-              <th className={`${thCls} hidden md:table-cell`}>代理人</th>
-              <th className={thCls}>申請時間</th>
-              <th className={thCls}>狀態</th>
-              <th className={`${thCls} hidden sm:table-cell`}>緊急程度</th>
-              <th className={`${thCls} hidden md:table-cell`}>到期時間</th>
-            </tr>
-          </thead>
-          <tbody>
-            {records.map((r) => {
-              const { text: dlText, urgent: dlUrgent } = deadlineDisplay(r.dueDate)
-              const submittedDate = r.submittedAt.slice(0, 10).replace(/-/g, '/')
-              return (
-                <tr
-                  key={r.id}
-                  onClick={() => onClick(r)}
-                  className={`border-b border-divider last:border-0 transition-colors cursor-pointer ${
-                    selectedIds.has(r.id) ? 'bg-primary/5' : 'hover:bg-surface-hover'
-                  }`}
-                >
-                  <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                    <RowCheckbox checked={selectedIds.has(r.id)} onChange={() => onToggleSelect(r.id)} />
-                  </td>
-                  <td className={`${tdBase} font-medium max-w-xs`}>
-                    <span className="line-clamp-2">{r.title}</span>
-                  </td>
-                  <td className={`${tdBase} text-fg-secondary whitespace-nowrap`}>{r.applicant}</td>
-                  <td className={`${tdBase} text-fg-secondary hidden md:table-cell`}>
-                    {r.agents && r.agents.length > 0 ? r.agents.join('、') : '-'}
-                  </td>
-                  <td className={`${tdBase} text-caption text-fg-secondary whitespace-nowrap`}>{submittedDate}</td>
-                  <td className={tdBase}>
-                    <Tag size="sm" color={STATUS_COLOR[r.status]}>{STATUS_LABEL[r.status]}</Tag>
-                  </td>
-                  <td className={`${tdBase} hidden sm:table-cell`}>
-                    {r.urgency === 'high' ? <Tag size="sm" color="red">緊急</Tag> : <span className="text-fg-placeholder">-</span>}
-                  </td>
-                  <td className={`${tdBase} text-caption hidden md:table-cell ${dlUrgent ? 'text-fg-danger' : 'text-fg-secondary'}`}>
-                    {dlText}
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
+        {tableEl}
       </div>
     </div>
   )
@@ -369,10 +385,27 @@ function ApprovalPage() {
             onValueChange={(v: string) => setCategory((v ?? 'all') as CategoryId | 'all')}
             layout="scroll"
           >
-            <Chip value="all">全部類別</Chip>
-            {CATEGORIES.map((c) => (
-              <Chip key={c.id} value={c.id}>{c.label}</Chip>
-            ))}
+            <Chip value="all">
+              全部類別
+              {tabRecords.length > 0 && (
+                <Badge
+                  variant={tabRecords.some((r) => r.urgency === 'high') ? 'critical' : 'low'}
+                  count={tabRecords.length}
+                />
+              )}
+            </Chip>
+            {CATEGORIES.map((c) => {
+              const catCount = tabRecords.filter((r) => r.category === c.id).length
+              const catHasAlert = tabRecords.some((r) => r.category === c.id && r.urgency === 'high')
+              return (
+                <Chip key={c.id} value={c.id}>
+                  {c.label}
+                  {catCount > 0 && (
+                    <Badge variant={catHasAlert ? 'critical' : 'low'} count={catCount} />
+                  )}
+                </Chip>
+              )
+            })}
           </ChipGroup>
 
           <SegmentedControl
@@ -398,7 +431,7 @@ function ApprovalPage() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto px-[var(--layout-space-loose)] py-4">
+      <div className={`flex-1 min-h-0 ${view === 'list' ? 'overflow-hidden' : 'overflow-y-auto px-[var(--layout-space-loose)] py-4'}`}>
         {filtered.length === 0 ? (
           <EmptyState message={`目前沒有${TAB_LABELS[tab]}的單據`} />
         ) : view === 'card' ? (
@@ -422,6 +455,7 @@ function ApprovalPage() {
             onToggleSelectAll={handleSelectAll}
             onToggleSelect={toggleSelect}
             onClick={openRecord}
+            fullHeight
           />
         )}
       </div>
