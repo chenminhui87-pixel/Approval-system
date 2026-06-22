@@ -563,51 +563,65 @@ function DetailSheet({
         </div>
       )}
 
-      {confirmAction !== null && (
-        <div className="absolute inset-0 z-10 flex flex-col justify-end bg-black/40">
-          <div className="bg-canvas rounded-t-2xl px-5 pt-5 pb-6 flex flex-col gap-4 shadow-xl">
-            <p className="text-h4 font-semibold">
-              {confirmAction === 'approve' ? '確認核准' : '確認退件'}
-            </p>
-            {record && (
-              <p className="text-body text-fg-secondary line-clamp-2">{record.title}</p>
-            )}
-            <label className="flex flex-col gap-1.5">
-              <span className="text-body">
-                簽核意見
-                {confirmAction === 'reject' && <span className="text-fg-danger ml-1">*</span>}
-                {confirmAction === 'approve' && (
-                  <span className="text-fg-placeholder ml-1 text-caption">（選填）</span>
-                )}
-              </span>
-              <Textarea
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                rows={3}
-                placeholder={
-                  confirmAction === 'reject'
-                    ? '請說明退件原因，讓申請人能依此修正再送'
-                    : '可補充核准意見供下一站簽核人參考'
-                }
-              />
-            </label>
-            <div className="flex gap-3">
-              <Button variant="tertiary" className="flex-1" onClick={() => { setConfirmAction(null); setComment('') }}>
-                取消
-              </Button>
-              <Button
-                variant="secondary"
-                danger={confirmAction === 'reject'}
-                disabled={submitDisabled}
-                className="flex-1"
-                onClick={submit}
-              >
-                送出
-              </Button>
-            </div>
-          </div>
+      {/* Confirm full-page — slides in from right */}
+      <div
+        className={`absolute inset-0 z-10 flex flex-col bg-canvas transition-transform duration-300 ease-in-out ${
+          confirmAction !== null ? 'translate-x-0' : 'translate-x-full'
+        }`}
+      >
+        <div className="flex items-center gap-2 h-14 px-3 border-b border-divider bg-surface shrink-0">
+          <button
+            onClick={() => { setConfirmAction(null); setComment('') }}
+            className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-surface-hover active:bg-surface-hover shrink-0"
+            aria-label="返回"
+          >
+            <ChevronLeft size={20} />
+          </button>
+          <h2 className="text-body font-semibold flex-1">
+            {confirmAction === 'approve' ? '確認核准' : '確認退件'}
+          </h2>
         </div>
-      )}
+
+        <div className="flex-1 min-h-0 overflow-y-auto p-4 flex flex-col gap-4">
+          {record && (
+            <p className="text-body text-fg-secondary">{record.title}</p>
+          )}
+          <label className="flex flex-col gap-1.5">
+            <span className="text-body">
+              簽核意見
+              {confirmAction === 'reject' && <span className="text-fg-danger ml-1">*</span>}
+              {confirmAction === 'approve' && (
+                <span className="text-fg-placeholder ml-1 text-caption">（選填）</span>
+              )}
+            </span>
+            <Textarea
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              rows={5}
+              placeholder={
+                confirmAction === 'reject'
+                  ? '請說明退件原因，讓申請人能依此修正再送'
+                  : '可補充核准意見供下一站簽核人參考'
+              }
+            />
+          </label>
+        </div>
+
+        <div className="flex gap-3 px-4 py-3 border-t border-divider bg-surface shrink-0">
+          <Button variant="tertiary" className="flex-1" onClick={() => { setConfirmAction(null); setComment('') }}>
+            取消
+          </Button>
+          <Button
+            variant="secondary"
+            danger={confirmAction === 'reject'}
+            disabled={submitDisabled}
+            className="flex-1"
+            onClick={submit}
+          >
+            送出
+          </Button>
+        </div>
+      </div>
     </div>
   )
 }
@@ -635,7 +649,13 @@ const TABS: { id: TabId; label: string; Icon: React.ElementType }[] = [
   { id: 'signed', label: '已簽核', Icon: CheckCircle2 },
 ]
 
-export function ApprovalCenterMobile({ selectAllPlacement = 'header' }: { selectAllPlacement?: 'header' | 'subbar' } = {}) {
+export function ApprovalCenterMobile({
+  selectAllPlacement = 'header',
+  searchPlacement = 'header',
+}: {
+  selectAllPlacement?: 'header' | 'subbar'
+  searchPlacement?: 'header' | 'subfilter'
+} = {}) {
   const [screen, setScreen] = useState<Screen>('products')
   const [activeCategory, setActiveCategory] = useState<CategoryId | null>(null)
   const [tab, setTab] = useState<TabId>('pending-me')
@@ -653,6 +673,7 @@ export function ApprovalCenterMobile({ selectAllPlacement = 'header' }: { select
   const [batchComment, setBatchComment] = useState('')
   const [moreMenuOpen, setMoreMenuOpen] = useState(false)
   const [pendingBatchApprove, setPendingBatchApprove] = useState<{ comment: string; hiddenCount: number } | null>(null)
+  const [toast, setToast] = useState<{ message: string; type: 'approve' | 'reject' } | null>(null)
 
   const isDark = getEffectiveTheme(theme) === 'dark'
 
@@ -745,11 +766,20 @@ export function ApprovalCenterMobile({ selectAllPlacement = 'header' }: { select
     setSheetOpen(true)
   }
 
+  function showToast(type: 'approve' | 'reject') {
+    const message = type === 'approve' ? '已核准' : '已退件'
+    setToast({ message, type })
+    setTimeout(() => setToast(null), 2500)
+  }
+
   function handleApprove(id: string, comment?: string) {
     setRecords((prev) =>
       prev.map((r) => (r.id === id ? approveRecord(r, CURRENT_USER, comment) : r)),
     )
     setSheetOpen(false)
+    setSearch('')
+    setSearchVisible(false)
+    showToast('approve')
   }
 
   function handleReject(id: string, comment: string) {
@@ -757,6 +787,9 @@ export function ApprovalCenterMobile({ selectAllPlacement = 'header' }: { select
       prev.map((r) => (r.id === id ? rejectRecord(r, CURRENT_USER, comment) : r)),
     )
     setSheetOpen(false)
+    setSearch('')
+    setSearchVisible(false)
+    showToast('reject')
   }
 
   function submitBatch() {
@@ -798,6 +831,9 @@ export function ApprovalCenterMobile({ selectAllPlacement = 'header' }: { select
     setSelectedIds(new Set())
     setBatchAction(null)
     setBatchComment('')
+    setSearch('')
+    setSearchVisible(false)
+    showToast(action)
   }
 
   function confirmPendingBatch() {
@@ -870,7 +906,7 @@ export function ApprovalCenterMobile({ selectAllPlacement = 'header' }: { select
             </h1>
           )}
 
-          {screen === 'requests' && (
+          {screen === 'requests' && searchPlacement === 'header' && (
             searchVisible ? (
               <button
                 onClick={toggleSearch}
@@ -907,8 +943,29 @@ export function ApprovalCenterMobile({ selectAllPlacement = 'header' }: { select
           )}
         </header>
 
+        {/* ── subfilter: search filter row ── */}
+        {searchPlacement === 'subfilter' && screen === 'requests' && (
+          <div className="flex items-center h-12 px-3 gap-2 bg-surface border-b border-divider shrink-0">
+            <div className="flex items-center gap-2 flex-1 min-w-0 h-8 px-3 rounded-lg bg-muted">
+              <Search size={14} className="text-fg-placeholder shrink-0" />
+              <input
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="搜尋單據、申請人…"
+                className="flex-1 min-w-0 text-body text-foreground bg-transparent focus-visible:outline-none placeholder:text-fg-placeholder"
+              />
+              {search && (
+                <button onClick={() => setSearch('')} className="text-fg-placeholder hover:text-fg-secondary shrink-0" aria-label="清除搜尋">
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* ── V2: Gmail-style select-all sub-toolbar ── */}
-        {selectAllPlacement === 'subbar' && screen === 'requests' && !searchVisible && (
+        {selectAllPlacement === 'subbar' && screen === 'requests' && (
           <div className="flex items-center h-10 px-3 bg-surface border-b border-divider shrink-0">
             <button
               onClick={handleSelectAll}
@@ -1037,58 +1094,69 @@ export function ApprovalCenterMobile({ selectAllPlacement = 'header' }: { select
           )}
         </nav>
 
-        {/* ── Batch confirm overlay — z-40 ── */}
-        {batchAction !== null && (
-          <div className="absolute inset-0 z-40 flex flex-col justify-end bg-black/40">
-            <div className="bg-canvas rounded-t-2xl px-5 pt-5 pb-6 flex flex-col gap-4 shadow-xl">
-              <div>
-                <p className="text-h4 font-semibold">
-                  {batchAction === 'approve' ? '批次核准' : '批次退件'}
-                </p>
-                <p className="text-caption text-fg-secondary mt-0.5">
-                  共 {selectedIds.size} 件待處理單據
-                </p>
-              </div>
-              <label className="flex flex-col gap-1.5">
-                <span className="text-body">
-                  簽核意見
-                  {batchAction === 'reject' && <span className="text-fg-danger ml-1">*</span>}
-                  {batchAction === 'approve' && (
-                    <span className="text-fg-placeholder ml-1 text-caption">（選填）</span>
-                  )}
-                </span>
-                <Textarea
-                  value={batchComment}
-                  onChange={(e) => setBatchComment(e.target.value)}
-                  rows={3}
-                  placeholder={
-                    batchAction === 'reject'
-                      ? '請說明退件原因，讓申請人能依此修正再送'
-                      : '可補充核准意見供下一站簽核人參考'
-                  }
-                />
-              </label>
-              <div className="flex gap-3">
-                <Button
-                  variant="tertiary"
-                  className="flex-1"
-                  onClick={() => { setBatchAction(null); setBatchComment('') }}
-                >
-                  取消
-                </Button>
-                <Button
-                  variant="secondary"
-                  danger={batchAction === 'reject'}
-                  disabled={batchSubmitDisabled}
-                  className="flex-1"
-                  onClick={submitBatch}
-                >
-                  送出
-                </Button>
-              </div>
+        {/* ── Batch confirm full-page — z-40 ── */}
+        <div
+          className={`absolute inset-0 z-40 flex flex-col bg-canvas transition-transform duration-300 ease-in-out ${
+            batchAction !== null ? 'translate-x-0' : 'translate-x-full'
+          }`}
+        >
+          <div className="flex items-center gap-2 h-14 px-3 border-b border-divider bg-surface shrink-0">
+            <button
+              onClick={() => { setBatchAction(null); setBatchComment('') }}
+              className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-surface-hover active:bg-surface-hover shrink-0"
+              aria-label="返回"
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <div className="flex-1">
+              <h2 className="text-body font-semibold">
+                {batchAction === 'approve' ? '批次核准' : '批次退件'}
+              </h2>
+              <p className="text-caption text-fg-secondary">共 {selectedIds.size} 件待處理單據</p>
             </div>
           </div>
-        )}
+
+          <div className="flex-1 min-h-0 overflow-y-auto p-4 flex flex-col gap-4">
+            <label className="flex flex-col gap-1.5">
+              <span className="text-body">
+                簽核意見
+                {batchAction === 'reject' && <span className="text-fg-danger ml-1">*</span>}
+                {batchAction === 'approve' && (
+                  <span className="text-fg-placeholder ml-1 text-caption">（選填）</span>
+                )}
+              </span>
+              <Textarea
+                value={batchComment}
+                onChange={(e) => setBatchComment(e.target.value)}
+                rows={5}
+                placeholder={
+                  batchAction === 'reject'
+                    ? '請說明退件原因，讓申請人能依此修正再送'
+                    : '可補充核准意見供下一站簽核人參考'
+                }
+              />
+            </label>
+          </div>
+
+          <div className="flex gap-3 px-4 py-3 border-t border-divider bg-surface shrink-0">
+            <Button
+              variant="tertiary"
+              className="flex-1"
+              onClick={() => { setBatchAction(null); setBatchComment('') }}
+            >
+              取消
+            </Button>
+            <Button
+              variant="secondary"
+              danger={batchAction === 'reject'}
+              disabled={batchSubmitDisabled}
+              className="flex-1"
+              onClick={submitBatch}
+            >
+              送出
+            </Button>
+          </div>
+        </div>
 
         {/* ── Hidden-selected approve confirmation — z-45 ── */}
         {pendingBatchApprove !== null && (
@@ -1141,6 +1209,14 @@ export function ApprovalCenterMobile({ selectAllPlacement = 'header' }: { select
                 關閉
               </button>
             </div>
+          </div>
+        )}
+
+        {/* ── Toast — z-[70] ── */}
+        {toast && (
+          <div className="absolute bottom-24 left-4 right-4 z-[70] flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg bg-foreground text-canvas">
+            <CheckCircle2 size={16} className="shrink-0" />
+            <span className="text-body font-medium">{toast.message}</span>
           </div>
         )}
 
