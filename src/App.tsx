@@ -12,6 +12,7 @@ import {
   Tag,
   Button,
   Textarea,
+  Checkbox,
 } from '@qijenchen/design-system'
 import {
   LayoutGrid,
@@ -21,8 +22,6 @@ import {
   CheckCircle2,
   XCircle,
   Search,
-  Check,
-  Minus,
   X,
   ChevronLeft,
   Share2,
@@ -54,20 +53,12 @@ function RowCheckbox({ checked, indeterminate, onChange }: {
   onChange: () => void
 }) {
   return (
-    <button
-      type="button"
-      role="checkbox"
-      aria-checked={indeterminate ? 'mixed' : checked}
-      onClick={(e) => { e.stopPropagation(); onChange() }}
-      className="flex items-center justify-center w-5 h-5 rounded border-2 shrink-0 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      style={{
-        background: checked || indeterminate ? 'var(--color-primary)' : 'transparent',
-        borderColor: checked || indeterminate ? 'var(--color-primary)' : 'var(--color-fg-placeholder)',
-      }}
-    >
-      {indeterminate && <Minus size={11} className="text-white" strokeWidth={3} />}
-      {checked && !indeterminate && <Check size={11} className="text-white" strokeWidth={3} />}
-    </button>
+    <div onClick={(e) => e.stopPropagation()}>
+      <Checkbox
+        checked={indeterminate ? 'indeterminate' : checked}
+        onCheckedChange={onChange}
+      />
+    </div>
   )
 }
 

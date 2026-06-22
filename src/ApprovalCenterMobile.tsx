@@ -14,6 +14,8 @@ import {
   Separator,
   SegmentedControl,
   SegmentedControlItem,
+  Checkbox,
+  Badge,
 } from '@qijenchen/design-system'
 import {
   ClipboardList,
@@ -28,7 +30,6 @@ import {
   Moon,
   Monitor,
   LogOut,
-  Check,
   CheckSquare,
   Square,
   X,
@@ -195,13 +196,10 @@ function ProductListPanel({
 
                 {/* Badge + arrow */}
                 <div className="flex items-center gap-2 shrink-0">
-                  <span
-                    className={`min-w-[22px] h-[22px] flex items-center justify-center rounded-full text-white text-[11px] font-bold px-1.5 ${
-                      item.hasAlert ? 'bg-red-500' : 'bg-gray-400'
-                    }`}
-                  >
-                    {item.count}
-                  </span>
+                  <Badge
+                    variant={item.hasAlert ? 'critical' : 'low'}
+                    count={item.count}
+                  />
                   <ChevronRight size={16} className="text-fg-placeholder" />
                 </div>
               </button>
@@ -247,21 +245,12 @@ function ListRow({
 
   return (
     <div className={`flex items-stretch border-b border-divider ${selected ? 'bg-muted' : 'bg-surface'}`}>
-      <button
+      <div
+        className="flex items-start justify-center w-12 pt-3.5 shrink-0"
         onClick={onToggleSelect}
-        className="flex items-start justify-center w-12 pt-3.5 shrink-0 active:bg-surface-hover"
-        aria-label={selected ? '取消選取' : '選取'}
-        role="checkbox"
-        aria-checked={selected}
       >
-        <div
-          className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
-            selected ? 'bg-primary border-primary' : 'border-fg-placeholder bg-transparent'
-          }`}
-        >
-          {selected && <Check size={11} className="text-white" strokeWidth={3} />}
-        </div>
-      </button>
+        <Checkbox checked={selected} onCheckedChange={onToggleSelect} onClick={(e) => e.stopPropagation()} />
+      </div>
 
       <button
         onClick={onClick}
@@ -967,32 +956,26 @@ export function ApprovalCenterMobile({
         {/* ── V2: Gmail-style select-all sub-toolbar ── */}
         {selectAllPlacement === 'subbar' && screen === 'requests' && (
           <div className="flex items-center h-10 px-3 bg-surface border-b border-divider shrink-0">
-            <button
+            <div
               onClick={handleSelectAll}
-              className="flex items-center gap-2.5 text-fg-secondary hover:text-foreground active:text-foreground transition-colors"
+              className="flex items-center gap-2.5 text-fg-secondary hover:text-foreground active:text-foreground transition-colors cursor-pointer"
               aria-label={allVisibleSelected ? '取消全選' : '全選'}
             >
-              {/* Tri-state checkbox */}
-              <div
-                className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors shrink-0 ${
+              <Checkbox
+                checked={
                   allVisibleSelected && filtered.length > 0
-                    ? 'bg-primary border-primary'
+                    ? true
                     : someSelected
-                      ? 'border-primary bg-transparent'
-                      : 'border-fg-placeholder bg-transparent'
-                }`}
-              >
-                {allVisibleSelected && filtered.length > 0 && (
-                  <Check size={11} className="text-white" strokeWidth={3} />
-                )}
-                {someSelected && (
-                  <div className="w-2 h-0.5 bg-primary rounded-full" />
-                )}
-              </div>
+                      ? 'indeterminate'
+                      : false
+                }
+                onCheckedChange={handleSelectAll}
+                onClick={(e) => e.stopPropagation()}
+              />
               <span className="text-body">
                 {isSelecting ? `已選取 ${selectedIds.size} 項` : '全選'}
               </span>
-            </button>
+            </div>
             {filtered.length > 0 && (
               <span className="ml-auto text-caption text-fg-placeholder">
                 共 {filtered.length} 件
