@@ -13,7 +13,8 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build --output-dir storybook-static"
+    "build-storybook": "storybook build --output-dir storybook-static",
+    "setup:netlify": "node scripts/setup-netlify-access.mjs"
   },
   "dependencies": {
     "@qijenchen/design-system": "^0.1.0-beta.42",
