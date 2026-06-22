@@ -272,13 +272,11 @@ function ListRow({
           <span>{record.applicant}</span>
         </div>
 
-        {/* Row 3: 代理人 (conditional) */}
-        {record.agents && record.agents.length > 0 && (
-          <div className="flex items-center gap-1 text-caption text-fg-secondary min-w-0">
-            <span className="text-fg-placeholder shrink-0">代理人：</span>
-            <span className="truncate">{record.agents.join('、')}</span>
-          </div>
-        )}
+        {/* Row 3: 代理人 */}
+        <div className="flex items-center gap-1 text-caption text-fg-secondary min-w-0">
+          <span className="text-fg-placeholder shrink-0">代理人：</span>
+          <span className="truncate">{record.agents && record.agents.length > 0 ? record.agents.join('、') : '-'}</span>
+        </div>
 
         {/* Row 4: submitted date left + deadline + urgency tag right */}
         <div className="flex items-center justify-between gap-2 text-caption">

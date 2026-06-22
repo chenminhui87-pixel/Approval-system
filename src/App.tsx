@@ -41,8 +41,6 @@ import {
 } from './data'
 import { ApprovalModal } from './ApprovalModal'
 
-const URGENCY_COLOR = { high: 'red', medium: 'yellow', low: 'neutral' } as const
-const URGENCY_LABEL = { high: '緊急', medium: '一般', low: '低' } as const
 
 const AVATAR_COLORS = ['blue', 'violet', 'emerald', 'amber', 'rose', 'cyan', 'orange'] as const
 function nameToAvatarColor(name: string) {
@@ -127,13 +125,11 @@ function RecordCard({
           <span>{record.applicant}</span>
         </div>
 
-        {/* Row 3: 代理人 (conditional) */}
-        {record.agents && record.agents.length > 0 && (
-          <div className="flex items-center gap-1 text-caption text-fg-secondary min-w-0">
-            <span className="text-fg-placeholder shrink-0">代理人：</span>
-            <span className="truncate">{record.agents.join('、')}</span>
-          </div>
-        )}
+        {/* Row 3: 代理人 */}
+        <div className="flex items-center gap-1 text-caption text-fg-secondary min-w-0">
+          <span className="text-fg-placeholder shrink-0">代理人：</span>
+          <span className="truncate">{record.agents && record.agents.length > 0 ? record.agents.join('、') : '-'}</span>
+        </div>
 
         {/* Row 4: date + status + urgency */}
         <div className="flex items-center justify-between gap-2 text-caption">
@@ -167,50 +163,77 @@ function RecordList({
   onToggleSelect: (id: string) => void
   onClick: (r: ApprovalRecord) => void
 }) {
+  const thCls = 'text-left px-4 py-2.5 text-caption text-fg-secondary font-medium whitespace-nowrap'
+  const tdBase = 'px-4 py-3 cursor-pointer'
+
   return (
     <div className="rounded-lg border border-divider overflow-hidden">
-      <table className="w-full text-body">
-        <thead>
-          <tr className="border-b border-divider bg-muted">
-            <th className="px-4 py-2.5 w-10">
-              <RowCheckbox
-                checked={allSelected}
-                indeterminate={someSelected}
-                onChange={onToggleSelectAll}
-              />
-            </th>
-            {['單號', '標題', '申請者', '緊急程度', '狀態', '申請時間'].map((h) => (
-              <th key={h} className="text-left px-4 py-2.5 text-caption text-fg-secondary font-medium">{h}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {records.map((r) => (
-            <tr
-              key={r.id}
-              className={`border-b border-divider last:border-0 transition-colors cursor-pointer ${
-                selectedIds.has(r.id) ? 'bg-primary/5' : 'hover:bg-surface-hover'
-              }`}
-            >
-              <td className="px-4 py-3">
-                <RowCheckbox checked={selectedIds.has(r.id)} onChange={() => onToggleSelect(r.id)} />
-              </td>
-              <td className="px-4 py-3 text-caption text-fg-secondary" onClick={() => onClick(r)}>{r.id}</td>
-              <td className="px-4 py-3 font-medium max-w-xs truncate" onClick={() => onClick(r)}>{r.title}</td>
-              <td className="px-4 py-3 text-fg-secondary" onClick={() => onClick(r)}>{r.applicant}</td>
-              <td className="px-4 py-3" onClick={() => onClick(r)}>
-                {r.urgency === 'high' && <Tag size="sm" color={URGENCY_COLOR[r.urgency]}>{URGENCY_LABEL[r.urgency]}</Tag>}
-              </td>
-              <td className="px-4 py-3" onClick={() => onClick(r)}>
-                <Tag size="sm" color={STATUS_COLOR[r.status]}>{STATUS_LABEL[r.status]}</Tag>
-              </td>
-              <td className="px-4 py-3 text-caption text-fg-secondary" onClick={() => onClick(r)}>{r.submittedAt}</td>
+      <div className="overflow-x-auto">
+        <table className="w-full text-body min-w-[860px]">
+          <thead>
+            <tr className="border-b border-divider bg-muted">
+              <th className="px-4 py-2.5 w-10">
+                <RowCheckbox checked={allSelected} indeterminate={someSelected} onChange={onToggleSelectAll} />
+              </th>
+              <th className={thCls}>標題</th>
+              <th className={thCls}>申請人</th>
+              <th className={`${thCls} hidden md:table-cell`}>代理人</th>
+              <th className={thCls}>申請時間</th>
+              <th className={thCls}>狀態</th>
+              <th className={`${thCls} hidden sm:table-cell`}>緊急程度</th>
+              <th className={`${thCls} hidden md:table-cell`}>到期時間</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {records.map((r) => {
+              const { text: dlText, urgent: dlUrgent } = deadlineDisplay(r.dueDate)
+              const submittedDate = r.submittedAt.slice(0, 10).replace(/-/g, '/')
+              return (
+                <tr
+                  key={r.id}
+                  onClick={() => onClick(r)}
+                  className={`border-b border-divider last:border-0 transition-colors cursor-pointer ${
+                    selectedIds.has(r.id) ? 'bg-primary/5' : 'hover:bg-surface-hover'
+                  }`}
+                >
+                  <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                    <RowCheckbox checked={selectedIds.has(r.id)} onChange={() => onToggleSelect(r.id)} />
+                  </td>
+                  <td className={`${tdBase} font-medium max-w-xs`}>
+                    <span className="line-clamp-2">{r.title}</span>
+                  </td>
+                  <td className={`${tdBase} text-fg-secondary whitespace-nowrap`}>{r.applicant}</td>
+                  <td className={`${tdBase} text-fg-secondary hidden md:table-cell`}>
+                    {r.agents && r.agents.length > 0 ? r.agents.join('、') : '-'}
+                  </td>
+                  <td className={`${tdBase} text-caption text-fg-secondary whitespace-nowrap`}>{submittedDate}</td>
+                  <td className={tdBase}>
+                    <Tag size="sm" color={STATUS_COLOR[r.status]}>{STATUS_LABEL[r.status]}</Tag>
+                  </td>
+                  <td className={`${tdBase} hidden sm:table-cell`}>
+                    {r.urgency === 'high' ? <Tag size="sm" color="red">緊急</Tag> : <span className="text-fg-placeholder">-</span>}
+                  </td>
+                  <td className={`${tdBase} text-caption hidden md:table-cell ${dlUrgent ? 'text-fg-danger' : 'text-fg-secondary'}`}>
+                    {dlText}
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
+}
+
+function deadlineDisplay(dueDate?: string): { text: string; urgent: boolean } {
+  if (!dueDate) return { text: '-', urgent: false }
+  const due = new Date(dueDate + 'T00:00:00')
+  const today = new Date(); today.setHours(0, 0, 0, 0)
+  const diffDays = Math.ceil((due.getTime() - today.getTime()) / 86400000)
+  if (diffDays < 0) return { text: `逾期 ${Math.abs(diffDays)} 天`, urgent: true }
+  if (diffDays === 0) return { text: '今日到期', urgent: true }
+  return { text: `剩 ${diffDays} 天`, urgent: diffDays <= 3 }
 }
 
 function EmptyState({ message }: { message: string }) {
