@@ -13,6 +13,9 @@ import {
   Button,
   Textarea,
   Checkbox,
+  Input,
+  toast,
+  Toaster,
 } from '@qijenchen/design-system'
 import {
   LayoutGrid,
@@ -224,7 +227,6 @@ function ApprovalPage() {
   const [records, setRecords] = useState<ApprovalRecord[]>(MOCK_RECORDS)
   const [bottomBarMode, setBottomBarMode] = useState<BottomBarMode>('action')
   const [rejectComment, setRejectComment] = useState('')
-  const [pcToast, setPcToast] = useState<string | null>(null)
 
   const tabRecords = getTabRecords(tab, records, CURRENT_USER)
   const filtered = tabRecords
@@ -237,8 +239,7 @@ function ApprovalPage() {
   const someSelected = selectedIds.size > 0 && !allVisibleSelected
 
   function showToast(msg: string) {
-    setPcToast(msg)
-    setTimeout(() => setPcToast(null), 2500)
+    toast({ variant: 'success', title: msg })
   }
 
   function toggleSelect(id: string) {
@@ -312,21 +313,14 @@ function ApprovalPage() {
       {/* Search + filter bar */}
       <div className="flex flex-col gap-2 px-[var(--layout-space-loose)] pt-3 pb-2 border-b border-divider">
         {/* Search row */}
-        <div className="flex items-center gap-2 h-9 px-3 rounded-lg bg-muted">
-          <Search size={15} className="text-fg-placeholder shrink-0" />
-          <input
-            type="search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="搜尋單號、標題、申請者…"
-            className="flex-1 min-w-0 text-body text-foreground bg-transparent focus-visible:outline-none placeholder:text-fg-placeholder"
-          />
-          {search && (
-            <button onClick={() => setSearch('')} className="text-fg-placeholder hover:text-fg-secondary shrink-0">
-              <X size={14} />
-            </button>
-          )}
-        </div>
+        <Input
+          type="search"
+          startIcon={Search}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="搜尋單號、標題、申請者…"
+          endAction={search ? { icon: X, label: '清除', onClick: () => setSearch('') } : undefined}
+        />
 
         {/* Chips + view toggle row */}
         <div className="flex items-center justify-between gap-4">
@@ -401,47 +395,23 @@ function ApprovalPage() {
               {/* Left: count + cancel */}
               <div className="flex items-center gap-2 shrink-0">
                 <span className="text-body text-fg-secondary">已選取 {selectedIds.size} 項</span>
-                <button
+                <Button
+                  variant="tertiary"
+                  size="sm"
+                  startIcon={X}
                   onClick={clearSelection}
-                  className="w-6 h-6 flex items-center justify-center rounded-full text-fg-placeholder hover:bg-surface-hover hover:text-fg-secondary transition-colors"
                   aria-label="取消選取"
-                >
-                  <X size={14} />
-                </button>
+                />
               </div>
 
               <div className="flex-1" />
 
               {/* Secondary actions */}
               <div className="flex items-center gap-1">
-                <button
-                  onClick={() => handleStub('轉寄')}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-body text-fg-secondary hover:bg-surface-hover transition-colors"
-                >
-                  <Share2 size={15} />
-                  轉寄
-                </button>
-                <button
-                  onClick={() => handleStub('移交 Owner')}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-body text-fg-secondary hover:bg-surface-hover transition-colors"
-                >
-                  <UserCheck size={15} />
-                  移交
-                </button>
-                <button
-                  onClick={() => handleStub('退回給申請人')}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-body text-fg-secondary hover:bg-surface-hover transition-colors"
-                >
-                  <Undo2 size={15} />
-                  退回
-                </button>
-                <button
-                  onClick={() => handleStub('作廢')}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-body text-fg-danger hover:bg-surface-hover transition-colors"
-                >
-                  <Ban size={15} />
-                  作廢
-                </button>
+                <Button variant="tertiary" size="sm" startIcon={Share2} onClick={() => handleStub('轉寄')}>轉寄</Button>
+                <Button variant="tertiary" size="sm" startIcon={UserCheck} onClick={() => handleStub('移交 Owner')}>移交</Button>
+                <Button variant="tertiary" size="sm" startIcon={Undo2} onClick={() => handleStub('退回給申請人')}>退回</Button>
+                <Button variant="tertiary" size="sm" danger startIcon={Ban} onClick={() => handleStub('作廢')}>作廢</Button>
               </div>
 
               {/* Primary actions */}
@@ -458,13 +428,14 @@ function ApprovalPage() {
             /* Reject confirm mode */
             <div className="flex flex-col gap-3 px-[var(--layout-space-loose)] py-3">
               <div className="flex items-center gap-2">
-                <button
+                <Button
+                  variant="tertiary"
+                  size="sm"
+                  startIcon={ChevronLeft}
                   onClick={() => setBottomBarMode('action')}
-                  className="flex items-center gap-1 text-body text-fg-secondary hover:text-foreground transition-colors"
                 >
-                  <ChevronLeft size={16} />
                   返回
-                </button>
+                </Button>
                 <span className="text-body font-medium flex-1">退件原因 <span className="text-fg-danger">*</span></span>
                 <Button
                   variant="secondary"
@@ -486,14 +457,7 @@ function ApprovalPage() {
         </div>
       )}
 
-      {/* PC Toast */}
-      {pcToast && (
-        <div className="fixed bottom-6 right-6 z-[70] flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl bg-foreground text-canvas">
-          <CheckCircle2 size={16} className="shrink-0" />
-          <span className="text-body font-medium">{pcToast}</span>
-        </div>
-      )}
-
+      <Toaster />
       <ApprovalModal
         record={selectedRecord}
         open={modalOpen}

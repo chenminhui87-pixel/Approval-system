@@ -16,6 +16,8 @@ import {
   SegmentedControlItem,
   Checkbox,
   Badge,
+  toast as dsToast,
+  Toaster,
 } from '@qijenchen/design-system'
 import {
   ClipboardList,
@@ -362,13 +364,15 @@ function SettingsSheet({
       </div>
 
       <div className="px-4 pb-8 pt-2 shrink-0">
-        <button
+        <Button
+          variant="secondary"
+          danger
+          startIcon={LogOut}
+          className="w-full"
           onClick={onLogout}
-          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-surface border border-divider text-fg-danger hover:bg-surface-hover active:bg-surface-hover transition-colors text-body font-medium"
         >
-          <LogOut size={16} />
           登出
-        </button>
+        </Button>
       </div>
     </div>
   )
@@ -662,7 +666,6 @@ export function ApprovalCenterMobile({
   const [batchComment, setBatchComment] = useState('')
   const [moreMenuOpen, setMoreMenuOpen] = useState(false)
   const [pendingBatchApprove, setPendingBatchApprove] = useState<{ comment: string; hiddenCount: number } | null>(null)
-  const [toast, setToast] = useState<{ message: string; type: 'approve' | 'reject' } | null>(null)
 
   const isDark = getEffectiveTheme(theme) === 'dark'
 
@@ -757,8 +760,7 @@ export function ApprovalCenterMobile({
 
   function showToast(type: 'approve' | 'reject') {
     const message = type === 'approve' ? '已核准' : '已退件'
-    setToast({ message, type })
-    setTimeout(() => setToast(null), 2500)
+    dsToast({ variant: 'success', title: message })
   }
 
   function handleApprove(id: string, comment?: string) {
@@ -1195,13 +1197,7 @@ export function ApprovalCenterMobile({
           </div>
         )}
 
-        {/* ── Toast — z-[70] ── */}
-        {toast && (
-          <div className="absolute bottom-24 left-4 right-4 z-[70] flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg bg-foreground text-canvas">
-            <CheckCircle2 size={16} className="shrink-0" />
-            <span className="text-body font-medium">{toast.message}</span>
-          </div>
-        )}
+        <Toaster position="bottom-center" />
 
         {/* ── Settings sheet — z-30 ── */}
         <SettingsSheet
