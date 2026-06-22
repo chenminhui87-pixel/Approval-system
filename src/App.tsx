@@ -283,9 +283,10 @@ function ApprovalPage() {
   const [rejectComment, setRejectComment] = useState('')
 
   const tabRecords = getTabRecords(tab, records, CURRENT_USER)
-  const filtered = tabRecords
-    .filter((r) => category === 'all' || r.category === category)
+  const searchFiltered = tabRecords
     .filter((r) => !search || r.title.includes(search) || r.applicant.includes(search) || r.id.includes(search))
+  const filtered = searchFiltered
+    .filter((r) => category === 'all' || r.category === category)
 
   const selectedRecord = selectedId ? records.find((r) => r.id === selectedId) ?? null : null
   const isSelecting = selectedIds.size > 0
@@ -387,22 +388,22 @@ function ApprovalPage() {
             <Chip value="all">
               <span className="flex items-center gap-1">
                 全部類別
-                {tabRecords.length > 0 && (
+                {(search ? true : searchFiltered.length > 0) && (
                   <Badge
-                    variant={tabRecords.some((r) => r.urgency === 'high') ? 'critical' : 'low'}
-                    count={tabRecords.length}
+                    variant={searchFiltered.some((r) => r.urgency === 'high') ? 'critical' : 'low'}
+                    count={searchFiltered.length}
                   />
                 )}
               </span>
             </Chip>
             {CATEGORIES.map((c) => {
-              const catCount = tabRecords.filter((r) => r.category === c.id).length
-              const catHasAlert = tabRecords.some((r) => r.category === c.id && r.urgency === 'high')
+              const catCount = searchFiltered.filter((r) => r.category === c.id).length
+              const catHasAlert = searchFiltered.some((r) => r.category === c.id && r.urgency === 'high')
               return (
                 <Chip key={c.id} value={c.id}>
                   <span className="flex items-center gap-1">
                     {c.label}
-                    {catCount > 0 && (
+                    {(search ? true : catCount > 0) && (
                       <Badge variant={catHasAlert ? 'critical' : 'low'} count={catCount} />
                     )}
                   </span>
