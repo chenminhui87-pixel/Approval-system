@@ -95,6 +95,7 @@ function RecordCard({
   onClick: () => void
 }) {
   const submittedDate = record.submittedAt.slice(0, 10).replace(/-/g, '/')
+  const { text: dlText, urgent: dlUrgent } = deadlineDisplay(record.dueDate)
 
   return (
     <div
@@ -117,7 +118,7 @@ function RecordCard({
 
         {/* Row 2: 申請人 */}
         <div className="flex items-center gap-1 text-caption text-fg-secondary">
-          <span className="text-fg-placeholder shrink-0">申請人：</span>
+          <span className="text-fg-muted shrink-0">申請人：</span>
           <Avatar
             alt={record.applicant}
             size={14}
@@ -128,19 +129,18 @@ function RecordCard({
 
         {/* Row 3: 代理人 */}
         <div className="flex items-center gap-1 text-caption text-fg-secondary min-w-0">
-          <span className="text-fg-placeholder shrink-0">代理人：</span>
+          <span className="text-fg-muted shrink-0">代理人：</span>
           <span className="truncate">{record.agents && record.agents.length > 0 ? record.agents.join('、') : '-'}</span>
         </div>
 
-        {/* Row 4: date + status + urgency */}
+        {/* Row 4: date + overdue */}
         <div className="flex items-center justify-between gap-2 text-caption">
-          <span className="text-fg-placeholder">{submittedDate}</span>
-          <div className="flex items-center gap-1.5 shrink-0">
-            <Tag size="sm" color={STATUS_COLOR[record.status]}>{STATUS_LABEL[record.status]}</Tag>
-            {record.urgency === 'high' && (
-              <Tag size="sm" color="red">緊急</Tag>
-            )}
-          </div>
+          <span className="text-fg-muted">{submittedDate}</span>
+          {dlText !== '-' && (
+            <span className={`shrink-0 ${dlUrgent ? 'text-error-text' : 'text-fg-secondary'}`}>
+              {dlText}
+            </span>
+          )}
         </div>
       </button>
     </div>
@@ -214,7 +214,7 @@ function RecordList({
               <td className={`${tdBase} hidden sm:table-cell`}>
                 {r.urgency === 'high' ? <Tag size="sm" color="red">緊急</Tag> : <span className="text-fg-placeholder">-</span>}
               </td>
-              <td className={`${tdBase} text-caption hidden md:table-cell ${dlUrgent ? 'text-fg-danger' : 'text-fg-secondary'}`}>
+              <td className={`${tdBase} text-caption hidden md:table-cell ${dlUrgent ? 'text-error-text' : 'text-fg-secondary'}`}>
                 {dlText}
               </td>
             </tr>
@@ -226,9 +226,8 @@ function RecordList({
 
   if (fullHeight) {
     return (
-      <div className="h-full overflow-auto">
+      <div className="flex-1 min-h-0 overflow-auto rounded-lg border border-divider">
         {tableEl}
-        <div className="h-4" />
       </div>
     )
   }
@@ -369,12 +368,11 @@ function ApprovalPage() {
       <div className="flex flex-col gap-2 px-[var(--layout-space-loose)] pt-3 pb-2 border-b border-divider">
         {/* Search row */}
         <Input
-          type="search"
           startIcon={Search}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="搜尋單號、標題、申請者…"
-          endAction={search ? { icon: X, label: '清除', onClick: () => setSearch('') } : undefined}
+          endAction={search ? { icon: X, label: '清除搜尋', onClick: () => setSearch('') } : undefined}
         />
 
         {/* Chips + view toggle row */}
@@ -386,23 +384,27 @@ function ApprovalPage() {
             layout="scroll"
           >
             <Chip value="all">
-              全部類別
-              {tabRecords.length > 0 && (
-                <Badge
-                  variant={tabRecords.some((r) => r.urgency === 'high') ? 'critical' : 'low'}
-                  count={tabRecords.length}
-                />
-              )}
+              <span className="flex items-center gap-1">
+                全部類別
+                {tabRecords.length > 0 && (
+                  <Badge
+                    variant={tabRecords.some((r) => r.urgency === 'high') ? 'critical' : 'low'}
+                    count={tabRecords.length}
+                  />
+                )}
+              </span>
             </Chip>
             {CATEGORIES.map((c) => {
               const catCount = tabRecords.filter((r) => r.category === c.id).length
               const catHasAlert = tabRecords.some((r) => r.category === c.id && r.urgency === 'high')
               return (
                 <Chip key={c.id} value={c.id}>
-                  {c.label}
-                  {catCount > 0 && (
-                    <Badge variant={catHasAlert ? 'critical' : 'low'} count={catCount} />
-                  )}
+                  <span className="flex items-center gap-1">
+                    {c.label}
+                    {catCount > 0 && (
+                      <Badge variant={catHasAlert ? 'critical' : 'low'} count={catCount} />
+                    )}
+                  </span>
                 </Chip>
               )
             })}
@@ -431,7 +433,7 @@ function ApprovalPage() {
       </div>
 
       {/* Content */}
-      <div className={`flex-1 min-h-0 ${view === 'list' ? 'overflow-hidden' : 'overflow-y-auto px-[var(--layout-space-loose)] py-4'}`}>
+      <div className={`flex-1 min-h-0 ${view === 'list' ? 'flex flex-col p-4' : 'overflow-y-auto px-[var(--layout-space-loose)] py-4'}`}>
         {filtered.length === 0 ? (
           <EmptyState message={`目前沒有${TAB_LABELS[tab]}的單據`} />
         ) : view === 'card' ? (

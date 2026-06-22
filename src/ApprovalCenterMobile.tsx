@@ -192,9 +192,9 @@ function ProductListPanel({
                 <div className="flex-1 min-w-0">
                   <p className="text-body font-medium">{item.label}</p>
                   {item.hasAlert && (
-                    <p className="text-caption text-fg-danger mt-0.5">
+                    <p className="text-caption text-error-text mt-0.5">
                       {item.overdueCount > 0
-                        ? `${item.overdueCount} overdue`
+                        ? `${item.overdueCount} 已逾期`
                         : `${item.urgentCount} high priority`}
                     </p>
                   )}
@@ -283,7 +283,7 @@ function ListRow({
           <span className="text-fg-placeholder">{submittedDate} Submitted</span>
           <div className="flex items-center gap-1.5 shrink-0">
             {deadlineText && (
-              <span className={deadlineUrgent ? 'text-fg-danger' : 'text-fg-secondary'}>
+              <span className={deadlineUrgent ? 'text-error-text' : 'text-fg-secondary'}>
                 {deadlineText}
               </span>
             )}
