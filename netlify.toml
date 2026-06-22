@@ -1,16 +1,28 @@
+# Fork-and-go 流程(painless,無需 GitHub secret):
+#   1. Netlify Dashboard → New site → 連 repo
+#   2. Netlify 自動讀本 file → build storybook-static → deploy
+#   3. 完成。每次 push main → Netlify auto rebuild。
+
 [build]
-  command = "npm install && npm run build-storybook"
+  command = "npm run build-storybook"
   publish = "storybook-static"
 
 [build.environment]
   NODE_VERSION = "22"
 
-# Per-branch deploy preview 預設啟用（任何 branch push → 自動 preview URL）
+# 免費密碼保護 — Edge Function 自己做 HTTP Basic Auth(見 netlify/edge-functions/basic-auth.ts)。
+# 設 env var STORYBOOK_BASIC_AUTH="user:password"(多組空格分隔)→ 站台跳帳密彈窗;未設 = 公開 pass-through。
+[[edge_functions]]
+  path = "/*"
+  function = "basic-auth"
 
-# ── 安全 headers（對齊 ds-product-template）────────────────────────────────
-# 1️⃣ 反 SEO indexing：未公開的內部產品 demo 不該被 Google 收錄
-# 2️⃣ 一般 web 安全（防 click-jacking、MIME sniff、referrer leak）
-# 真正的 access control 走 Netlify dashboard → Visitor access → Password Protection
+# Per-branch deploy previews 預設啟用(任何 branch push → 自動 preview URL)
+# Production deploy 走 main
+
+# ─── Access control ──────────────────────────────────────────────────────────
+# 1️⃣ Defense-in-depth: 反 SEO indexing(X-Robots-Tag noindex)
+# 2️⃣ Real auth: Edge Function Basic Auth(免費,讀 STORYBOOK_BASIC_AUTH env var)
+
 [[headers]]
   for = "/*"
   [headers.values]
