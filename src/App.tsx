@@ -21,9 +21,6 @@ import {
   LayoutGrid,
   List,
   AlertCircle,
-  Clock,
-  CheckCircle2,
-  XCircle,
   Search,
   X,
   ChevronLeft,
@@ -46,9 +43,15 @@ import { ApprovalModal } from './ApprovalModal'
 
 const URGENCY_COLOR = { high: 'red', medium: 'yellow', low: 'neutral' } as const
 const URGENCY_LABEL = { high: '緊急', medium: '一般', low: '低' } as const
+
+const AVATAR_COLORS = ['blue', 'violet', 'emerald', 'amber', 'rose', 'cyan', 'orange'] as const
+function nameToAvatarColor(name: string) {
+  let h = 0
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0
+  return AVATAR_COLORS[h % AVATAR_COLORS.length]
+}
 const STATUS_COLOR = { pending: 'blue', approved: 'green', rejected: 'red' } as const
 const STATUS_LABEL = { pending: '簽核中', approved: '已核准', rejected: '已退件' } as const
-const STATUS_ICON = { pending: Clock, approved: CheckCircle2, rejected: XCircle }
 
 function RowCheckbox({ checked, indeterminate, onChange }: {
   checked: boolean
@@ -92,43 +95,56 @@ function RecordCard({
   onToggleSelect: () => void
   onClick: () => void
 }) {
-  const StatusIcon = STATUS_ICON[record.status]
-  const currentStepLabel = record.steps.find((s) => s.status === 'current')?.label
+  const submittedDate = record.submittedAt.slice(0, 10).replace(/-/g, '/')
 
   return (
     <div
-      className={`relative group rounded-lg border bg-surface transition-colors flex flex-col gap-3 ${
+      className={`rounded-lg border bg-surface transition-colors flex items-stretch ${
         selected ? 'border-primary bg-primary/5' : 'border-divider hover:bg-surface-hover'
       }`}
     >
-      {/* Checkbox top-left */}
-      <div className="absolute top-3 left-3 z-10">
+      {/* Checkbox area */}
+      <div
+        className="flex items-start justify-center w-12 pt-3.5 shrink-0"
+        onClick={(e) => { e.stopPropagation(); onToggleSelect() }}
+      >
         <RowCheckbox checked={selected} onChange={onToggleSelect} />
       </div>
 
-      {/* Click area for detail */}
-      <button
-        onClick={onClick}
-        className="text-left w-full p-4 pl-10 flex flex-col gap-3"
-      >
-        <div className="flex items-start justify-between gap-2">
-          <span className="text-body font-medium line-clamp-2 flex-1">{record.title}</span>
-          {record.urgency !== 'low' && (
-            <Tag size="sm" color={URGENCY_COLOR[record.urgency]} className="shrink-0">
-              {URGENCY_LABEL[record.urgency]}
-            </Tag>
-          )}
-        </div>
-        <div className="flex items-center gap-1.5 text-caption text-fg-secondary">
-          <StatusIcon size={14} />
-          <span>{STATUS_LABEL[record.status]}</span>
-          {currentStepLabel && <><span>·</span><span>{currentStepLabel}</span></>}
-        </div>
-        <div className="flex items-center justify-between text-caption text-fg-placeholder">
+      {/* Content */}
+      <button onClick={onClick} className="flex-1 min-w-0 py-3 pr-4 text-left flex flex-col gap-1.5">
+        {/* Row 1: title */}
+        <span className="text-body font-medium line-clamp-2">{record.title}</span>
+
+        {/* Row 2: 申請人 */}
+        <div className="flex items-center gap-1 text-caption text-fg-secondary">
+          <span className="text-fg-placeholder shrink-0">申請人：</span>
+          <Avatar
+            alt={record.applicant}
+            size={14}
+            color={nameToAvatarColor(record.applicant) as Parameters<typeof Avatar>[0]['color']}
+          />
           <span>{record.applicant}</span>
-          <span>{record.submittedAt}</span>
         </div>
-        <div className="text-caption text-fg-placeholder">#{record.id}</div>
+
+        {/* Row 3: 代理人 (conditional) */}
+        {record.agents && record.agents.length > 0 && (
+          <div className="flex items-center gap-1 text-caption text-fg-secondary min-w-0">
+            <span className="text-fg-placeholder shrink-0">代理人：</span>
+            <span className="truncate">{record.agents.join('、')}</span>
+          </div>
+        )}
+
+        {/* Row 4: date + status + urgency */}
+        <div className="flex items-center justify-between gap-2 text-caption">
+          <span className="text-fg-placeholder">{submittedDate}</span>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <Tag size="sm" color={STATUS_COLOR[record.status]}>{STATUS_LABEL[record.status]}</Tag>
+            {record.urgency === 'high' && (
+              <Tag size="sm" color="red">緊急</Tag>
+            )}
+          </div>
+        </div>
       </button>
     </div>
   )
@@ -183,7 +199,7 @@ function RecordList({
               <td className="px-4 py-3 font-medium max-w-xs truncate" onClick={() => onClick(r)}>{r.title}</td>
               <td className="px-4 py-3 text-fg-secondary" onClick={() => onClick(r)}>{r.applicant}</td>
               <td className="px-4 py-3" onClick={() => onClick(r)}>
-                {r.urgency !== 'low' && <Tag size="sm" color={URGENCY_COLOR[r.urgency]}>{URGENCY_LABEL[r.urgency]}</Tag>}
+                {r.urgency === 'high' && <Tag size="sm" color={URGENCY_COLOR[r.urgency]}>{URGENCY_LABEL[r.urgency]}</Tag>}
               </td>
               <td className="px-4 py-3" onClick={() => onClick(r)}>
                 <Tag size="sm" color={STATUS_COLOR[r.status]}>{STATUS_LABEL[r.status]}</Tag>
@@ -465,6 +481,7 @@ function ApprovalPage() {
         mode={tab === 'pending-me' ? 'approve' : 'view'}
         onApprove={handleApprove}
         onReject={handleReject}
+        onMoreAction={handleStub}
       />
     </div>
   )

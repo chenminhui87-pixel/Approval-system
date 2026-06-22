@@ -36,6 +36,10 @@ import {
   Square,
   X,
   MoreHorizontal,
+  Share2,
+  UserCheck,
+  Undo2,
+  Ban,
   Newspaper,
   Laptop,
   Receipt,
@@ -387,6 +391,7 @@ function DetailSheet({
   onClose,
   onApprove,
   onReject,
+  onMoreAction,
 }: {
   record: ApprovalRecord | null
   open: boolean
@@ -394,10 +399,12 @@ function DetailSheet({
   onClose: () => void
   onApprove?: (id: string, comment?: string) => void
   onReject?: (id: string, comment: string) => void
+  onMoreAction?: (label: string) => void
 }) {
   const [detailTab, setDetailTab] = useState<DetailTab>('detail')
   const [confirmAction, setConfirmAction] = useState<'approve' | 'reject' | null>(null)
   const [comment, setComment] = useState('')
+  const [singleMoreOpen, setSingleMoreOpen] = useState(false)
 
   function handleClose() {
     onClose()
@@ -547,6 +554,13 @@ function DetailSheet({
 
       {canApprove && confirmAction === null && (
         <div className="absolute bottom-0 left-0 right-0 flex gap-3 px-4 py-3 bg-surface border-t border-divider">
+          <button
+            onClick={() => setSingleMoreOpen(true)}
+            className="w-10 h-10 flex items-center justify-center rounded-full text-fg-secondary hover:bg-surface-hover active:bg-surface-hover shrink-0"
+            aria-label="更多操作"
+          >
+            <MoreHorizontal size={20} />
+          </button>
           <Button variant="secondary" danger className="flex-1" onClick={() => { setComment(''); setConfirmAction('reject') }}>
             退件
           </Button>
@@ -615,6 +629,44 @@ function DetailSheet({
           </Button>
         </div>
       </div>
+
+      {/* Single record more action sheet */}
+      {singleMoreOpen && (
+        <div
+          className="absolute inset-0 z-30 flex flex-col justify-end bg-black/40"
+          onClick={() => setSingleMoreOpen(false)}
+        >
+          <div
+            className="bg-canvas rounded-t-2xl overflow-hidden shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-4 py-3 border-b border-divider">
+              <p className="text-caption text-fg-secondary text-center">更多操作</p>
+            </div>
+            {([
+              { Icon: Share2, label: '轉寄', action: '轉寄', danger: false },
+              { Icon: UserCheck, label: '移交', action: '移交 Owner', danger: false },
+              { Icon: Undo2, label: '退回給申請人', action: '退回給申請人', danger: false },
+              { Icon: Ban, label: '作廢', action: '作廢', danger: true },
+            ] as const).map(({ Icon, label, action, danger }) => (
+              <button
+                key={action}
+                className={`w-full flex items-center gap-3 px-4 py-3.5 text-body border-b border-divider hover:bg-surface-hover active:bg-surface-hover ${danger ? 'text-fg-danger' : ''}`}
+                onClick={() => { onMoreAction?.(action); setSingleMoreOpen(false) }}
+              >
+                <Icon size={18} className="shrink-0" />
+                {label}
+              </button>
+            ))}
+            <button
+              className="w-full px-4 py-3.5 text-body text-fg-secondary text-center hover:bg-surface-hover active:bg-surface-hover"
+              onClick={() => setSingleMoreOpen(false)}
+            >
+              關閉
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -1180,6 +1232,21 @@ export function ApprovalCenterMobile({
                   已選取 {selectedIds.size} 項
                 </p>
               </div>
+              {([
+                { Icon: Share2, label: '轉寄', action: '轉寄', danger: false },
+                { Icon: UserCheck, label: '移交', action: '移交 Owner', danger: false },
+                { Icon: Undo2, label: '退回給申請人', action: '退回給申請人', danger: false },
+                { Icon: Ban, label: '作廢', action: '作廢', danger: true },
+              ] as const).map(({ Icon, label, action, danger }) => (
+                <button
+                  key={action}
+                  className={`w-full flex items-center gap-3 px-4 py-3.5 text-body border-b border-divider hover:bg-surface-hover active:bg-surface-hover ${danger ? 'text-fg-danger' : ''}`}
+                  onClick={() => { dsToast({ variant: 'neutral', title: `${label}（功能待實作）` }); setMoreMenuOpen(false) }}
+                >
+                  <Icon size={18} className="shrink-0" />
+                  {label}
+                </button>
+              ))}
               <button
                 className="w-full flex items-center gap-3 px-4 py-3.5 text-body hover:bg-surface-hover active:bg-surface-hover border-b border-divider"
                 onClick={() => { setSelectedIds(new Set()); setMoreMenuOpen(false) }}
@@ -1216,6 +1283,7 @@ export function ApprovalCenterMobile({
           onClose={() => setSheetOpen(false)}
           onApprove={handleApprove}
           onReject={handleReject}
+          onMoreAction={(label) => dsToast({ variant: 'neutral', title: `${label}（功能待實作）` })}
         />
       </div>
     </TooltipProvider>

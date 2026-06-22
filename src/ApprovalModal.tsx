@@ -17,7 +17,14 @@ import {
   Textarea,
   Separator,
 } from '@qijenchen/design-system'
-import { Paperclip } from 'lucide-react'
+import { Paperclip, Share2, UserCheck, Undo2, Ban } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from '@qijenchen/design-system'
 import type { ApprovalRecord } from './data'
 import { ApprovalRoute } from './ApprovalRoute'
 
@@ -28,6 +35,7 @@ interface ApprovalModalProps {
   mode: 'approve' | 'view'
   onApprove?: (id: string, comment?: string) => void
   onReject?: (id: string, comment: string) => void
+  onMoreAction?: (label: string) => void
 }
 
 const URGENCY_COLOR = {
@@ -61,6 +69,7 @@ export function ApprovalModal({
   mode,
   onApprove,
   onReject,
+  onMoreAction,
 }: ApprovalModalProps) {
   const [confirmAction, setConfirmAction] = useState<'approve' | 'reject' | null>(null)
   const [comment, setComment] = useState('')
@@ -103,7 +112,7 @@ export function ApprovalModal({
             <Tag size="sm" color={STATUS_COLOR[record.status]} solid={record.status === 'approved'}>
               {STATUS_LABEL[record.status]}
             </Tag>
-            {record.urgency !== 'low' && (
+            {record.urgency === 'high' && (
               <Tag size="sm" color={URGENCY_COLOR[record.urgency]}>
                 {URGENCY_LABEL[record.urgency]}
               </Tag>
@@ -209,6 +218,18 @@ export function ApprovalModal({
 
         {mode === 'approve' && record.status === 'pending' && (
           <DialogFooter>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="tertiary" size="sm">⋯</Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem startIcon={Share2} onClick={() => onMoreAction?.('轉寄')}>轉寄</DropdownMenuItem>
+                <DropdownMenuItem startIcon={UserCheck} onClick={() => onMoreAction?.('移交 Owner')}>移交</DropdownMenuItem>
+                <DropdownMenuItem startIcon={Undo2} onClick={() => onMoreAction?.('退回給申請人')}>退回給申請人</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem startIcon={Ban} className="text-fg-danger" onClick={() => onMoreAction?.('作廢')}>作廢</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button variant="secondary" danger onClick={() => openConfirm('reject')}>
               退件
             </Button>
