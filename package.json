@@ -14,16 +14,17 @@
     "typecheck": "tsc --noEmit",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build --output-dir storybook-static",
-    "setup:netlify": "node scripts/setup-netlify-access.mjs"
+    "setup:netlify": "node scripts/setup-netlify-access.mjs",
+    "sync-all": "node scripts/sync-all.mjs"
   },
   "dependencies": {
-    "@qijenchen/design-system": "^0.1.0-beta.42",
+    "@qijenchen/design-system": "^0.1.0-beta.74",
     "lucide-react": "^0.577.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "@qijenchen/storybook-config": "^0.1.0-beta.42",
+    "@qijenchen/storybook-config": "^0.1.0-beta.74",
     "@storybook/addon-a11y": "^8.6.18",
     "@storybook/addon-docs": "^8.6.18",
     "@storybook/addon-essentials": "^8.6.14",
