@@ -987,6 +987,22 @@ export function ApprovalCenterMobile({
               </div>
             )
           )}
+
+          {screen === 'requests' && searchPlacement === 'subfilter' && selectAllPlacement === 'header' && (
+            <button
+              onClick={handleSelectAll}
+              className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors hover:bg-surface-hover active:bg-surface-hover shrink-0 ${
+                allVisibleSelected && filtered.length > 0 ? 'text-primary' : 'text-fg-secondary'
+              }`}
+              aria-label="全選"
+            >
+              {allVisibleSelected && filtered.length > 0 ? (
+                <CheckSquare size={18} />
+              ) : (
+                <Square size={18} />
+              )}
+            </button>
+          )}
         </header>
 
         {/* ── subfilter: search filter row ── */}
