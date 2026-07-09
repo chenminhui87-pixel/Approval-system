@@ -73,14 +73,17 @@ const STATUS_LABEL = { pending: '簽核中', approved: '已核准', rejected: '�
 const TODAY = new Date('2026-06-18')
 const OVERDUE_THRESHOLD_DAYS = 7
 
+const ICON_BG = 'bg-[var(--color-neutral-2-opaque)]'
+const ICON_COLOR = 'text-[var(--color-neutral-8-opaque)]'
+
 const CATEGORY_META: Record<CategoryId, { Icon: React.ElementType; iconBg: string; iconColor: string }> = {
-  article:  { Icon: Newspaper, iconBg: 'bg-blue-100',   iconColor: 'text-blue-600' },
-  computer: { Icon: Laptop,    iconBg: 'bg-violet-100', iconColor: 'text-violet-600' },
-  expense:  { Icon: Receipt,   iconBg: 'bg-emerald-100',iconColor: 'text-emerald-600' },
-  travel:   { Icon: Plane,     iconBg: 'bg-amber-100',  iconColor: 'text-amber-600' },
-  vacation: { Icon: Calendar,  iconBg: 'bg-yellow-100', iconColor: 'text-yellow-600' },
-  recruit:  { Icon: Users,         iconBg: 'bg-rose-100',   iconColor: 'text-rose-600' },
-  training: { Icon: GraduationCap, iconBg: 'bg-pink-100',   iconColor: 'text-pink-600' },
+  article:  { Icon: Newspaper,     iconBg: ICON_BG, iconColor: ICON_COLOR },
+  computer: { Icon: Laptop,        iconBg: ICON_BG, iconColor: ICON_COLOR },
+  expense:  { Icon: Receipt,       iconBg: ICON_BG, iconColor: ICON_COLOR },
+  travel:   { Icon: Plane,         iconBg: ICON_BG, iconColor: ICON_COLOR },
+  vacation: { Icon: Calendar,      iconBg: ICON_BG, iconColor: ICON_COLOR },
+  recruit:  { Icon: Users,         iconBg: ICON_BG, iconColor: ICON_COLOR },
+  training: { Icon: GraduationCap, iconBg: ICON_BG, iconColor: ICON_COLOR },
 }
 
 const AVATAR_COLORS = ['blue', 'violet', 'emerald', 'amber', 'rose', 'cyan', 'orange'] as const
@@ -187,41 +190,37 @@ function ProductListPanel({
           <p className="text-body">目前沒有相關單據</p>
         </div>
       ) : (
-        <div className="bg-surface border-b border-divider overflow-hidden">
-          {items.map((item, idx) => {
+        <div className="bg-surface overflow-hidden">
+          {items.map((item) => {
             const IconComponent = item.Icon
             return (
               <button
                 key={item.id}
                 onClick={() => onSelectCategory(item.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3.5 hover:bg-surface-hover active:bg-surface-hover transition-colors text-left ${
-                  idx < items.length - 1 ? 'border-b border-divider' : ''
-                }`}
+                className="w-full flex items-stretch gap-3 pl-4 min-h-[67px] hover:bg-surface-hover active:bg-surface-hover transition-colors text-left"
               >
                 {/* App-style icon */}
-                <div
-                  className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center shrink-0"
-                >
-                  <IconComponent size={16} className="text-gray-900" />
+                <div className={`w-8 h-8 rounded-full ${item.iconBg} flex items-center justify-center shrink-0 self-center`}>
+                  <IconComponent size={16} className={item.iconColor} />
                 </div>
 
-                {/* Text */}
-                <div className="flex-1 min-w-0">
-                  <p className="text-body font-medium">{item.label}</p>
-                  {item.hasAlert && (
-                    <p className="text-caption text-error-text mt-0.5">
-                      {`${item.immediateCount} 件須立即簽核`}
-                    </p>
-                  )}
-                </div>
-
-                {/* Badge + arrow */}
-                <div className="flex items-center gap-2 shrink-0">
-                  <Badge
-                    variant={item.hasAlert ? 'critical' : 'low'}
-                    count={item.count}
-                  />
-                  <ChevronRight size={16} className="text-fg-placeholder" />
+                {/* Content + inset divider */}
+                <div className="flex-1 flex items-center gap-2 pr-4 border-b border-divider">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-body font-medium">{item.label}</p>
+                    {item.hasAlert && (
+                      <p className="text-caption text-error-text mt-0.5">
+                        {`${item.immediateCount} 件須立即簽核`}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Badge
+                      variant={item.hasAlert ? 'critical' : 'low'}
+                      count={item.count}
+                    />
+                    <ChevronRight size={16} className="text-fg-placeholder" />
+                  </div>
                 </div>
               </button>
             )
@@ -265,7 +264,7 @@ function ListRow({
   const submittedDate = record.submittedAt.slice(0, 10).replace(/-/g, '/')
 
   return (
-    <div className={`flex items-stretch border-b border-divider pl-3 ${selected ? 'bg-muted' : 'bg-surface'}`}>
+    <div className={`flex items-stretch pl-3 ${selected ? 'bg-muted' : 'bg-surface'}`}>
       <div
         className="flex items-start justify-start w-12 pt-3.5 shrink-0"
         onClick={onToggleSelect}
@@ -275,7 +274,7 @@ function ListRow({
 
       <button
         onClick={onClick}
-        className="flex-1 min-w-0 py-3 pr-4 text-left flex flex-col gap-1.5 active:bg-surface-hover"
+        className="flex-1 min-w-0 py-3 pr-4 text-left flex flex-col gap-1.5 active:bg-surface-hover border-b border-divider"
       >
         {/* Row 1: title */}
         <span className="text-body font-medium line-clamp-2">{record.title}</span>
