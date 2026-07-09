@@ -1,13 +1,9 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import {
   TooltipProvider,
   Avatar,
   Tag,
   Button,
-  Steps,
-  StepItem,
-  StepLabel,
-  StepDescription,
   DescriptionList,
   DescriptionItem,
   Textarea,
@@ -19,6 +15,7 @@ import {
   Input,
   toast as dsToast,
   Toaster,
+  CircularProgress,
 } from '@qijenchen/design-system'
 import {
   ClipboardList,
@@ -33,10 +30,7 @@ import {
   Moon,
   Monitor,
   LogOut,
-  CheckSquare,
-  Square,
   X,
-  MoreHorizontal,
   Share2,
   UserCheck,
   Undo2,
@@ -63,10 +57,6 @@ import { ApprovalRoute } from './ApprovalRoute'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const URGENCY_COLOR = { high: 'red', medium: 'yellow', low: 'neutral' } as const
-const URGENCY_LABEL = { high: '緊急', medium: '一般', low: '低' } as const
-const STATUS_COLOR = { pending: 'blue', approved: 'green', rejected: 'red' } as const
-const STATUS_LABEL = { pending: '簽核中', approved: '已核准', rejected: '已退件' } as const
 // Fixed demo date matching mock data era so overdue calculations are meaningful
 const TODAY = new Date('2026-06-18')
 const OVERDUE_THRESHOLD_DAYS = 7
@@ -160,6 +150,76 @@ function computeProductItems(tab: TabId, records: ApprovalRecord[], homeSearch?:
       immediateCount,
     }]
   }).sort((a, b) => priority(a) - priority(b))
+}
+
+// ─── useSwipeBack ─────────────────────────────────────────────────────────────
+
+function useSwipeBack(onBack: () => void, enabled = true) {
+  const ref = useRef<HTMLDivElement>(null)
+  const callbackRef = useRef(onBack)
+  callbackRef.current = onBack
+
+  useEffect(() => {
+    if (!enabled) return
+    const el = ref.current
+    if (!el) return
+
+    let startX = 0
+    let startY = 0
+    let tracking = false
+
+    const onTouchStart = (e: TouchEvent) => {
+      startX = e.touches[0].clientX
+      startY = e.touches[0].clientY
+      tracking = false
+      el.style.transition = 'none'
+    }
+
+    const onTouchMove = (e: TouchEvent) => {
+      const dx = e.touches[0].clientX - startX
+      const dy = e.touches[0].clientY - startY
+      if (!tracking) {
+        if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return
+        if (Math.abs(dx) > Math.abs(dy) && dx > 0) {
+          tracking = true
+        } else {
+          el.style.transition = ''
+          return
+        }
+      }
+      el.style.transform = `translateX(${dx}px)`
+      e.preventDefault()
+    }
+
+    const onTouchEnd = (e: TouchEvent) => {
+      if (!tracking) { el.style.transition = ''; return }
+      tracking = false
+      const dx = e.changedTouches[0].clientX - startX
+      if (dx > 80) {
+        el.style.transition = 'transform 220ms ease-out'
+        el.style.transform = 'translateX(100%)'
+        setTimeout(() => {
+          callbackRef.current()
+          requestAnimationFrame(() => { el.style.transition = ''; el.style.transform = '' })
+        }, 220)
+      } else {
+        el.style.transition = 'transform 180ms ease-out'
+        el.style.transform = 'translateX(0)'
+        setTimeout(() => { el.style.transition = ''; el.style.transform = '' }, 180)
+      }
+    }
+
+    el.addEventListener('touchstart', onTouchStart, { passive: true })
+    el.addEventListener('touchmove', onTouchMove, { passive: false })
+    el.addEventListener('touchend', onTouchEnd, { passive: true })
+    return () => {
+      el.removeEventListener('touchstart', onTouchStart)
+      el.removeEventListener('touchmove', onTouchMove)
+      el.removeEventListener('touchend', onTouchEnd)
+    }
+  }, [enabled])
+
+  return ref
 }
 
 // ─── ProductListPanel ─────────────────────────────────────────────────────────
@@ -263,9 +323,9 @@ function ListRow({
   const submittedDate = record.submittedAt.slice(0, 10).replace(/-/g, '/')
 
   return (
-    <div className={`flex items-stretch border-b border-divider pl-3 ${selected ? 'bg-muted' : 'bg-surface'}`}>
+    <div className={`flex items-start border-b border-divider pl-4 gap-4 ${selected ? 'bg-muted' : 'bg-surface'}`}>
       <div
-        className="flex items-start justify-start w-12 pt-3.5 shrink-0"
+        className="flex pt-3.5 shrink-0"
         onClick={onToggleSelect}
       >
         <Checkbox checked={selected} onCheckedChange={onToggleSelect} onClick={(e) => e.stopPropagation()} />
@@ -276,7 +336,7 @@ function ListRow({
         className="flex-1 min-w-0 py-3 pr-4 text-left flex flex-col gap-1.5 active:bg-surface-hover"
       >
         {/* Row 1: title */}
-        <span className="text-body font-medium line-clamp-2">{record.title}</span>
+        <span className="text-body font-medium line-clamp-3">{record.title}</span>
 
         {/* Row 2: 申請人 avatar + name */}
         <div className="flex items-center gap-1 text-caption text-fg-secondary">
@@ -325,8 +385,10 @@ function SettingsSheet({
   onClose: () => void
   onLogout: () => void
 }) {
+  const swipeRef = useSwipeBack(onClose, open)
   return (
     <div
+      ref={swipeRef}
       aria-hidden={!open}
       className={`absolute inset-0 z-30 flex flex-col bg-canvas transition-transform duration-300 ease-in-out ${
         open ? 'translate-y-0' : 'translate-y-full'
@@ -437,16 +499,18 @@ function DetailSheet({
 
   const submitDisabled = confirmAction === 'reject' && comment.trim().length === 0
   const canApprove = !!record && mode === 'approve' && record.status === 'pending'
-  const hasRichRoute = record?.steps.some((s) => s.people && s.people.length > 0)
-  const currentStep = record?.steps.find((s) => s.status === 'current')
-  const completedValues = record?.steps.filter((s) => s.status === 'completed').map((s) => s.id) ?? []
-  const errorValues = record?.steps.filter((s) => s.status === 'error').map((s) => s.id) ?? []
+  const detailSwipeRef = useSwipeBack(handleClose, open && confirmAction === null)
+  const confirmSwipeRef = useSwipeBack(
+    () => { setConfirmAction(null); setComment('') },
+    confirmAction !== null,
+  )
 
   return (
     <div
+      ref={detailSwipeRef}
       aria-hidden={!open}
       className={`absolute inset-0 z-20 flex flex-col bg-canvas transition-transform duration-300 ease-in-out ${
-        open ? 'translate-y-0' : 'translate-y-full'
+        open ? 'translate-x-0' : 'translate-x-full'
       }`}
     >
       <div className="flex items-center gap-2 h-14 px-3 border-b border-divider bg-surface shrink-0">
@@ -460,18 +524,6 @@ function DetailSheet({
         <div className="flex-1 min-w-0">
           <p className="text-body font-medium truncate">{record?.title ?? ''}</p>
         </div>
-        {record && (
-          <div className="flex items-center gap-1 shrink-0">
-            <Tag size="sm" color={STATUS_COLOR[record.status]} solid={record.status === 'approved'}>
-              {STATUS_LABEL[record.status]}
-            </Tag>
-            {record.urgency !== 'low' && (
-              <Tag size="sm" color={URGENCY_COLOR[record.urgency]}>
-                {URGENCY_LABEL[record.urgency]}
-              </Tag>
-            )}
-          </div>
-        )}
       </div>
 
       <div className="flex border-b border-divider bg-surface shrink-0">
@@ -492,7 +544,7 @@ function DetailSheet({
 
       <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide">
         {record && detailTab === 'detail' ? (
-          <div className="flex flex-col gap-5 p-4 pb-24">
+          <div className="flex flex-col gap-5 p-4">
             <section>
               <p className="text-caption font-semibold text-fg-secondary mb-3 tracking-wide uppercase">基本資訊</p>
               <DescriptionList direction="vertical">
@@ -531,47 +583,15 @@ function DetailSheet({
             </section>
           </div>
         ) : record ? (
-          <div className="p-4 pb-24">
-            {hasRichRoute ? (
-              <ApprovalRoute steps={record.steps} />
-            ) : (
-              <Steps
-                value={currentStep?.id}
-                completedValues={completedValues}
-                errorValues={errorValues}
-                orientation="vertical"
-                size="sm"
-              >
-                {record.steps.map((step) => (
-                  <StepItem key={step.id} value={step.id}>
-                    <StepLabel>{step.label}</StepLabel>
-                    <StepDescription>
-                      {step.parallel ? '平行簽核：' : ''}
-                      {step.approvers.join('、')}
-                      {step.approvedBy && step.approvedBy.length > 0 && (
-                        <span className="block text-fg-success">已簽：{step.approvedBy.join('、')}</span>
-                      )}
-                      {step.approvedAt && (
-                        <span className="block text-fg-placeholder">{step.approvedAt}</span>
-                      )}
-                    </StepDescription>
-                  </StepItem>
-                ))}
-              </Steps>
-            )}
+          <div className="p-4">
+            <ApprovalRoute steps={record.steps} />
           </div>
         ) : null}
       </div>
 
       {canApprove && confirmAction === null && (
-        <div className="absolute bottom-0 left-0 right-0 flex gap-3 px-4 py-3 bg-surface border-t border-divider">
-          <button
-            onClick={() => setSingleMoreOpen(true)}
-            className="w-10 h-10 flex items-center justify-center rounded-full text-fg-secondary hover:bg-surface-hover active:bg-surface-hover shrink-0"
-            aria-label="更多操作"
-          >
-            <MoreHorizontal size={20} />
-          </button>
+        <div className="flex gap-3 px-4 py-3 bg-surface border-t border-divider shrink-0">
+          <Button variant="tertiary" onClick={() => setSingleMoreOpen(true)}>更多</Button>
           <Button variant="secondary" danger className="flex-1" onClick={() => { setComment(''); setConfirmAction('reject') }}>
             退件
           </Button>
@@ -583,8 +603,9 @@ function DetailSheet({
 
       {/* Confirm full-page — slides in from right */}
       <div
+        ref={confirmSwipeRef}
         className={`absolute inset-0 z-10 flex flex-col bg-canvas transition-transform duration-300 ease-in-out ${
-          confirmAction !== null ? 'translate-x-0' : 'translate-x-full'
+          confirmAction !== null ? 'translate-x-0' : 'translate-x-full pointer-events-none'
         }`}
       >
         <div className="flex items-center gap-2 h-14 px-3 border-b border-divider bg-surface shrink-0">
@@ -669,7 +690,7 @@ function DetailSheet({
             ] as const).map(({ Icon, label, action, danger }) => (
               <button
                 key={action}
-                className={`w-full flex items-center gap-3 px-4 py-3.5 text-body border-b border-divider hover:bg-surface-hover active:bg-surface-hover ${danger ? 'text-fg-danger' : ''}`}
+                className={`w-full flex items-center gap-3 px-4 py-3.5 text-body hover:bg-surface-hover active:bg-surface-hover ${danger ? 'text-fg-danger' : ''}`}
                 onClick={() => { onMoreAction?.(action); setSingleMoreOpen(false) }}
               >
                 <Icon size={18} className="shrink-0" />
@@ -730,7 +751,28 @@ export function ApprovalCenterMobile({
   const [batchComment, setBatchComment] = useState('')
   const [moreMenuOpen, setMoreMenuOpen] = useState(false)
   const [pendingBatchApprove, setPendingBatchApprove] = useState<{ comment: string; hiddenCount: number } | null>(null)
+  const [visibleCount, setVisibleCount] = useState(20)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [homeSearch, setHomeSearch] = useState('')
+  const sentinelRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => { setVisibleCount(20); setIsLoadingMore(false) }, [category, search, tab])
+
+  useEffect(() => {
+    const el = sentinelRef.current
+    if (!el) return
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setIsLoadingMore(true)
+        setTimeout(() => {
+          setVisibleCount(c => c + 20)
+          setIsLoadingMore(false)
+        }, 500)
+      }
+    })
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [visibleCount])
 
   const isDark = getEffectiveTheme(theme) === 'dark'
 
@@ -796,6 +838,8 @@ export function ApprovalCenterMobile({
     setSelectedIds(new Set())
   }
 
+  const requestsSwipeRef = useSwipeBack(handleBack, screen === 'requests')
+
   // ── Record actions ───────────────────────────────────────────────────────────
 
   function handleSelectAll() {
@@ -856,7 +900,7 @@ export function ApprovalCenterMobile({
     if (!batchAction) return
 
     // 搜尋中送出批次核准時，偵測已勾選但被搜尋隱藏的單據
-    if (batchAction === 'approve' && searchVisible && search.trim()) {
+    if (batchAction === 'approve' && search.trim()) {
       const visibleIds = new Set(filtered.map((r) => r.id))
       const hiddenCount = [...selectedIds].filter((id) => !visibleIds.has(id)).length
       if (hiddenCount > 0) {
@@ -927,7 +971,7 @@ export function ApprovalCenterMobile({
         data-theme={isDark ? 'dark' : 'light'}
       >
         {/* ── Header ── */}
-        <header className={`flex items-center gap-2 h-12 px-3 bg-surface shrink-0 z-10 ${screen === 'requests' && searchPlacement === 'header' && selectAllPlacement === 'header' ? 'border-b border-divider' : ''}`}>
+        <header className={`flex items-center gap-2 h-12 px-4 bg-surface shrink-0 z-10 ${screen === 'requests' && searchPlacement === 'header' && selectAllPlacement === 'header' ? 'border-b border-divider' : ''}`}>
           {screen === 'products' ? (
             <button
               type="button"
@@ -989,16 +1033,9 @@ export function ApprovalCenterMobile({
                 {selectAllPlacement === 'header' && (
                   <button
                     onClick={handleSelectAll}
-                    className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors hover:bg-surface-hover active:bg-surface-hover ${
-                      allVisibleSelected && filtered.length > 0 ? 'text-primary' : 'text-fg-secondary'
-                    }`}
-                    aria-label="全選"
+                    className="text-body font-medium text-primary hover:text-primary-hover active:text-primary-hover pl-2 py-1 shrink-0"
                   >
-                    {allVisibleSelected && filtered.length > 0 ? (
-                      <CheckSquare size={18} />
-                    ) : (
-                      <Square size={18} />
-                    )}
+                    {allVisibleSelected && filtered.length > 0 ? 'Deselect all' : 'Select all'}
                   </button>
                 )}
               </div>
@@ -1008,23 +1045,16 @@ export function ApprovalCenterMobile({
           {screen === 'requests' && searchPlacement === 'subfilter' && selectAllPlacement === 'header' && (
             <button
               onClick={handleSelectAll}
-              className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors hover:bg-surface-hover active:bg-surface-hover shrink-0 ${
-                allVisibleSelected && filtered.length > 0 ? 'text-primary' : 'text-fg-secondary'
-              }`}
-              aria-label="全選"
+              className="text-body font-medium text-primary hover:text-primary-hover active:text-primary-hover pl-2 py-1 shrink-0"
             >
-              {allVisibleSelected && filtered.length > 0 ? (
-                <CheckSquare size={18} />
-              ) : (
-                <Square size={18} />
-              )}
+              {allVisibleSelected && filtered.length > 0 ? 'Deselect all' : 'Select all'}
             </button>
           )}
         </header>
 
         {/* ── subfilter: search filter row ── */}
         {searchPlacement === 'subfilter' && screen === 'requests' && (
-          <div className="px-3 py-2 bg-surface border-b border-divider shrink-0">
+          <div className="px-4 py-2 bg-surface border-b border-divider shrink-0">
             <Input
               size="sm"
               startIcon={Search}
@@ -1092,6 +1122,7 @@ export function ApprovalCenterMobile({
 
           {/* Requests panel — slides in from right */}
           <div
+            ref={requestsSwipeRef}
             className={`absolute inset-0 flex flex-col transition-transform duration-300 ease-in-out ${
               screen === 'requests' ? 'translate-x-0' : 'translate-x-full'
             }`}
@@ -1105,7 +1136,7 @@ export function ApprovalCenterMobile({
                 </div>
               ) : (
                 <div>
-                  {filtered.map((r) => (
+                  {filtered.slice(0, visibleCount).map((r) => (
                     <ListRow
                       key={r.id}
                       record={r}
@@ -1114,6 +1145,14 @@ export function ApprovalCenterMobile({
                       onClick={() => openRecord(r)}
                     />
                   ))}
+                  {visibleCount < filtered.length && !isLoadingMore && (
+                    <div ref={sentinelRef} className="h-12" />
+                  )}
+                  {isLoadingMore && (
+                    <div className="flex justify-center py-4">
+                      <CircularProgress />
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -1124,27 +1163,21 @@ export function ApprovalCenterMobile({
         <nav className="shrink-0 border-t border-divider bg-surface">
           {isSelecting ? (
             <div className="flex items-center gap-2 px-3 py-3">
-              <button
-                onClick={() => setMoreMenuOpen(true)}
-                className="w-10 h-10 flex items-center justify-center rounded-full text-fg-secondary hover:bg-surface-hover active:bg-surface-hover shrink-0"
-                aria-label="更多操作"
-              >
-                <MoreHorizontal size={20} />
-              </button>
+              <Button variant="tertiary" onClick={() => setMoreMenuOpen(true)}>更多</Button>
               <Button
                 variant="secondary"
                 danger
                 className="flex-1"
                 onClick={() => { setBatchComment(''); setBatchAction('reject') }}
               >
-                退件
+                退件 ({selectedIds.size})
               </Button>
               <Button
                 variant="secondary"
                 className="flex-1"
                 onClick={() => { setBatchComment(''); setBatchAction('approve') }}
               >
-                核准
+                核准 ({selectedIds.size})
               </Button>
             </div>
           ) : (
@@ -1269,9 +1302,7 @@ export function ApprovalCenterMobile({
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between px-4 py-3 border-b border-divider">
-                <p className="text-caption text-fg-secondary">
-                  已選取 {selectedIds.size} 項
-                </p>
+                <p className="text-caption text-fg-secondary">更多操作</p>
                 <button
                   onClick={() => setMoreMenuOpen(false)}
                   className="flex items-center justify-center w-7 h-7 rounded-full hover:bg-surface-hover active:bg-surface-hover text-fg-secondary"
@@ -1288,20 +1319,13 @@ export function ApprovalCenterMobile({
               ] as const).map(({ Icon, label, action, danger }) => (
                 <button
                   key={action}
-                  className={`w-full flex items-center gap-3 px-4 py-3.5 text-body border-b border-divider hover:bg-surface-hover active:bg-surface-hover ${danger ? 'text-fg-danger' : ''}`}
+                  className={`w-full flex items-center gap-3 px-4 py-3.5 text-body hover:bg-surface-hover active:bg-surface-hover ${danger ? 'text-fg-danger' : ''}`}
                   onClick={() => { dsToast({ variant: 'neutral', title: `${label}（功能待實作）` }); setMoreMenuOpen(false) }}
                 >
                   <Icon size={18} className="shrink-0" />
                   {label}
                 </button>
               ))}
-              <button
-                className="w-full flex items-center gap-3 px-4 py-3.5 text-body hover:bg-surface-hover active:bg-surface-hover border-b border-divider"
-                onClick={() => { setSelectedIds(new Set()); setMoreMenuOpen(false) }}
-              >
-                <X size={18} className="text-fg-secondary shrink-0" />
-                取消選取
-              </button>
             </div>
           </div>
         )}

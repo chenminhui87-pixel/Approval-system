@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import App from './App'
-import { ApprovalCenterMobile } from './ApprovalCenterMobile'
+import { ApprovalCenterMobile } from './ApprovalCenterMobileV2'
 
 const meta: Meta<typeof App> = {
   title: 'App / Approval System',
@@ -17,42 +17,19 @@ export const Default: Story = {
   name: 'PC',
 }
 
-export const MobileV1SearchTop: Story = {
-  name: 'Mobile — 全選在頂列 · 搜尋在頂列',
-  parameters: { layout: 'fullscreen' },
-  render: () => (
-    <div className="w-full h-screen">
-      <ApprovalCenterMobile selectAllPlacement="header" searchPlacement="header" />
-    </div>
-  ),
-}
-
-export const MobileV2SearchTop: Story = {
-  name: 'Mobile — 全選在工具列 · 搜尋在頂列',
-  parameters: { layout: 'fullscreen' },
-  render: () => (
-    <div className="w-full h-screen">
-      <ApprovalCenterMobile selectAllPlacement="subbar" searchPlacement="header" />
-    </div>
-  ),
-}
-
-export const MobileV1SearchDown: Story = {
-  name: 'Mobile — 全選在頂列 · 搜尋在篩選欄',
-  parameters: { layout: 'fullscreen' },
+export const Mobile: Story = {
+  name: 'Mobile',
+  parameters: {
+    viewport: {
+      viewports: {
+        iphone15: { name: 'iPhone 15', styles: { width: '393px', height: '852px' } },
+      },
+      defaultViewport: 'iphone15',
+    },
+  },
   render: () => (
     <div className="w-full h-screen">
       <ApprovalCenterMobile selectAllPlacement="header" searchPlacement="subfilter" />
-    </div>
-  ),
-}
-
-export const MobileV2SearchDown: Story = {
-  name: 'Mobile — 全選在工具列 · 搜尋在篩選欄',
-  parameters: { layout: 'fullscreen' },
-  render: () => (
-    <div className="w-full h-screen">
-      <ApprovalCenterMobile selectAllPlacement="subbar" searchPlacement="subfilter" />
     </div>
   ),
 }
