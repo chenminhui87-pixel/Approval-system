@@ -13,6 +13,8 @@ import {
   Checkbox,
   Badge,
   Input,
+  Field,
+  FieldLabel,
   toast as dsToast,
   Toaster,
   CircularProgress,
@@ -625,14 +627,13 @@ function DetailSheet({
           {record && (
             <p className="text-body text-fg-secondary">{record.title}</p>
           )}
-          <label className="flex flex-col gap-1.5">
-            <span className="text-body">
+          <Field required={confirmAction === 'reject'}>
+            <FieldLabel>
               簽核意見
-              {confirmAction === 'reject' && <span className="text-fg-danger ml-1">*</span>}
               {confirmAction === 'approve' && (
                 <span className="text-fg-placeholder ml-1 text-caption">（選填）</span>
               )}
-            </span>
+            </FieldLabel>
             <Textarea
               value={comment}
               onChange={(e) => setComment(e.target.value)}
@@ -643,7 +644,7 @@ function DetailSheet({
                   : '可補充核准意見供下一站簽核人參考'
               }
             />
-          </label>
+          </Field>
         </div>
 
         <div className="flex gap-3 px-4 py-3 border-t border-divider bg-surface shrink-0">
@@ -1228,14 +1229,13 @@ export function ApprovalCenterMobile({
           </div>
 
           <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide p-4 flex flex-col gap-4">
-            <label className="flex flex-col gap-1.5">
-              <span className="text-body">
+            <Field required={batchAction === 'reject'}>
+              <FieldLabel>
                 簽核意見
-                {batchAction === 'reject' && <span className="text-fg-danger ml-1">*</span>}
                 {batchAction === 'approve' && (
                   <span className="text-fg-placeholder ml-1 text-caption">（選填）</span>
                 )}
-              </span>
+              </FieldLabel>
               <Textarea
                 value={batchComment}
                 onChange={(e) => setBatchComment(e.target.value)}
@@ -1246,7 +1246,7 @@ export function ApprovalCenterMobile({
                     : '可補充核准意見供下一站簽核人參考'
                 }
               />
-            </label>
+            </Field>
           </div>
 
           <div className="flex gap-3 px-4 py-3 border-t border-divider bg-surface shrink-0">
