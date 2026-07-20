@@ -548,7 +548,7 @@ function DetailSheet({
           <div className="flex flex-col gap-5 p-4">
             <section>
               <p className="text-caption font-semibold text-fg-secondary mb-3 tracking-wide uppercase">基本資訊</p>
-              <DescriptionList direction="vertical">
+              <DescriptionList orientation="vertical">
                 {record.fixedFields.map((f) => (
                   <DescriptionItem key={f.label} label={f.label}>{f.value}</DescriptionItem>
                 ))}
@@ -557,7 +557,7 @@ function DetailSheet({
             <Separator />
             <section>
               <p className="text-caption font-semibold text-fg-secondary mb-3 tracking-wide uppercase">申請內容</p>
-              <DescriptionList direction="vertical">
+              <DescriptionList orientation="vertical">
                 {record.customFields.map((f) => (
                   <DescriptionItem key={f.label} label={f.label}>{f.value}</DescriptionItem>
                 ))}
@@ -993,7 +993,6 @@ export function ApprovalCenterMobile({
 
           {screen === 'requests' && searchVisible ? (
             <Input
-              variant="bare"
               size="sm"
               startIcon={Search}
               value={search}

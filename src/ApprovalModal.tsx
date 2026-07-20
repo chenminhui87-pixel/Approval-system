@@ -127,7 +127,7 @@ export function ApprovalModal({
             {/* Fixed fields */}
             <section>
               <p className="text-h4 font-medium mb-3">基本資訊</p>
-              <DescriptionList direction="vertical">
+              <DescriptionList orientation="vertical">
                 {record.fixedFields.map((f) => (
                   <DescriptionItem key={f.label} label={f.label}>
                     {f.value}
@@ -141,7 +141,7 @@ export function ApprovalModal({
             {/* Custom fields */}
             <section>
               <p className="text-h4 font-medium mb-3">申請內容</p>
-              <DescriptionList direction="vertical">
+              <DescriptionList orientation="vertical">
                 {record.customFields.map((f) => (
                   <DescriptionItem key={f.label} label={f.label}>
                     {f.value}
