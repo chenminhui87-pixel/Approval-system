@@ -51,14 +51,16 @@ export function FormTemplateManager({ open, onClose, onCreate }: FormTemplateMan
     <Dialog open={open} onOpenChange={(o: boolean) => !o && onClose()}>
       <DialogContent maxWidth="760px" onOpenAutoFocus={(e) => e.preventDefault()}>
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-3">
-            <span>申請單表單</span>
-            <Button variant="secondary" size="sm" startIcon={Plus} onClick={onCreate} className="ml-auto mr-2">
-              新建表單
-            </Button>
-          </DialogTitle>
+          <DialogTitle>申請單表單</DialogTitle>
         </DialogHeader>
         <DialogBody>
+          {/* 工具列:左側計數、右側新建(不塞在標題旁) */}
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <span className="text-body text-fg-secondary">共 {MOCK_FORMS.length} 張表單</span>
+            <Button variant="secondary" size="sm" startIcon={Plus} onClick={onCreate}>
+              新建表單
+            </Button>
+          </div>
           <div className="rounded-lg border border-divider overflow-hidden">
             <table className="w-full text-body">
               <thead>

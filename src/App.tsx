@@ -37,6 +37,10 @@ import {
   Plus,
   MoreHorizontal,
   FileText,
+  ClipboardList,
+  CheckCircle2,
+  Send,
+  Forward,
 } from 'lucide-react'
 import {
   MOCK_RECORDS,
@@ -290,10 +294,16 @@ const TAB_LABELS: Record<TabId, string> = {
   submitted: '已申請',
   cc: '轉寄給我',
 }
-// 依角色分組:審核者(待簽核→已簽核)、申請者(已申請)、被轉寄者(轉寄給我)
-const APPROVER_TABS: TabId[] = ['pending-me', 'signed']
-const APPLICANT_TABS: TabId[] = ['submitted']
-const CC_TABS: TabId[] = ['cc']
+// icon 與 mobile 底部 tab 一致
+const TAB_ICONS: Record<TabId, typeof ClipboardList> = {
+  'pending-me': ClipboardList,
+  signed: CheckCircle2,
+  submitted: Send,
+  cc: Forward,
+}
+// 依角色分組:審核者(待簽核→已簽核)、申請者(已申請)、被轉寄者(轉寄給我)。
+// 以「群組間距」呈現分組(見 render),取代垂直分隔線。
+const TAB_GROUPS: TabId[][] = [['pending-me', 'signed'], ['submitted'], ['cc']]
 
 function ApprovalPage() {
   const [tab, setTab] = useState<TabId>('pending-me')
@@ -404,22 +414,23 @@ function ApprovalPage() {
       }
     >
     <div className="flex flex-col h-full">
-      {/* Tabs */}
-      <div className="border-b border-divider px-[var(--layout-space-loose)]">
+      {/* Tabs — 不加 border-b,DS TabsList 自帶底線(避免雙線) */}
+      <div className="px-[var(--layout-space-loose)]">
         <Tabs value={tab} onValueChange={(v: string) => { setTab(v as TabId); setSelectedIds(new Set()); setSearch('') }}>
           <TabsList>
-            {APPROVER_TABS.map((t) => (
-              <TabsTrigger key={t} value={t}>{TAB_LABELS[t]}</TabsTrigger>
-            ))}
-            {/* 角色分組視覺分隔:審核者 ‖ 申請者 ‖ 副本 */}
-            <div aria-hidden className="self-center mx-1.5 h-4 w-px bg-divider" />
-            {APPLICANT_TABS.map((t) => (
-              <TabsTrigger key={t} value={t}>{TAB_LABELS[t]}</TabsTrigger>
-            ))}
-            <div aria-hidden className="self-center mx-1.5 h-4 w-px bg-divider" />
-            {CC_TABS.map((t) => (
-              <TabsTrigger key={t} value={t}>{TAB_LABELS[t]}</TabsTrigger>
-            ))}
+            {TAB_GROUPS.map((group, gi) =>
+              group.map((t, ti) => (
+                <TabsTrigger
+                  key={t}
+                  value={t}
+                  startIcon={TAB_ICONS[t]}
+                  // 群組間距:每個非首組的第一顆加大左間距 → 以留白分組,取代分隔線
+                  className={gi > 0 && ti === 0 ? 'ml-5' : undefined}
+                >
+                  {TAB_LABELS[t]}
+                </TabsTrigger>
+              )),
+            )}
           </TabsList>
         </Tabs>
       </div>
@@ -461,13 +472,13 @@ function ApprovalPage() {
             {CATEGORIES.map((c) => {
               const catCount = searchFiltered.filter((r) => r.category === c.id).length
               const catHasAlert = searchFiltered.some((r) => r.category === c.id && r.urgency === 'high')
+              // 只顯示該 tab(+搜尋)下有單據的類別;目前選取中的類別一律保留(避免 chip 消失)
+              if (catCount === 0 && category !== c.id) return null
               return (
                 <Chip key={c.id} value={c.id}>
                   <span className="flex items-center gap-1">
                     {c.label}
-                    {(search ? true : catCount > 0) && (
-                      <Badge variant={catHasAlert ? 'critical' : 'low'} count={catCount} />
-                    )}
+                    <Badge variant={catHasAlert ? 'critical' : 'low'} count={catCount} />
                   </span>
                 </Chip>
               )

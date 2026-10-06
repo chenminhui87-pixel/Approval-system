@@ -78,8 +78,9 @@ export function ApprovalDetailPanel({
     // 內容區自己滾,footer 當 shrink-0 兄弟 → 固定底部。
     <div className="flex flex-col w-full h-full">
       <Tabs value={tab} onValueChange={(v: string) => setTab(v as 'content' | 'route')} className="flex-1 flex flex-col min-h-0">
-        {/* Tab bar — 固定頂部 */}
-        <div className="shrink-0 bg-surface border-b border-divider px-4 pt-2">
+        {/* Tab bar — 固定頂部;不加 border-b(TabsList 自帶底線,避免雙線)、
+            不加 pt(與內容 px-4 對齊、避免跟主內容 tab 高度差) */}
+        <div className="shrink-0 bg-surface px-4">
           <TabsList>
             <TabsTrigger value="content">申請內容</TabsTrigger>
             <TabsTrigger value="route">簽核流程</TabsTrigger>
