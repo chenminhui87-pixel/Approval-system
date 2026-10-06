@@ -86,7 +86,7 @@ function PageHeader({ title, onOpenForms }: { title: string; onOpenForms: () => 
       {/* 管理/設定類暫時入口 — 創建申請單表單(未來交下游系統) */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="tertiary" size="sm" startIcon={MoreHorizontal} aria-label="更多" />
+          <Button variant="tertiary" size="sm" iconOnly startIcon={MoreHorizontal} aria-label="更多" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem startIcon={FileText} onClick={onOpenForms}>創建申請單表單</DropdownMenuItem>
@@ -546,6 +546,7 @@ function ApprovalPage() {
                 <Button
                   variant="tertiary"
                   size="sm"
+                  iconOnly
                   startIcon={X}
                   onClick={clearSelection}
                   aria-label="取消選取"

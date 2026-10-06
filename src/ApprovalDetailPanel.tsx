@@ -91,6 +91,7 @@ export function ApprovalDetailPanel({
             <Button
               variant="tertiary"
               size="sm"
+              iconOnly
               startIcon={Maximize2}
               aria-label="展開為完整視圖"
               onClick={onExpand}
@@ -197,7 +198,7 @@ export function ApprovalDetailPanel({
             <div className="flex items-center gap-2">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="tertiary" size="sm" startIcon={MoreHorizontal} aria-label="更多動作" />
+                  <Button variant="tertiary" size="sm" iconOnly startIcon={MoreHorizontal} aria-label="更多動作" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start">
                   <DropdownMenuItem startIcon={Share2} onClick={() => onMoreAction('轉寄')}>轉寄</DropdownMenuItem>
