@@ -268,10 +268,13 @@ type ViewMode = 'card' | 'list'
 type BottomBarMode = 'action' | 'reject'
 
 const TAB_LABELS: Record<TabId, string> = {
-  'pending-me': '待我簽核',
-  submitted: '已申請',
+  'pending-me': '待簽核',
   signed: '已簽核',
+  submitted: '我送出的',
 }
+// 依角色分組:審核者(待簽核→已簽核)相鄰在前,申請者(我送出的)在後
+const APPROVER_TABS: TabId[] = ['pending-me', 'signed']
+const APPLICANT_TABS: TabId[] = ['submitted']
 
 function ApprovalPage() {
   const [tab, setTab] = useState<TabId>('pending-me')
@@ -386,7 +389,12 @@ function ApprovalPage() {
       <div className="border-b border-divider px-[var(--layout-space-loose)]">
         <Tabs value={tab} onValueChange={(v: string) => { setTab(v as TabId); setSelectedIds(new Set()); setSearch('') }}>
           <TabsList>
-            {(Object.keys(TAB_LABELS) as TabId[]).map((t) => (
+            {APPROVER_TABS.map((t) => (
+              <TabsTrigger key={t} value={t}>{TAB_LABELS[t]}</TabsTrigger>
+            ))}
+            {/* 角色分組視覺分隔:審核者 ‖ 申請者 */}
+            <div aria-hidden className="self-center mx-1.5 h-4 w-px bg-divider" />
+            {APPLICANT_TABS.map((t) => (
               <TabsTrigger key={t} value={t}>{TAB_LABELS[t]}</TabsTrigger>
             ))}
           </TabsList>
@@ -468,7 +476,7 @@ function ApprovalPage() {
       {/* Content */}
       <div className={`flex-1 min-h-0 ${view === 'list' ? 'flex flex-col p-4' : 'overflow-y-auto px-[var(--layout-space-loose)] py-4'}`}>
         {filtered.length === 0 ? (
-          <EmptyState message={`目前沒有${TAB_LABELS[tab]}的單據`} />
+          <EmptyState message="目前沒有相關單據" />
         ) : view === 'card' ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filtered.map((r) => (

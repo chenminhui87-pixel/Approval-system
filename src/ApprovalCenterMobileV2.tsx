@@ -721,10 +721,11 @@ function LoggedOutScreen({ onLogin }: { onLogin: () => void }) {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
+// 依角色分組:審核者(待簽核→已簽核)相鄰在前,申請者(我送出的)在後
 const TABS: { id: TabId; label: string; Icon: React.ElementType }[] = [
   { id: 'pending-me', label: '待簽核', Icon: ClipboardList },
-  { id: 'submitted', label: '已申請', Icon: Send },
   { id: 'signed', label: '已簽核', Icon: CheckCircle2 },
+  { id: 'submitted', label: '我送出的', Icon: Send },
 ]
 
 export function ApprovalCenterMobile({
