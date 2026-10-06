@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import {
   TooltipProvider,
+  AppShell,
+  AppShellAside,
   Avatar,
   Tabs,
   TabsList,
@@ -40,6 +42,7 @@ import {
   type ApprovalRecord,
   type CategoryId,
 } from './data'
+import { ApprovalDetailPanel } from './ApprovalDetailPanel'
 import { ApprovalModal } from './ApprovalModal'
 
 
@@ -277,6 +280,7 @@ function ApprovalPage() {
   const [search, setSearch] = useState('')
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [panelOpen, setPanelOpen] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [records, setRecords] = useState<ApprovalRecord[]>(MOCK_RECORDS)
   const [bottomBarMode, setBottomBarMode] = useState<BottomBarMode>('action')
@@ -321,17 +325,21 @@ function ApprovalPage() {
 
   function openRecord(r: ApprovalRecord) {
     setSelectedId(r.id)
-    setModalOpen(true)
+    setPanelOpen(true)
   }
 
   function handleApprove(id: string, comment?: string) {
     setRecords((prev) => prev.map((r) => (r.id === id ? approveRecord(r, CURRENT_USER, comment) : r)))
     setModalOpen(false)
+    setPanelOpen(false)
+    showToast('已核准')
   }
 
   function handleReject(id: string, comment: string) {
     setRecords((prev) => prev.map((r) => (r.id === id ? rejectRecord(r, CURRENT_USER, comment) : r)))
     setModalOpen(false)
+    setPanelOpen(false)
+    showToast('已退件')
   }
 
   function handleBatchApprove() {
@@ -353,6 +361,26 @@ function ApprovalPage() {
   }
 
   return (
+    <AppShell
+      header={<PageHeader title="簽核管理" />}
+      asideOpen={panelOpen && !!selectedRecord}
+      onAsideOpenChange={setPanelOpen}
+      aside={
+        selectedRecord ? (
+          <AppShellAside title={selectedRecord.title} width={{ md: 380, xl: 420 }}>
+            <ApprovalDetailPanel
+              key={selectedRecord.id}
+              record={selectedRecord}
+              mode={tab === 'pending-me' ? 'approve' : 'view'}
+              onApprove={handleApprove}
+              onReject={handleReject}
+              onMoreAction={handleStub}
+              onExpand={() => setModalOpen(true)}
+            />
+          </AppShellAside>
+        ) : undefined
+      }
+    >
     <div className="flex flex-col h-full">
       {/* Tabs */}
       <div className="border-b border-divider px-[var(--layout-space-loose)]">
@@ -545,17 +573,15 @@ function ApprovalPage() {
         onMoreAction={handleStub}
       />
     </div>
+    </AppShell>
   )
 }
 
 export default function App() {
   return (
     <TooltipProvider delayDuration={500} skipDelayDuration={300}>
-      <div className="flex flex-col h-svh bg-canvas">
-        <PageHeader title="簽核管理" />
-        <main className="flex-1 min-h-0 overflow-hidden">
-          <ApprovalPage />
-        </main>
+      <div className="h-svh bg-canvas">
+        <ApprovalPage />
       </div>
     </TooltipProvider>
   )
