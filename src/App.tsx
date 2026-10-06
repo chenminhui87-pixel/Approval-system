@@ -41,6 +41,7 @@ import {
   CheckCircle2,
   Send,
   Forward,
+  Info,
 } from 'lucide-react'
 import {
   MOCK_RECORDS,
@@ -179,6 +180,7 @@ function RecordList({
   onToggleSelectAll,
   onToggleSelect,
   onClick,
+  activeId,
   fullHeight,
 }: {
   records: ApprovalRecord[]
@@ -188,6 +190,8 @@ function RecordList({
   onToggleSelectAll: () => void
   onToggleSelect: (id: string) => void
   onClick: (r: ApprovalRecord) => void
+  /** 目前面板開著的單據 id → 該列 info 鈕呈 pressed/checked */
+  activeId: string | null
   fullHeight?: boolean
 }) {
   const thCls = 'text-left px-4 py-2.5 text-caption text-fg-secondary font-medium whitespace-nowrap'
@@ -207,6 +211,8 @@ function RecordList({
           <th className={thCls}>狀態</th>
           <th className={`${thCls} hidden sm:table-cell`}>緊急程度</th>
           <th className={`${thCls} hidden md:table-cell`}>到期時間</th>
+          {/* 固定在右緣的操作欄 */}
+          <th className="sticky right-0 z-10 bg-muted px-3 py-2.5 w-12" aria-label="操作" />
         </tr>
       </thead>
       <tbody>
@@ -217,7 +223,7 @@ function RecordList({
             <tr
               key={r.id}
               onClick={() => onClick(r)}
-              className={`border-b border-divider last:border-0 transition-colors cursor-pointer ${
+              className={`group border-b border-divider last:border-0 transition-colors cursor-pointer ${
                 selectedIds.has(r.id) ? 'bg-primary/5' : 'hover:bg-surface-hover'
               }`}
             >
@@ -240,6 +246,21 @@ function RecordList({
               </td>
               <td className={`${tdBase} text-caption hidden md:table-cell ${dlUrgent ? 'text-error-text' : 'text-fg-secondary'}`}>
                 {dlText}
+              </td>
+              {/* 固定右緣:info 按鈕,面板開著該列時 pressed */}
+              <td
+                className="sticky right-0 z-10 bg-surface group-hover:bg-surface-hover px-2 py-3 w-12 text-center"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Button
+                  variant="text"
+                  size="sm"
+                  iconOnly
+                  startIcon={Info}
+                  pressed={activeId === r.id}
+                  aria-label="展開詳情"
+                  onClick={() => onClick(r)}
+                />
               </td>
             </tr>
           )
@@ -414,8 +435,8 @@ function ApprovalPage() {
       }
     >
     <div className="flex flex-col h-full">
-      {/* Tabs — 不加 border-b,DS TabsList 自帶底線(避免雙線) */}
-      <div className="px-[var(--layout-space-loose)]">
+      {/* Tabs — 不加 border-b,DS TabsList 自帶底線(避免雙線);pt-2 與 header 拉開 */}
+      <div className="px-[var(--layout-space-loose)] pt-2">
         <Tabs value={tab} onValueChange={(v: string) => { setTab(v as TabId); setSelectedIds(new Set()); setSearch('') }}>
           <TabsList>
             {TAB_ORDER.map((t) => (
@@ -427,8 +448,9 @@ function ApprovalPage() {
         </Tabs>
       </div>
 
-      {/* Search + filter bar */}
-      <div className="flex flex-col gap-2 px-[var(--layout-space-loose)] pt-3 pb-2 border-b border-divider">
+      {/* Search + filter bar — 搜尋+篩選為同一 toolbar 區,內部 gap-3,
+          上下 py 與 tabs / list 拉開層級 */}
+      <div className="flex flex-col gap-3 px-[var(--layout-space-loose)] pt-4 pb-4 border-b border-divider">
         {/* Search row */}
         <Input
           startIcon={Search}
@@ -533,6 +555,7 @@ function ApprovalPage() {
             onToggleSelectAll={handleSelectAll}
             onToggleSelect={toggleSelect}
             onClick={openRecord}
+            activeId={panelOpen ? selectedId : null}
             fullHeight
           />
         )}
