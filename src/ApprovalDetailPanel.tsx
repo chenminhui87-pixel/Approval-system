@@ -24,7 +24,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from '@qijenchen/design-system'
-import { Paperclip, Share2, UserCheck, Undo2, Ban, ChevronLeft, MoreHorizontal, Maximize2 } from 'lucide-react'
+import { Paperclip, Share2, UserCheck, Undo2, Ban, ChevronLeft, MoreHorizontal } from 'lucide-react'
 import type { ApprovalRecord } from './data'
 import { ApprovalRoute } from './ApprovalRoute'
 
@@ -34,8 +34,6 @@ interface ApprovalDetailPanelProps {
   onApprove: (id: string, comment?: string) => void
   onReject: (id: string, comment: string) => void
   onMoreAction: (label: string) => void
-  /** 展開為完整 modal 大視圖 */
-  onExpand?: () => void
 }
 
 const URGENCY_COLOR = { high: 'red', medium: 'yellow', low: 'neutral' } as const
@@ -49,7 +47,6 @@ export function ApprovalDetailPanel({
   onApprove,
   onReject,
   onMoreAction,
-  onExpand,
 }: ApprovalDetailPanelProps) {
   const [tab, setTab] = useState<'content' | 'route'>('content')
   const [confirmAction, setConfirmAction] = useState<'approve' | 'reject' | null>(null)
@@ -77,27 +74,16 @@ export function ApprovalDetailPanel({
   }
 
   return (
-    // 高度剛好填滿 AppShellAside 的 ScrollArea viewport(100svh − header),
-    // 讓外層不滾、內容區自己滾,footer 當 shrink-0 兄弟 → 真正固定底部。
-    <div className="flex flex-col w-full h-[calc(100svh-var(--chrome-header-height))]">
+    // 由 DetailAside 提供固定高度(header 下方 flex-1 區),這裡填滿即可:
+    // 內容區自己滾,footer 當 shrink-0 兄弟 → 固定底部。
+    <div className="flex flex-col w-full h-full">
       <Tabs value={tab} onValueChange={(v: string) => setTab(v as 'content' | 'route')} className="flex-1 flex flex-col min-h-0">
-        {/* Tab bar — 固定頂部;右側「展開」開完整 modal */}
-        <div className="shrink-0 bg-surface border-b border-divider px-4 pt-2 flex items-end justify-between gap-2">
+        {/* Tab bar — 固定頂部 */}
+        <div className="shrink-0 bg-surface border-b border-divider px-4 pt-2">
           <TabsList>
             <TabsTrigger value="content">申請內容</TabsTrigger>
             <TabsTrigger value="route">簽核流程</TabsTrigger>
           </TabsList>
-          {onExpand && (
-            <Button
-              variant="tertiary"
-              size="sm"
-              iconOnly
-              startIcon={Maximize2}
-              aria-label="展開為完整視圖"
-              onClick={onExpand}
-              className="mb-1.5"
-            />
-          )}
         </div>
 
         {/* 捲動內容區 — 只有這塊會滾,tab bar 與 footer 固定 */}
@@ -195,12 +181,13 @@ export function ApprovalDetailPanel({
       {showActions && (
         <div className="shrink-0 bg-surface border-t border-divider px-4 py-3">
           {confirmAction === null ? (
-            <div className="flex items-center gap-2">
+            // ⋯ / 退件 / 核准 同為操作按鈕 → 一組靠右,⋯ 用 secondary(有框)對齊
+            <div className="flex items-center justify-end gap-2">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="tertiary" size="sm" iconOnly startIcon={MoreHorizontal} aria-label="更多動作" />
+                  <Button variant="secondary" iconOnly startIcon={MoreHorizontal} aria-label="更多動作" />
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start">
+                <DropdownMenuContent align="end">
                   <DropdownMenuItem startIcon={Share2} onClick={() => onMoreAction('轉寄')}>轉寄</DropdownMenuItem>
                   <DropdownMenuItem startIcon={UserCheck} onClick={() => onMoreAction('移交 Owner')}>移交</DropdownMenuItem>
                   <DropdownMenuItem startIcon={Undo2} onClick={() => onMoreAction('退回給申請人')}>退回給申請人</DropdownMenuItem>
@@ -208,7 +195,6 @@ export function ApprovalDetailPanel({
                   <DropdownMenuItem startIcon={Ban} className="text-fg-danger" onClick={() => onMoreAction('作廢')}>作廢</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <div className="flex-1" />
               <Button variant="secondary" danger onClick={() => openConfirm('reject')}>退件</Button>
               <Button variant="secondary" onClick={() => openConfirm('approve')}>核准</Button>
             </div>

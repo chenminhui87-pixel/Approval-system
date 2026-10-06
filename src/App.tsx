@@ -2,7 +2,6 @@ import { useState } from 'react'
 import {
   TooltipProvider,
   AppShell,
-  AppShellAside,
   Avatar,
   Tabs,
   TabsList,
@@ -52,6 +51,7 @@ import {
 import { ApprovalDetailPanel } from './ApprovalDetailPanel'
 import { ApprovalModal } from './ApprovalModal'
 import { FormTemplateManager } from './FormTemplateManager'
+import { DetailAside } from './DetailAside'
 
 
 const AVATAR_COLORS = ['blue', 'violet', 'emerald', 'amber', 'rose', 'cyan', 'orange'] as const
@@ -390,7 +390,7 @@ function ApprovalPage() {
       onAsideOpenChange={setPanelOpen}
       aside={
         selectedRecord ? (
-          <AppShellAside title={selectedRecord.title} width={{ md: 380, xl: 420 }}>
+          <DetailAside title={selectedRecord.title} onExpand={() => setModalOpen(true)}>
             <ApprovalDetailPanel
               key={selectedRecord.id}
               record={selectedRecord}
@@ -398,9 +398,8 @@ function ApprovalPage() {
               onApprove={handleApprove}
               onReject={handleReject}
               onMoreAction={handleStub}
-              onExpand={() => setModalOpen(true)}
             />
-          </AppShellAside>
+          </DetailAside>
         ) : undefined
       }
     >
