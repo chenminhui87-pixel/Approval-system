@@ -448,9 +448,9 @@ function ApprovalPage() {
         </Tabs>
       </div>
 
-      {/* Search + filter bar — 搜尋+篩選為同一 toolbar 區,內部 gap-3,
-          上下 py 與 tabs / list 拉開層級 */}
-      <div className="flex flex-col gap-3 px-[var(--layout-space-loose)] pt-4 pb-4 border-b border-divider">
+      {/* Search + filter bar — 搜尋+篩選為同一 toolbar 區,內部 gap-3;
+          pt-8 明顯拉開與上方 tab 的距離 */}
+      <div className="flex flex-col gap-3 px-[var(--layout-space-loose)] pt-8 pb-4 border-b border-divider">
         {/* Search row */}
         <Input
           startIcon={Search}
