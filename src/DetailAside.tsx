@@ -62,7 +62,7 @@ export function DetailAside({ title, onExpand, children }: DetailAsideProps) {
   return (
     <aside
       aria-label={title}
-      className="flex flex-col h-svh w-[380px] xl:w-[420px] shrink-0 border-l border-divider bg-surface"
+      className="flex flex-col h-full w-[380px] xl:w-[420px] shrink-0 border-l border-divider bg-surface"
     >
       <ChromeHeader>
         <h2 className="text-body-lg font-medium flex-1 truncate">{title}</h2>

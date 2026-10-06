@@ -201,13 +201,14 @@ function RecordList({
     <table className="w-full text-body min-w-[860px]">
       <thead>
         <tr className="border-b border-divider bg-muted">
-          {/* 凍結左欄:checkbox + 標題(標題右緣 stroke) */}
-          <th className="sticky left-0 z-20 bg-muted w-12 px-0 py-2.5">
+          {/* 凍結左欄:checkbox + 標題(各自右緣 stroke)。bg 用不透明 muted
+              避免疊在 tr 的半透明 bg-muted 上變深 */}
+          <th className="sticky left-0 z-20 bg-[var(--color-neutral-2-opaque)] border-r border-divider w-12 px-0 py-2.5">
             <div className="flex items-center justify-center">
               <RowCheckbox checked={allSelected} indeterminate={someSelected} onChange={onToggleSelectAll} />
             </div>
           </th>
-          <th className={`${thCls} sticky left-12 z-20 bg-muted border-r border-divider`}>標題</th>
+          <th className={`${thCls} sticky left-12 z-20 bg-[var(--color-neutral-2-opaque)] border-r border-divider`}>標題</th>
           <th className={thCls}>申請人</th>
           <th className={`${thCls} hidden md:table-cell`}>代理人</th>
           <th className={thCls}>申請時間</th>
@@ -215,7 +216,7 @@ function RecordList({
           <th className={`${thCls} hidden sm:table-cell`}>緊急程度</th>
           <th className={`${thCls} hidden md:table-cell`}>到期時間</th>
           {/* 凍結右欄:操作(左緣 stroke) */}
-          <th className="sticky right-0 z-20 bg-muted border-l border-divider px-3 py-2.5 w-12" aria-label="操作" />
+          <th className="sticky right-0 z-20 bg-[var(--color-neutral-2-opaque)] border-l border-divider px-3 py-2.5 w-12" aria-label="操作" />
         </tr>
       </thead>
       <tbody>
@@ -230,8 +231,8 @@ function RecordList({
                 selectedIds.has(r.id) ? 'bg-primary/5' : 'hover:bg-surface-hover'
               }`}
             >
-              {/* 凍結左欄:checkbox + 標題(標題右緣 stroke) */}
-              <td className="sticky left-0 z-20 bg-surface group-hover:bg-surface-hover w-12 px-0 py-3" onClick={(e) => e.stopPropagation()}>
+              {/* 凍結左欄:checkbox + 標題(各自右緣 stroke) */}
+              <td className="sticky left-0 z-20 bg-surface group-hover:bg-surface-hover border-r border-divider w-12 px-0 py-3" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center justify-center">
                   <RowCheckbox checked={selectedIds.has(r.id)} onChange={() => onToggleSelect(r.id)} />
                 </div>
@@ -422,7 +423,8 @@ function ApprovalPage() {
 
   return (
     <AppShell
-      header={<PageHeader title="簽核管理" onOpenForms={() => setFormMgrOpen(true)} />}
+      layout="primary-header"
+      globalHeader={<PageHeader title="簽核管理" onOpenForms={() => setFormMgrOpen(true)} />}
       asideOpen={panelOpen && !!selectedRecord}
       onAsideOpenChange={setPanelOpen}
       aside={
