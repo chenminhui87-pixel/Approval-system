@@ -10,3 +10,13 @@
     display: none;
   }
 }
+
+/* 分類 chip 溢出的 ▼ 收合鈕:DS ChipGroup layout="menu" 內建 variant="text"(無框),
+   consumer override 成 chip pill 樣式(圓角 + 邊框),對齊同列 chip 視覺。
+   目標為 DropdownMenuTrigger(aria-haspopup="menu");不改 node_modules。 */
+.category-chips [aria-haspopup='menu'] {
+  @apply rounded-full border border-border;
+}
+.category-chips [aria-haspopup='menu']:hover {
+  @apply border-border-hover;
+}

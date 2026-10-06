@@ -25,7 +25,7 @@ export function DetailAside({ title, onExpand, children }: DetailAsideProps) {
     <>
       {onExpand && (
         <Button
-          variant="tertiary"
+          variant="text"
           size="sm"
           iconOnly
           startIcon={Maximize2}

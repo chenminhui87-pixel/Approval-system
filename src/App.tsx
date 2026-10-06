@@ -86,7 +86,7 @@ function PageHeader({ title, onOpenForms }: { title: string; onOpenForms: () => 
       {/* 管理/設定類暫時入口 — 創建申請單表單(未來交下游系統) */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="tertiary" size="sm" iconOnly startIcon={MoreHorizontal} aria-label="更多" />
+          <Button variant="text" size="sm" iconOnly startIcon={MoreHorizontal} aria-label="更多" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem startIcon={FileText} onClick={onOpenForms}>創建申請單表單</DropdownMenuItem>
@@ -438,8 +438,9 @@ function ApprovalPage() {
 
         {/* Chips + view toggle row */}
         <div className="flex items-center justify-between gap-4">
-          {/* flex-1 min-w-0 讓 menu layout 能偵測溢出 → 顯示向下箭頭收合鈕 */}
-          <div className="flex-1 min-w-0">
+          {/* flex-1 min-w-0 讓 menu layout 能偵測溢出 → 顯示向下箭頭收合鈕;
+              category-chips class 供 globals.css 給溢出 ▼ 鈕加框(對齊 chip pill) */}
+          <div className="flex-1 min-w-0 category-chips">
           <ChipGroup
             type="single"
             value={category}

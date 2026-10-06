@@ -181,11 +181,11 @@ export function ApprovalDetailPanel({
       {showActions && (
         <div className="shrink-0 bg-surface border-t border-divider px-4 py-3">
           {confirmAction === null ? (
-            // ⋯ / 退件 / 核准 同為操作按鈕 → 一組靠右,⋯ 用 secondary(有框)對齊
+            // ⋯ / 退件 / 核准 一組靠右;⋯ 為 icon 類操作,用 text(無框)
             <div className="flex items-center justify-end gap-2">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="secondary" iconOnly startIcon={MoreHorizontal} aria-label="更多動作" />
+                  <Button variant="text" iconOnly startIcon={MoreHorizontal} aria-label="更多動作" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem startIcon={Share2} onClick={() => onMoreAction('轉寄')}>轉寄</DropdownMenuItem>
