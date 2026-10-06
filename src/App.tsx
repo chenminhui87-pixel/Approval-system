@@ -203,7 +203,7 @@ function RecordList({
         <tr className="border-b border-divider bg-muted">
           {/* 凍結左欄:checkbox + 標題(各自右緣 stroke)。bg 用不透明 muted
               避免疊在 tr 的半透明 bg-muted 上變深 */}
-          <th className="sticky left-0 z-20 bg-[var(--color-neutral-2-opaque)] border-r border-divider w-12 px-0 py-2.5">
+          <th className="sticky left-0 z-20 bg-[var(--color-neutral-2-opaque)] w-12 px-0 py-2.5">
             <div className="flex items-center justify-center">
               <RowCheckbox checked={allSelected} indeterminate={someSelected} onChange={onToggleSelectAll} />
             </div>
@@ -231,8 +231,8 @@ function RecordList({
                 selectedIds.has(r.id) ? 'bg-primary/5' : 'hover:bg-surface-hover'
               }`}
             >
-              {/* 凍結左欄:checkbox + 標題(各自右緣 stroke) */}
-              <td className="sticky left-0 z-20 bg-surface group-hover:bg-surface-hover border-r border-divider w-12 px-0 py-3" onClick={(e) => e.stopPropagation()}>
+              {/* 凍結左欄:checkbox + 標題(右緣 stroke 在標題) */}
+              <td className="sticky left-0 z-20 bg-surface group-hover:bg-surface-hover w-12 px-0 py-3" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center justify-center">
                   <RowCheckbox checked={selectedIds.has(r.id)} onChange={() => onToggleSelect(r.id)} />
                 </div>
