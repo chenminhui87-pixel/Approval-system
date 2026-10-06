@@ -301,9 +301,9 @@ const TAB_ICONS: Record<TabId, typeof ClipboardList> = {
   submitted: Send,
   cc: Forward,
 }
-// 依角色分組:審核者(待簽核→已簽核)、申請者(已申請)、被轉寄者(轉寄給我)。
-// 以「群組間距」呈現分組(見 render),取代垂直分隔線。
-const TAB_GROUPS: TabId[][] = [['pending-me', 'signed'], ['submitted'], ['cc']]
+// 順序即分組線索:審核者(待簽核→已簽核)相鄰在前,再申請者(已申請)、被轉寄者
+// (轉寄給我)。不加分隔線 / 群組間距,純靠 icon + 順序區辨(per 設計決策 B)。
+const TAB_ORDER: TabId[] = ['pending-me', 'signed', 'submitted', 'cc']
 
 function ApprovalPage() {
   const [tab, setTab] = useState<TabId>('pending-me')
@@ -418,19 +418,11 @@ function ApprovalPage() {
       <div className="px-[var(--layout-space-loose)]">
         <Tabs value={tab} onValueChange={(v: string) => { setTab(v as TabId); setSelectedIds(new Set()); setSearch('') }}>
           <TabsList>
-            {TAB_GROUPS.map((group, gi) =>
-              group.map((t, ti) => (
-                <TabsTrigger
-                  key={t}
-                  value={t}
-                  startIcon={TAB_ICONS[t]}
-                  // 群組間距:每個非首組的第一顆加大左間距 → 以留白分組,取代分隔線
-                  className={gi > 0 && ti === 0 ? 'ml-5' : undefined}
-                >
-                  {TAB_LABELS[t]}
-                </TabsTrigger>
-              )),
-            )}
+            {TAB_ORDER.map((t) => (
+              <TabsTrigger key={t} value={t} startIcon={TAB_ICONS[t]}>
+                {TAB_LABELS[t]}
+              </TabsTrigger>
+            ))}
           </TabsList>
         </Tabs>
       </div>
