@@ -201,18 +201,21 @@ function RecordList({
     <table className="w-full text-body min-w-[860px]">
       <thead>
         <tr className="border-b border-divider bg-muted">
-          <th className="px-4 py-2.5 w-10">
-            <RowCheckbox checked={allSelected} indeterminate={someSelected} onChange={onToggleSelectAll} />
+          {/* 凍結左欄:checkbox + 標題(標題右緣 stroke) */}
+          <th className="sticky left-0 z-20 bg-muted w-12 px-0 py-2.5">
+            <div className="flex items-center justify-center">
+              <RowCheckbox checked={allSelected} indeterminate={someSelected} onChange={onToggleSelectAll} />
+            </div>
           </th>
-          <th className={thCls}>標題</th>
+          <th className={`${thCls} sticky left-12 z-20 bg-muted border-r border-divider`}>標題</th>
           <th className={thCls}>申請人</th>
           <th className={`${thCls} hidden md:table-cell`}>代理人</th>
           <th className={thCls}>申請時間</th>
           <th className={thCls}>狀態</th>
           <th className={`${thCls} hidden sm:table-cell`}>緊急程度</th>
           <th className={`${thCls} hidden md:table-cell`}>到期時間</th>
-          {/* 固定在右緣的操作欄 */}
-          <th className="sticky right-0 z-10 bg-muted px-3 py-2.5 w-12" aria-label="操作" />
+          {/* 凍結右欄:操作(左緣 stroke) */}
+          <th className="sticky right-0 z-20 bg-muted border-l border-divider px-3 py-2.5 w-12" aria-label="操作" />
         </tr>
       </thead>
       <tbody>
@@ -227,10 +230,13 @@ function RecordList({
                 selectedIds.has(r.id) ? 'bg-primary/5' : 'hover:bg-surface-hover'
               }`}
             >
-              <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                <RowCheckbox checked={selectedIds.has(r.id)} onChange={() => onToggleSelect(r.id)} />
+              {/* 凍結左欄:checkbox + 標題(標題右緣 stroke) */}
+              <td className="sticky left-0 z-20 bg-surface group-hover:bg-surface-hover w-12 px-0 py-3" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center justify-center">
+                  <RowCheckbox checked={selectedIds.has(r.id)} onChange={() => onToggleSelect(r.id)} />
+                </div>
               </td>
-              <td className={`${tdBase} font-medium max-w-xs`}>
+              <td className={`${tdBase} sticky left-12 z-20 bg-surface group-hover:bg-surface-hover border-r border-divider font-medium max-w-xs`}>
                 <span className="line-clamp-2">{r.title}</span>
               </td>
               <td className={`${tdBase} text-fg-secondary whitespace-nowrap`}>{r.applicant}</td>
@@ -247,9 +253,9 @@ function RecordList({
               <td className={`${tdBase} text-caption hidden md:table-cell ${dlUrgent ? 'text-error-text' : 'text-fg-secondary'}`}>
                 {dlText}
               </td>
-              {/* 固定右緣:info 按鈕,面板開著該列時 pressed */}
+              {/* 凍結右欄:info 按鈕(左緣 stroke),面板開著該列時 pressed */}
               <td
-                className="sticky right-0 z-10 bg-surface group-hover:bg-surface-hover px-2 py-3 w-12 text-center"
+                className="sticky right-0 z-20 bg-surface group-hover:bg-surface-hover border-l border-divider px-2 py-3 w-12 text-center"
                 onClick={(e) => e.stopPropagation()}
               >
                 <Button
@@ -449,8 +455,8 @@ function ApprovalPage() {
       </div>
 
       {/* Search + filter bar — 搜尋+篩選為同一 toolbar 區,內部 gap-3;
-          pt-8 明顯拉開與上方 tab 的距離 */}
-      <div className="flex flex-col gap-3 px-[var(--layout-space-loose)] pt-8 pb-4 border-b border-divider">
+          pt-8 明顯拉開與上方 tab 的距離(table 上方不加 divider) */}
+      <div className="flex flex-col gap-3 px-[var(--layout-space-loose)] pt-8 pb-4">
         {/* Search row */}
         <Input
           startIcon={Search}
