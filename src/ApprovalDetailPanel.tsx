@@ -77,10 +77,12 @@ export function ApprovalDetailPanel({
   }
 
   return (
-    <div className="flex flex-col min-h-full">
+    // 高度剛好填滿 AppShellAside 的 ScrollArea viewport(100svh − header),
+    // 讓外層不滾、內容區自己滾,footer 當 shrink-0 兄弟 → 真正固定底部。
+    <div className="flex flex-col w-full h-[calc(100svh-var(--chrome-header-height))]">
       <Tabs value={tab} onValueChange={(v: string) => setTab(v as 'content' | 'route')} className="flex-1 flex flex-col min-h-0">
-        {/* Tab bar — sticky 在標題列下方;右側「展開」開完整 modal */}
-        <div className="sticky top-0 z-10 bg-surface border-b border-divider px-4 pt-2 flex items-end justify-between gap-2">
+        {/* Tab bar — 固定頂部;右側「展開」開完整 modal */}
+        <div className="shrink-0 bg-surface border-b border-divider px-4 pt-2 flex items-end justify-between gap-2">
           <TabsList>
             <TabsTrigger value="content">申請內容</TabsTrigger>
             <TabsTrigger value="route">簽核流程</TabsTrigger>
@@ -97,6 +99,8 @@ export function ApprovalDetailPanel({
           )}
         </div>
 
+        {/* 捲動內容區 — 只有這塊會滾,tab bar 與 footer 固定 */}
+        <div className="flex-1 min-h-0 overflow-y-auto">
         {/* 申請內容 */}
         <TabsContent value="content" className="flex flex-col gap-5 px-4 py-4">
           {/* Meta 列 — 面板標題只有單據名,狀態/緊急在此補回 */}
@@ -183,11 +187,12 @@ export function ApprovalDetailPanel({
             </Steps>
           )}
         </TabsContent>
+        </div>
       </Tabs>
 
-      {/* Footer 動作 — sticky 底部 */}
+      {/* Footer 動作 — 固定底部(shrink-0 兄弟,不隨內容捲動) */}
       {showActions && (
-        <div className="sticky bottom-0 mt-auto bg-surface border-t border-divider px-4 py-3">
+        <div className="shrink-0 bg-surface border-t border-divider px-4 py-3">
           {confirmAction === null ? (
             <div className="flex items-center gap-2">
               <DropdownMenu>

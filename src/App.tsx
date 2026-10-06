@@ -407,11 +407,13 @@ function ApprovalPage() {
 
         {/* Chips + view toggle row */}
         <div className="flex items-center justify-between gap-4">
+          {/* flex-1 min-w-0 讓 menu layout 能偵測溢出 → 顯示向下箭頭收合鈕 */}
+          <div className="flex-1 min-w-0">
           <ChipGroup
             type="single"
             value={category}
             onValueChange={(v: string) => setCategory((v ?? 'all') as CategoryId | 'all')}
-            layout="scroll"
+            layout="menu"
           >
             <Chip value="all">
               <span className="flex items-center gap-1">
@@ -439,6 +441,7 @@ function ApprovalPage() {
               )
             })}
           </ChipGroup>
+          </div>
 
           <SegmentedControl
             value={view}
