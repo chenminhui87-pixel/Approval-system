@@ -31,6 +31,7 @@ import {
   UserCheck,
   Undo2,
   Ban,
+  Plus,
 } from 'lucide-react'
 import {
   MOCK_RECORDS,
@@ -263,18 +264,20 @@ function EmptyState({ message }: { message: string }) {
   )
 }
 
-type TabId = 'pending-me' | 'submitted' | 'signed'
+type TabId = 'pending-me' | 'submitted' | 'signed' | 'cc'
 type ViewMode = 'card' | 'list'
 type BottomBarMode = 'action' | 'reject'
 
 const TAB_LABELS: Record<TabId, string> = {
   'pending-me': '待簽核',
   signed: '已簽核',
-  submitted: '我送出的',
+  submitted: '已申請',
+  cc: '轉寄給我',
 }
-// 依角色分組:審核者(待簽核→已簽核)相鄰在前,申請者(我送出的)在後
+// 依角色分組:審核者(待簽核→已簽核)、申請者(已申請)、被轉寄者(轉寄給我)
 const APPROVER_TABS: TabId[] = ['pending-me', 'signed']
 const APPLICANT_TABS: TabId[] = ['submitted']
+const CC_TABS: TabId[] = ['cc']
 
 function ApprovalPage() {
   const [tab, setTab] = useState<TabId>('pending-me')
@@ -392,9 +395,13 @@ function ApprovalPage() {
             {APPROVER_TABS.map((t) => (
               <TabsTrigger key={t} value={t}>{TAB_LABELS[t]}</TabsTrigger>
             ))}
-            {/* 角色分組視覺分隔:審核者 ‖ 申請者 */}
+            {/* 角色分組視覺分隔:審核者 ‖ 申請者 ‖ 副本 */}
             <div aria-hidden className="self-center mx-1.5 h-4 w-px bg-divider" />
             {APPLICANT_TABS.map((t) => (
+              <TabsTrigger key={t} value={t}>{TAB_LABELS[t]}</TabsTrigger>
+            ))}
+            <div aria-hidden className="self-center mx-1.5 h-4 w-px bg-divider" />
+            {CC_TABS.map((t) => (
               <TabsTrigger key={t} value={t}>{TAB_LABELS[t]}</TabsTrigger>
             ))}
           </TabsList>
@@ -450,6 +457,14 @@ function ApprovalPage() {
             })}
           </ChipGroup>
           </div>
+
+          {/* 新增申請單 — 弱化:只在「已申請」(申請者視角)出現的次級按鈕。
+              未來送單改由下游系統處理時,移除此一按鈕即可。 */}
+          {tab === 'submitted' && (
+            <Button variant="tertiary" size="sm" startIcon={Plus} onClick={() => handleStub('新增申請單')}>
+              新增申請單
+            </Button>
+          )}
 
           <SegmentedControl
             value={view}

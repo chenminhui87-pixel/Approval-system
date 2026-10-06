@@ -66,6 +66,8 @@ export interface ApprovalRecord {
   attachments: Attachment[]
   dueDate?: string
   agents?: string[]
+  /** 副本給我:被加為副本（CC）知會的人,非簽核者、非申請者 */
+  copiedTo?: string[]
 }
 
 export const CATEGORIES: { id: CategoryId; label: string }[] = [
@@ -169,6 +171,7 @@ export const MOCK_RECORDS: ApprovalRecord[] = [
   },
   {
     id: 'REQ-2026-0002',
+    copiedTo: ['陳美惠'],
     category: 'computer',
     title: 'MacBook Pro 採購申請 × 3',
     applicant: '林志明',
@@ -451,6 +454,7 @@ export const MOCK_RECORDS: ApprovalRecord[] = [
   },
   {
     id: 'REQ-2026-0008',
+    copiedTo: ['陳美惠'],
     category: 'travel',
     title: '日本東京 6/15-6/18 客戶拜訪出差',
     applicant: '黃建偉',
@@ -538,6 +542,7 @@ export const MOCK_RECORDS: ApprovalRecord[] = [
   },
   {
     id: 'REQ-2026-0010',
+    copiedTo: ['陳美惠'],
     category: 'recruit',
     title: '前端工程師招募職缺開放',
     applicant: '周總監',
@@ -656,6 +661,7 @@ export const MOCK_RECORDS: ApprovalRecord[] = [
   // ── badge demo: urgent-no-overdue (red "緊急待審") ──────────────────────────
   {
     id: 'REQ-2026-0013',
+    copiedTo: ['陳美惠'],
     category: 'training',
     title: '外部 AI 工作坊報名申請',
     applicant: '周總監',
@@ -1340,10 +1346,13 @@ export const MOCK_RECORDS: ApprovalRecord[] = [
 export const CURRENT_USER = '陳美惠'
 
 export function getTabRecords(
-  tab: 'pending-me' | 'submitted' | 'signed',
+  tab: 'pending-me' | 'submitted' | 'signed' | 'cc',
   records: ApprovalRecord[],
   currentUser: string
 ): ApprovalRecord[] {
+  if (tab === 'cc') {
+    return records.filter((r) => r.copiedTo?.includes(currentUser))
+  }
   if (tab === 'submitted') {
     return records.filter((r) => r.applicant === currentUser)
   }

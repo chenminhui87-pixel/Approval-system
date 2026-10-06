@@ -22,6 +22,7 @@ import {
 import {
   ClipboardList,
   Send,
+  Forward,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
@@ -83,7 +84,7 @@ function nameToAvatarColor(name: string): string {
   return AVATAR_COLORS[h % AVATAR_COLORS.length]
 }
 
-type TabId = 'pending-me' | 'submitted' | 'signed'
+type TabId = 'pending-me' | 'submitted' | 'signed' | 'cc'
 type DetailTab = 'detail' | 'route'
 type ThemeOption = 'light' | 'dark' | 'system'
 type Screen = 'products' | 'requests'
@@ -721,11 +722,12 @@ function LoggedOutScreen({ onLogin }: { onLogin: () => void }) {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-// 依角色分組:審核者(待簽核→已簽核)相鄰在前,申請者(我送出的)在後
+// 依角色分組:審核者(待簽核→已簽核)、申請者(已申請)、被轉寄者(轉寄給我)
 const TABS: { id: TabId; label: string; Icon: React.ElementType }[] = [
   { id: 'pending-me', label: '待簽核', Icon: ClipboardList },
   { id: 'signed', label: '已簽核', Icon: CheckCircle2 },
-  { id: 'submitted', label: '我送出的', Icon: Send },
+  { id: 'submitted', label: '已申請', Icon: Send },
+  { id: 'cc', label: '轉寄給我', Icon: Forward },
 ]
 
 export function ApprovalCenterMobile({
