@@ -19,6 +19,10 @@ import {
   Badge,
   toast,
   Toaster,
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
 } from '@qijenchen/design-system'
 import {
   LayoutGrid,
@@ -32,6 +36,8 @@ import {
   Undo2,
   Ban,
   Plus,
+  MoreHorizontal,
+  FileText,
 } from 'lucide-react'
 import {
   MOCK_RECORDS,
@@ -45,6 +51,7 @@ import {
 } from './data'
 import { ApprovalDetailPanel } from './ApprovalDetailPanel'
 import { ApprovalModal } from './ApprovalModal'
+import { FormTemplateManager } from './FormTemplateManager'
 
 
 const AVATAR_COLORS = ['blue', 'violet', 'emerald', 'amber', 'rose', 'cyan', 'orange'] as const
@@ -71,11 +78,20 @@ function RowCheckbox({ checked, indeterminate, onChange }: {
   )
 }
 
-function PageHeader({ title }: { title: string }) {
+function PageHeader({ title, onOpenForms }: { title: string; onOpenForms: () => void }) {
   return (
     <header className="flex items-center gap-3 h-[var(--chrome-header-height)] px-[var(--layout-space-loose)] bg-surface border-b border-divider">
       <Avatar alt="簽核系統" size={24} shape="square" color="blue" solid />
       <h1 className="text-body-lg font-medium flex-1 truncate">{title}</h1>
+      {/* 管理/設定類暫時入口 — 創建申請單表單(未來交下游系統) */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="tertiary" size="sm" startIcon={MoreHorizontal} aria-label="更多" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem startIcon={FileText} onClick={onOpenForms}>創建申請單表單</DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
       <button
         type="button"
         aria-label={`${CURRENT_USER}（個人設定）`}
@@ -288,6 +304,7 @@ function ApprovalPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [panelOpen, setPanelOpen] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
+  const [formMgrOpen, setFormMgrOpen] = useState(false)
   const [records, setRecords] = useState<ApprovalRecord[]>(MOCK_RECORDS)
   const [bottomBarMode, setBottomBarMode] = useState<BottomBarMode>('action')
   const [rejectComment, setRejectComment] = useState('')
@@ -368,7 +385,7 @@ function ApprovalPage() {
 
   return (
     <AppShell
-      header={<PageHeader title="簽核管理" />}
+      header={<PageHeader title="簽核管理" onOpenForms={() => setFormMgrOpen(true)} />}
       asideOpen={panelOpen && !!selectedRecord}
       onAsideOpenChange={setPanelOpen}
       aside={
@@ -597,6 +614,11 @@ function ApprovalPage() {
         onApprove={handleApprove}
         onReject={handleReject}
         onMoreAction={handleStub}
+      />
+      <FormTemplateManager
+        open={formMgrOpen}
+        onClose={() => setFormMgrOpen(false)}
+        onCreate={() => handleStub('新建表單')}
       />
     </div>
     </AppShell>
