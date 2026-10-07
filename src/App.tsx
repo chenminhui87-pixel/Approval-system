@@ -29,7 +29,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
+  DialogBody,
   DialogFooter,
   DialogClose,
 } from '@qijenchen/design-system'
@@ -840,15 +840,18 @@ function ApprovalPage() {
         onClose={() => setFormMgrOpen(false)}
         onCreate={() => handleStub('新建表單')}
       />
-      {/* 核准時有已選單據被搜尋隱藏 → 二次確認 modal(DS「確認 = Dialog」+ 對齊 mobile) */}
+      {/* 核准時有已選單據被搜尋隱藏 → 二次確認 modal(DS「確認 = Dialog」+ 對齊 mobile)
+          結構照 DS 確認框 canonical:header 只放 title、說明走 DialogBody、動作走 DialogFooter */}
       <Dialog open={approveConfirmOpen} onOpenChange={setApproveConfirmOpen}>
-        <DialogContent autoHeight maxWidth={440}>
+        <DialogContent height="hug" maxWidth={440}>
           <DialogHeader>
             <DialogTitle>一併核准不在搜尋結果的單據</DialogTitle>
-            <DialogDescription>
-              另有 {hiddenSelectedCount} 張已勾選的單據不在目前搜尋結果中，確認後將一併核准，共 {selectedIds.size} 項。
-            </DialogDescription>
           </DialogHeader>
+          <DialogBody>
+            <p className="text-body">
+              另有 {hiddenSelectedCount} 張已勾選的單據不在目前搜尋結果中，確認後將一併核准，共 {selectedIds.size} 項。
+            </p>
+          </DialogBody>
           <DialogFooter>
             <DialogClose asChild>
               <Button variant="tertiary">取消</Button>
