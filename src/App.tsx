@@ -417,6 +417,8 @@ function RecordList({
       getRowId={(r) => r.id}
       height="100%"
       size="md"
+      // 多行列(標題換行)時 cell 頂對齊,不垂直置中(DS row-mode:auto → items-start)
+      autoRowHeight
       pinnedLeftColumns={['select', 'title']}
       pinnedRightColumns={['info']}
       // 呈現型表格,維持原手刻版的乾淨表頭:關閉欄位排序 / 隱藏(header ⌄ 空選單由
