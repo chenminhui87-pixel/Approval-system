@@ -618,7 +618,18 @@ function ApprovalPage() {
     <div className="flex flex-col h-full">
       {/* Tabs — 不加 border-b,DS TabsList 自帶底線(避免雙線);pt-2 與 header 拉開 */}
       <div className="px-[var(--layout-space-loose)] pt-2">
-        <Tabs value={tab} onValueChange={(v: string) => { setTab(v as TabId); setSelectedIds(new Set()); setSearch('') }}>
+        <Tabs value={tab} onValueChange={(v: string) => {
+          const nextTab = v as TabId
+          setTab(nextTab)
+          setSelectedIds(new Set())
+          setSearch('')
+          // Q2 幽靈空清單修正:切 tab 後若目前分類在新 tab 沒有任何單據 → 退回「全部類別」,
+          // 避免顯示一個 0 筆的分類 filter + 空表;分類在新 tab 仍有單據則保留(跨 tab 連續性)。
+          if (category !== 'all') {
+            const has = getTabRecords(nextTab, records, CURRENT_USER).some((r) => r.category === category)
+            if (!has) setCategory('all')
+          }
+        }}>
           <TabsList>
             {TAB_ORDER.map((t) => (
               <TabsTrigger key={t} value={t} startIcon={TAB_ICONS[t]}>
