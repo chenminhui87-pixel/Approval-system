@@ -25,6 +25,13 @@ import {
   ProfileCard,
   DataTable,
   type DataTableProps,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
 } from '@qijenchen/design-system'
 // HoverCard 非 root front-door(DS 標 internal)。但 align=center 鎖死在 Avatar.hoverCard,
 // 代理人清單卡需靠左對齊 → 走 DS 官方 subpath export(非 /src、非 /dist 深層路徑,
@@ -470,7 +477,7 @@ function EmptyState({ message }: { message: string }) {
 
 type TabId = 'pending-me' | 'submitted' | 'signed' | 'cc'
 type ViewMode = 'card' | 'list'
-type BottomBarMode = 'action' | 'reject' | 'approveConfirm'
+type BottomBarMode = 'action' | 'reject'
 
 const TAB_LABELS: Record<TabId, string> = {
   'pending-me': '待簽核',
@@ -502,6 +509,8 @@ function ApprovalPage() {
   const [records, setRecords] = useState<ApprovalRecord[]>(MOCK_RECORDS)
   const [bottomBarMode, setBottomBarMode] = useState<BottomBarMode>('action')
   const [rejectComment, setRejectComment] = useState('')
+  // 有已選單據被搜尋隱藏時,核准前的二次確認 modal(對齊 DS「確認 = Dialog」+ mobile)
+  const [approveConfirmOpen, setApproveConfirmOpen] = useState(false)
 
   const tabRecords = getTabRecords(tab, records, CURRENT_USER)
   const searchFiltered = tabRecords
@@ -766,29 +775,11 @@ function ApprovalPage() {
                 </Button>
                 <Button
                   variant="secondary"
-                  onClick={() => hiddenSelectedCount > 0 ? setBottomBarMode('approveConfirm') : handleBatchApprove()}
+                  onClick={() => hiddenSelectedCount > 0 ? setApproveConfirmOpen(true) : handleBatchApprove()}
                 >
                   核准
                 </Button>
               </div>
-            </div>
-          ) : bottomBarMode === 'approveConfirm' ? (
-            /* 有已選單據被搜尋隱藏 → 核准前確認(對齊 mobile) */
-            <div className="flex items-center gap-3 px-[var(--layout-space-loose)] py-3">
-              <Button
-                variant="tertiary"
-                size="sm"
-                startIcon={ChevronLeft}
-                onClick={() => setBottomBarMode('action')}
-              >
-                返回
-              </Button>
-              <span className="text-body flex-1">
-                有 <span className="font-medium">{hiddenSelectedCount}</span> 項已選單據被目前搜尋隱藏，仍要一併核准共 <span className="font-medium">{selectedIds.size}</span> 項？
-              </span>
-              <Button variant="secondary" onClick={handleBatchApprove}>
-                確認核准
-              </Button>
             </div>
           ) : (
             /* Reject confirm mode */
@@ -838,6 +829,25 @@ function ApprovalPage() {
         onClose={() => setFormMgrOpen(false)}
         onCreate={() => handleStub('新建表單')}
       />
+      {/* 核准時有已選單據被搜尋隱藏 → 二次確認 modal(DS「確認 = Dialog」+ 對齊 mobile) */}
+      <Dialog open={approveConfirmOpen} onOpenChange={setApproveConfirmOpen}>
+        <DialogContent autoHeight maxWidth={440}>
+          <DialogHeader>
+            <DialogTitle>一併核准不在搜尋結果的單據</DialogTitle>
+            <DialogDescription>
+              另有 {hiddenSelectedCount} 張已勾選的單據不在目前搜尋結果中，確認後將一併核准，共 {selectedIds.size} 項。
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="tertiary">取消</Button>
+            </DialogClose>
+            <Button variant="secondary" onClick={() => { setApproveConfirmOpen(false); handleBatchApprove() }}>
+              確認核准
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
     </AppShell>
   )
