@@ -555,9 +555,9 @@ function ApprovalPage() {
         <Input
           startIcon={Search}
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => { setSearch(e.target.value); clearSelection() }}
           placeholder="搜尋單號、標題、申請者…"
-          endAction={search ? { icon: X, label: '清除搜尋', onClick: () => setSearch('') } : undefined}
+          endAction={search ? { icon: X, label: '清除搜尋', onClick: () => { setSearch(''); clearSelection() } } : undefined}
           className="!bg-muted"
         />
 
@@ -569,7 +569,7 @@ function ApprovalPage() {
           <ChipGroup
             type="single"
             value={category}
-            onValueChange={(v: string) => setCategory((v ?? 'all') as CategoryId | 'all')}
+            onValueChange={(v: string) => { setCategory((v ?? 'all') as CategoryId | 'all'); clearSelection() }}
             layout="menu"
           >
             <Chip value="all">
