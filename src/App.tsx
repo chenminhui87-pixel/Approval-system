@@ -127,9 +127,6 @@ function Applicant({ name }: { name: string }) {
 function AgentListCard({ agents }: { agents: string[] }) {
   return (
     <div className="w-[320px] bg-surface-raised rounded-lg border border-border overflow-hidden">
-      <div className="px-4 py-2.5 border-b border-divider text-caption font-medium text-fg-secondary">
-        代理人 · {agents.length} 人
-      </div>
       <div className="divide-y divide-divider max-h-[320px] overflow-auto">
         {agents.map((name) => {
           const p = getPerson(name)
