@@ -48,9 +48,9 @@ import {
   MoreHorizontal,
   FileText,
   ClipboardList,
-  CheckCircle2,
-  Send,
-  Forward,
+  ClipboardCheck,
+  ClipboardPen,
+  ClipboardCopy,
   Info,
 } from 'lucide-react'
 import {
@@ -488,9 +488,9 @@ const TAB_LABELS: Record<TabId, string> = {
 // icon 與 mobile 底部 tab 一致
 const TAB_ICONS: Record<TabId, typeof ClipboardList> = {
   'pending-me': ClipboardList,
-  signed: CheckCircle2,
-  submitted: Send,
-  cc: Forward,
+  signed: ClipboardCheck,
+  submitted: ClipboardPen,
+  cc: ClipboardCopy,
 }
 // 順序即分組線索:審核者(待簽核→已簽核)相鄰在前,再申請者(已申請)、被轉寄者
 // (轉寄給我)。不加分隔線 / 群組間距,純靠 icon + 順序區辨(per 設計決策 B)。
