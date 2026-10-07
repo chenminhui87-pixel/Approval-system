@@ -22,6 +22,8 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   ProfileCard,
   DataTable,
   type DataTableProps,
@@ -52,6 +54,7 @@ import {
   Send,
   Forward,
   Info,
+  ChevronDown,
 } from 'lucide-react'
 import {
   MOCK_RECORDS,
@@ -509,14 +512,24 @@ function ApprovalPage() {
   const [records, setRecords] = useState<ApprovalRecord[]>(MOCK_RECORDS)
   const [bottomBarMode, setBottomBarMode] = useState<BottomBarMode>('action')
   const [rejectComment, setRejectComment] = useState('')
-  // 有已選單據被搜尋隱藏時,核准前的二次確認 modal(對齊 DS「確認 = Dialog」+ mobile)
+  // 批次核准確認 modal(對齊 DS「確認 = Dialog」+ mobile);附核准意見(選填,跟單張/退件一致)
   const [approveConfirmOpen, setApproveConfirmOpen] = useState(false)
+  const [approveComment, setApproveComment] = useState('')
 
   const tabRecords = getTabRecords(tab, records, CURRENT_USER)
   const searchFiltered = tabRecords
     .filter((r) => !search || r.title.includes(search) || r.applicant.includes(search) || r.id.includes(search))
   const filtered = searchFiltered
     .filter((r) => category === 'all' || r.category === category)
+
+  // 分類統計(給 chips + 下拉選單共用):只留該 tab(+搜尋)有單據的類別,
+  // 目前選取中的類別一律保留(避免 chip / 選項消失)
+  const categoryStats = CATEGORIES.map((c) => ({
+    id: c.id,
+    label: c.label,
+    count: searchFiltered.filter((r) => r.category === c.id).length,
+    hasAlert: searchFiltered.some((r) => r.category === c.id && r.urgency === 'high'),
+  })).filter((c) => c.count > 0 || category === c.id)
 
   const selectedRecord = selectedId ? records.find((r) => r.id === selectedId) ?? null : null
   const isSelecting = selectedIds.size > 0
@@ -576,9 +589,9 @@ function ApprovalPage() {
     showToast('已退件')
   }
 
-  function handleBatchApprove() {
+  function handleBatchApprove(comment?: string) {
     const count = [...selectedIds].filter((id) => records.find((r) => r.id === id)?.status === 'pending').length
-    setRecords((prev) => prev.map((r) => selectedIds.has(r.id) && r.status === 'pending' ? approveRecord(r, CURRENT_USER) : r))
+    setRecords((prev) => prev.map((r) => selectedIds.has(r.id) && r.status === 'pending' ? approveRecord(r, CURRENT_USER, comment) : r))
     clearSelection()
     showToast(`已核准 ${count} 件`)
   }
@@ -655,41 +668,57 @@ function ApprovalPage() {
 
         {/* Chips + view toggle row */}
         <div className="flex items-center justify-between gap-4">
-          {/* flex-1 min-w-0 讓 menu layout 能偵測溢出 → 顯示向下箭頭收合鈕;
-              category-chips class 供 globals.css 給溢出 ▼ 鈕加框(對齊 chip pill) */}
-          <div className="flex-1 min-w-0 category-chips">
-          <ChipGroup
-            type="single"
-            value={category}
-            onValueChange={(v: string) => { setCategory((v ?? 'all') as CategoryId | 'all'); clearSelection() }}
-            layout="menu"
-          >
-            <Chip value="all">
-              <span className="flex items-center gap-1">
-                全部類別
-                {(search ? true : searchFiltered.length > 0) && (
-                  <Badge
-                    variant={searchFiltered.some((r) => r.urgency === 'high') ? 'critical' : 'low'}
-                    count={searchFiltered.length}
-                  />
-                )}
-              </span>
-            </Chip>
-            {CATEGORIES.map((c) => {
-              const catCount = searchFiltered.filter((r) => r.category === c.id).length
-              const catHasAlert = searchFiltered.some((r) => r.category === c.id && r.urgency === 'high')
-              // 只顯示該 tab(+搜尋)下有單據的類別;目前選取中的類別一律保留(避免 chip 消失)
-              if (catCount === 0 && category !== c.id) return null
-              return (
+          {/* 分類列:chips 水平捲動 + 自組單選下拉(導覽 / 溢出)。
+              DS ChipGroup layout="menu" 的下拉用 checkbox item,不符「一次選一個」語意,
+              故改 layout="scroll" + 自組 DropdownMenuRadioGroup(單選 + selected 高亮)。 */}
+          <div className="flex-1 min-w-0 flex items-center gap-2 category-chips">
+            <ChipGroup
+              type="single"
+              value={category}
+              onValueChange={(v: string) => { setCategory((v ?? 'all') as CategoryId | 'all'); clearSelection() }}
+              layout="scroll"
+              className="min-w-0 flex-1"
+            >
+              <Chip value="all">
+                <span className="flex items-center gap-1">
+                  全部類別
+                  {(search ? true : searchFiltered.length > 0) && (
+                    <Badge
+                      variant={searchFiltered.some((r) => r.urgency === 'high') ? 'critical' : 'low'}
+                      count={searchFiltered.length}
+                    />
+                  )}
+                </span>
+              </Chip>
+              {categoryStats.map((c) => (
                 <Chip key={c.id} value={c.id}>
                   <span className="flex items-center gap-1">
                     {c.label}
-                    <Badge variant={catHasAlert ? 'critical' : 'low'} count={catCount} />
+                    <Badge variant={c.hasAlert ? 'critical' : 'low'} count={c.count} />
                   </span>
                 </Chip>
-              )
-            })}
-          </ChipGroup>
+              ))}
+            </ChipGroup>
+
+            {/* 單選分類選單:一次只選一個 → Radio(selected 高亮),非 checkbox */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="text" size="sm" iconOnly startIcon={ChevronDown} aria-label="分類選單" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="max-h-[60vh] overflow-auto">
+                <DropdownMenuRadioGroup
+                  value={category}
+                  onValueChange={(v: string) => { setCategory(v as CategoryId | 'all'); clearSelection() }}
+                >
+                  <DropdownMenuRadioItem value="all">全部類別（{searchFiltered.length}）</DropdownMenuRadioItem>
+                  {categoryStats.map((c) => (
+                    <DropdownMenuRadioItem key={c.id} value={c.id}>
+                      {c.label}（{c.count}）
+                    </DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           {/* 新增申請單 — 弱化:只在「已申請」(申請者視角)出現的次級按鈕。
@@ -786,7 +815,7 @@ function ApprovalPage() {
                 </Button>
                 <Button
                   variant="secondary"
-                  onClick={() => hiddenSelectedCount > 0 ? setApproveConfirmOpen(true) : handleBatchApprove()}
+                  onClick={() => { setApproveComment(''); setApproveConfirmOpen(true) }}
                 >
                   核准
                 </Button>
@@ -840,23 +869,38 @@ function ApprovalPage() {
         onClose={() => setFormMgrOpen(false)}
         onCreate={() => handleStub('新建表單')}
       />
-      {/* 核准時有已選單據被搜尋隱藏 → 二次確認 modal(DS「確認 = Dialog」+ 對齊 mobile)
-          結構照 DS 確認框 canonical:header 只放 title、說明走 DialogBody、動作走 DialogFooter */}
+      {/* 批次核准確認 modal(DS「確認 = Dialog」+ 對齊 mobile)。附核准意見(選填),
+          跟單張核准 / 退件一致;有被搜尋隱藏的已選單據時,另顯示一併核准提示。 */}
       <Dialog open={approveConfirmOpen} onOpenChange={setApproveConfirmOpen}>
         <DialogContent height="hug" maxWidth={440}>
           <DialogHeader>
-            <DialogTitle>一併核准不在搜尋結果的單據</DialogTitle>
+            <DialogTitle>核准 {selectedIds.size} 件申請單</DialogTitle>
           </DialogHeader>
           <DialogBody>
-            <p className="text-body">
-              另有 {hiddenSelectedCount} 張已勾選的單據不在目前搜尋結果中，確認後將一併核准，共 {selectedIds.size} 項。
-            </p>
+            <div className="flex flex-col gap-3">
+              {hiddenSelectedCount > 0 && (
+                <p className="text-body text-fg-secondary">
+                  其中 {hiddenSelectedCount} 張已勾選的單據不在目前搜尋結果中，確認後將一併核准。
+                </p>
+              )}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-body font-medium">
+                  核准意見 <span className="text-fg-placeholder text-caption font-normal">（選填）</span>
+                </span>
+                <Textarea
+                  value={approveComment}
+                  onChange={(e) => setApproveComment(e.target.value)}
+                  rows={3}
+                  placeholder="可補充核准意見供下一站簽核人參考"
+                />
+              </div>
+            </div>
           </DialogBody>
           <DialogFooter>
             <DialogClose asChild>
               <Button variant="tertiary">取消</Button>
             </DialogClose>
-            <Button variant="secondary" onClick={() => { setApproveConfirmOpen(false); handleBatchApprove() }}>
+            <Button variant="secondary" onClick={() => { setApproveConfirmOpen(false); handleBatchApprove(approveComment.trim() || undefined) }}>
               確認核准
             </Button>
           </DialogFooter>
