@@ -24,6 +24,10 @@ import {
   DropdownMenuItem,
   ProfileCard,
 } from '@qijenchen/design-system'
+// HoverCard 非 root front-door(DS 標 internal)。但 align=center 鎖死在 Avatar.hoverCard,
+// 代理人清單卡需靠左對齊 → 走 DS 官方 subpath export(非 /src、非 /dist 深層路徑,
+// 符合 lint-ds-internal-imports 允許清單 + DS「internal 元件 subpath 包裝後可用」規範)。
+import { HoverCard, HoverCardTrigger, HoverCardContent } from '@qijenchen/design-system/components/HoverCard'
 import {
   LayoutGrid,
   List,
@@ -146,22 +150,30 @@ function AgentListCard({ agents }: { agents: string[] }) {
   )
 }
 
-// 代理人 — 多頭像 overlap stack;hover 任一顯示「代理人清單卡」
+// 代理人 — 多頭像 overlap stack;hover 整組顯示「代理人清單卡」
+// 走 DS HoverCard primitives(非 Avatar.hoverCard,後者鎖死 align=center)→
+// 可用 align="start" 讓卡片靠頭像組左緣對齊。
 function AgentAvatars({ agents }: { agents?: string[] }) {
   if (!agents || agents.length === 0) return <span className="text-fg-placeholder">-</span>
-  const card = <AgentListCard agents={agents} />
   return (
-    <span className="inline-flex items-center">
-      {agents.map((a, i) => (
-        <span
-          key={a + i}
-          className={`rounded-full ring-2 ring-surface ${i > 0 ? '-ml-2' : ''}`}
-          style={{ zIndex: agents.length - i }}
-        >
-          <Avatar alt={a} size={22} src={personAvatarSrc(a)} hoverCard={card} />
+    <HoverCard>
+      <HoverCardTrigger asChild>
+        <span className="inline-flex items-center cursor-default">
+          {agents.map((a, i) => (
+            <span
+              key={a + i}
+              className={`rounded-full ring-2 ring-surface ${i > 0 ? '-ml-2' : ''}`}
+              style={{ zIndex: agents.length - i }}
+            >
+              <Avatar alt={a} size={22} src={personAvatarSrc(a)} />
+            </span>
+          ))}
         </span>
-      ))}
-    </span>
+      </HoverCardTrigger>
+      <HoverCardContent align="start" className="p-0 w-auto border-0 bg-transparent shadow-none">
+        <AgentListCard agents={agents} />
+      </HoverCardContent>
+    </HoverCard>
   )
 }
 
