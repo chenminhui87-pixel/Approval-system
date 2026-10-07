@@ -20,3 +20,11 @@
 .category-chips [aria-haspopup='menu']:hover {
   @apply border-border-hover;
 }
+
+/* 簽核清單 DataTable:呈現型表格,已關閉欄位排序 / 隱藏(tableOptions)。
+   DS 的 header ⌄ 欄位選單 trigger 不隨「無選項」自動收起(只逐項 gate),
+   在 48px 寬的 select 欄還會在 hover 時蓋住「全選」checkbox → 隱藏空選單 trigger。
+   目標 [data-col-menu];scope 在本表,不動 node_modules。 */
+.approval-datatable [data-col-menu] {
+  display: none;
+}

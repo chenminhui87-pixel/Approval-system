@@ -23,6 +23,8 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   ProfileCard,
+  DataTable,
+  type DataTableProps,
 } from '@qijenchen/design-system'
 // HoverCard 非 root front-door(DS 標 internal)。但 align=center 鎖死在 Avatar.hoverCard,
 // 代理人清單卡需靠左對齊 → 走 DS 官方 subpath export(非 /src、非 /dist 深層路徑,
@@ -288,7 +290,7 @@ function RecordList({
   onClick,
   onOpenModal,
   activeId,
-  fullHeight,
+  showSelectAll,
 }: {
   records: ApprovalRecord[]
   selectedIds: Set<string>
@@ -296,123 +298,131 @@ function RecordList({
   someSelected: boolean
   onToggleSelectAll: () => void
   onToggleSelect: (id: string) => void
-  /** 點列 / info 鈕 → 開右側面板 */
+  /** 點 info 鈕 → 開右側面板 */
   onClick: (r: ApprovalRecord) => void
   /** 點標題 → 開完整 modal */
   onOpenModal: (r: ApprovalRecord) => void
   /** 目前面板開著的單據 id → 該列 info 鈕呈 pressed/checked */
   activeId: string | null
-  fullHeight?: boolean
+  /** 只有「選定具體分類」時才顯示表頭「全選」;全部類別僅列可勾、無一鍵全選
+      (per 設計決策:跨類型一鍵全選是盲簽最常發生處,批次鎖在單一類型內) */
+  showSelectAll: boolean
 }) {
-  const thCls = 'text-left px-4 py-2.5 text-caption text-fg-secondary font-medium whitespace-nowrap'
-  // 一般 header:sticky top(z-10);凍結欄 header:sticky top+left/right(z-30 蓋過 body 凍結 z-20)
-  const thSticky = `${thCls} sticky top-0 z-10 bg-[var(--color-neutral-2-opaque)]`
-  const tdBase = 'px-4 py-3 cursor-pointer'
-
-  const tableEl = (
-    <table className="w-full text-body min-w-[860px]">
-      <thead>
-        <tr className="border-b border-divider">
-          {/* 凍結左欄:checkbox + 標題(標題右緣 stroke)。bg 用不透明 muted;
-              corner(sticky top+left)z-30 蓋過 body 凍結欄 z-20 */}
-          <th className="sticky top-0 left-0 z-30 bg-[var(--color-neutral-2-opaque)] w-12 px-0 py-2.5">
-            <div className="flex items-center justify-center">
-              <RowCheckbox checked={allSelected} indeterminate={someSelected} onChange={onToggleSelectAll} />
-            </div>
-          </th>
-          <th className={`${thCls} sticky top-0 left-12 z-30 bg-[var(--color-neutral-2-opaque)] border-r border-divider`}>標題</th>
-          <th className={thSticky}>申請人</th>
-          <th className={`${thSticky} hidden md:table-cell`}>代理人</th>
-          <th className={thSticky}>申請時間</th>
-          <th className={thSticky}>狀態</th>
-          <th className={`${thSticky} hidden sm:table-cell`}>緊急程度</th>
-          <th className={`${thSticky} hidden md:table-cell`}>到期時間</th>
-          {/* 凍結右欄:操作(左緣 stroke) */}
-          <th className="sticky top-0 right-0 z-30 bg-[var(--color-neutral-2-opaque)] border-l border-divider px-3 py-2.5 w-12" aria-label="操作" />
-        </tr>
-      </thead>
-      <tbody>
-        {records.map((r) => {
-          const { text: dlText, urgent: dlUrgent } = deadlineDisplay(r.dueDate)
-          const submittedDate = r.submittedAt.slice(0, 10).replace(/-/g, '/')
-          return (
-            <tr
-              key={r.id}
-              onClick={() => onClick(r)}
-              className={`group border-b border-divider last:border-0 transition-colors cursor-pointer ${
-                selectedIds.has(r.id) ? 'bg-primary/5' : 'hover:bg-surface-hover'
-              }`}
-            >
-              {/* 凍結左欄:checkbox + 標題(右緣 stroke 在標題) */}
-              <td className="sticky left-0 z-20 bg-surface group-hover:bg-surface-hover w-12 px-0 py-3" onClick={(e) => e.stopPropagation()}>
-                <div className="flex items-center justify-center">
-                  <RowCheckbox checked={selectedIds.has(r.id)} onChange={() => onToggleSelect(r.id)} />
-                </div>
-              </td>
-              <td className={`${tdBase} sticky left-12 z-20 bg-surface group-hover:bg-surface-hover border-r border-divider font-medium max-w-xs`}>
-                {/* 點標題開完整 modal(與列點擊/info 開面板區分) */}
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); onOpenModal(r) }}
-                  className="text-left line-clamp-2 hover:text-primary hover:underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
-                >
-                  {r.title}
-                </button>
-              </td>
-              <td className={`${tdBase} text-fg-secondary whitespace-nowrap`}>
-                <Applicant name={r.applicant} />
-              </td>
-              <td className={`${tdBase} text-fg-secondary hidden md:table-cell`}>
-                <AgentAvatars agents={r.agents} />
-              </td>
-              <td className={`${tdBase} text-caption text-fg-secondary whitespace-nowrap`}>{submittedDate}</td>
-              <td className={tdBase}>
-                <Tag size="sm" color={STATUS_COLOR[r.status]}>{STATUS_LABEL[r.status]}</Tag>
-              </td>
-              <td className={`${tdBase} hidden sm:table-cell`}>
-                {r.urgency === 'high' ? <Tag size="sm" color="red">緊急</Tag> : <span className="text-fg-placeholder">-</span>}
-              </td>
-              <td className={`${tdBase} text-caption hidden md:table-cell ${dlUrgent ? 'text-error-text' : 'text-fg-secondary'}`}>
-                {dlText}
-              </td>
-              {/* 凍結右欄:info 按鈕(左緣 stroke),面板開著該列時 pressed */}
-              <td
-                className="sticky right-0 z-20 bg-surface group-hover:bg-surface-hover border-l border-divider px-2 py-3 w-12 text-center"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <Button
-                  variant="text"
-                  size="sm"
-                  iconOnly
-                  startIcon={Info}
-                  pressed={activeId === r.id}
-                  aria-label="展開詳情"
-                  onClick={() => onClick(r)}
-                />
-              </td>
-            </tr>
-          )
-        })}
-      </tbody>
-    </table>
-  )
-
-  if (fullHeight) {
-    // 不用 flex-1(會把表格撐滿留白);改 max-h-full 讓筆數少時 hug 內容、
-    // 超過可用高度才在容器內捲動
-    return (
-      <div className="max-h-full min-h-0 overflow-auto rounded-lg border border-divider">
-        {tableEl}
-      </div>
-    )
-  }
+  // DS DataTable 欄位定義。凍結欄用 pinnedLeft(select / title)+ pinnedRight(info),
+  // 取代原手刻 sticky + z-index。height="100%" + 父層 flex 約束 → 少筆 hug、多筆內捲
+  // (data-table.spec.md L78)。選取不另上 row 底色(L249:有 checkbox 就只用 checkbox)。
+  const columns: DataTableProps<ApprovalRecord>['columns'] = [
+    {
+      id: 'select',
+      meta: { width: 48, resizable: false },
+      header: () =>
+        showSelectAll ? (
+          <div className="flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+            <RowCheckbox checked={allSelected} indeterminate={someSelected} onChange={onToggleSelectAll} />
+          </div>
+        ) : null,
+      cell: ({ row }) => (
+        <div className="flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+          <RowCheckbox checked={selectedIds.has(row.original.id)} onChange={() => onToggleSelect(row.original.id)} />
+        </div>
+      ),
+    },
+    {
+      id: 'title',
+      header: '標題',
+      meta: { width: 240 },
+      cell: ({ row }) => (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onOpenModal(row.original) }}
+          className="text-left line-clamp-2 font-medium hover:text-primary hover:underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+        >
+          {row.original.title}
+        </button>
+      ),
+    },
+    {
+      id: 'applicant',
+      header: '申請人',
+      meta: { width: 140 },
+      cell: ({ row }) => <Applicant name={row.original.applicant} />,
+    },
+    {
+      id: 'agents',
+      header: '代理人',
+      meta: { width: 120 },
+      cell: ({ row }) => <AgentAvatars agents={row.original.agents} />,
+    },
+    {
+      id: 'submittedAt',
+      header: '申請時間',
+      meta: { width: 112 },
+      cell: ({ row }) => (
+        <span className="text-caption text-fg-secondary whitespace-nowrap">
+          {row.original.submittedAt.slice(0, 10).replace(/-/g, '/')}
+        </span>
+      ),
+    },
+    {
+      id: 'status',
+      header: '狀態',
+      meta: { width: 92 },
+      cell: ({ row }) => (
+        <Tag size="sm" color={STATUS_COLOR[row.original.status]}>{STATUS_LABEL[row.original.status]}</Tag>
+      ),
+    },
+    {
+      id: 'urgency',
+      header: '緊急程度',
+      meta: { width: 96 },
+      cell: ({ row }) =>
+        row.original.urgency === 'high'
+          ? <Tag size="sm" color="red">緊急</Tag>
+          : <span className="text-fg-placeholder">-</span>,
+    },
+    {
+      id: 'dueDate',
+      header: '到期時間',
+      meta: { width: 112 },
+      cell: ({ row }) => {
+        const { text, urgent } = deadlineDisplay(row.original.dueDate)
+        return <span className={`text-caption ${urgent ? 'text-error-text' : 'text-fg-secondary'}`}>{text}</span>
+      },
+    },
+    {
+      id: 'info',
+      header: '',
+      meta: { width: 48, resizable: false },
+      cell: ({ row }) => (
+        <div className="flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+          <Button
+            variant="text"
+            size="sm"
+            iconOnly
+            startIcon={Info}
+            pressed={activeId === row.original.id}
+            aria-label="展開詳情"
+            onClick={() => onClick(row.original)}
+          />
+        </div>
+      ),
+    },
+  ]
 
   return (
-    <div className="rounded-lg border border-divider overflow-hidden">
-      <div className="overflow-x-auto">
-        {tableEl}
-      </div>
-    </div>
+    <DataTable
+      className="approval-datatable"
+      columns={columns}
+      data={records}
+      getRowId={(r) => r.id}
+      height="100%"
+      size="md"
+      pinnedLeftColumns={['select', 'title']}
+      pinnedRightColumns={['info']}
+      // 呈現型表格,維持原手刻版的乾淨表頭:關閉欄位排序 / 隱藏(header ⌄ 空選單由
+      // globals.css `.approval-datatable [data-col-menu]` 隱藏,避免蓋住 select 欄全選)
+      tableOptions={{ enableSorting: false, enableHiding: false }}
+    />
   )
 }
 
@@ -693,7 +703,7 @@ function ApprovalPage() {
             onClick={openRecord}
             onOpenModal={openModalFor}
             activeId={panelOpen ? selectedId : null}
-            fullHeight
+            showSelectAll={category !== 'all'}
           />
         )}
       </div>
