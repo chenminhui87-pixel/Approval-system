@@ -1363,8 +1363,34 @@ export const PEOPLE: Record<string, Person> = {
   人資助理: { department: '人力資源部', title: '人資助理' },
   採購協辦: { department: '採購部', title: '採購協辦' },
 }
-export function getPerson(name: string): Person {
-  return PEOPLE[name] ?? { department: '—' }
+export interface PersonInfo extends Person {
+  id: string
+  employeeNumber: string
+  email: string
+  phone: string
+  location: string
+  status: 'online' | 'away' | 'busy' | 'offline'
+}
+const STATUSES = ['online', 'away', 'busy', 'offline'] as const
+function hashName(name: string): number {
+  let h = 0
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0
+  return h
+}
+// 由姓名確定性衍生其餘欄位(mock),讓 ProfileCard 內容完整(非 placeholder)
+export function getPerson(name: string): PersonInfo {
+  const base = PEOPLE[name] ?? { department: '—' }
+  const h = hashName(name)
+  const emp = 10000 + (h % 90000)
+  return {
+    ...base,
+    id: `U-${1000 + (h % 9000)}`,
+    employeeNumber: `EMP-${emp}`,
+    email: `emp${emp}@cpcm.tw`,
+    phone: `02-${2700 + (h % 100)}-${1000 + (h % 9000)}`,
+    location: '台北總部',
+    status: STATUSES[h % STATUSES.length],
+  }
 }
 
 export function getTabRecords(

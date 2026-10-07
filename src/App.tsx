@@ -23,6 +23,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   ProfileCard,
+  ProfileCardDefaultActions,
 } from '@qijenchen/design-system'
 import {
   LayoutGrid,
@@ -70,23 +71,45 @@ function nameToAvatarColor(name: string) {
 const STATUS_COLOR = { pending: 'blue', approved: 'green', rejected: 'red' } as const
 const STATUS_LABEL = { pending: '簽核中', approved: '已核准', rejected: '已退件' } as const
 
-// 人員頭像 — hover 顯示 DS ProfileCard(名字 / 職稱 / 部門)
-function PersonAvatar({ name, size = 22 }: { name: string; size?: number }) {
-  const color = nameToAvatarColor(name) as Parameters<typeof Avatar>[0]['color']
+// 示意頭像 — 色底圓 + 白色人形 silhouette(data-uri SVG),無文字,各人以顏色區分
+const COLOR_HEX: Record<string, string> = {
+  blue: '#3b82f6', violet: '#8b5cf6', emerald: '#10b981', amber: '#f59e0b',
+  rose: '#f43f5e', cyan: '#06b6d4', orange: '#f97316',
+}
+function personAvatarSrc(name: string): string {
+  const hex = COLOR_HEX[nameToAvatarColor(name)] ?? '#64748b'
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" fill="${hex}"/><circle cx="12" cy="9" r="3.4" fill="#fff"/><path d="M12 13.1c-3.7 0-6.3 2.1-6.3 5V20h12.6v-1.9c0-2.9-2.6-5-6.3-5z" fill="#fff"/></svg>`
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`
+}
+
+// 人員頭像 — hover 顯示 DS ProfileCard(完整欄位)
+function personProfileCard(name: string) {
   const p = getPerson(name)
+  return (
+    <ProfileCard
+      name={name}
+      avatar={{ src: personAvatarSrc(name), alt: name }}
+      subtitle={p.title}
+      status={p.status}
+      defaultFieldValues={{ id: p.id, employeeNumber: p.employeeNumber }}
+      fields={[
+        { label: '部門', value: p.department },
+        { label: '電子郵件', value: p.email },
+        { label: '電話', value: p.phone },
+        { label: '地點', value: p.location },
+      ]}
+      actions={<ProfileCardDefaultActions onChat={() => {}} onCall={() => {}} />}
+      onViewMore={() => {}}
+    />
+  )
+}
+function PersonAvatar({ name, size = 22 }: { name: string; size?: number }) {
   return (
     <Avatar
       alt={name}
       size={size}
-      color={color}
-      hoverCard={
-        <ProfileCard
-          name={name}
-          avatar={{ alt: name, color }}
-          subtitle={p.title}
-          fields={[{ label: '部門', value: p.department }]}
-        />
-      }
+      src={personAvatarSrc(name)}
+      hoverCard={personProfileCard(name)}
     />
   )
 }
