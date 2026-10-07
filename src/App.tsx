@@ -32,10 +32,6 @@ import {
   Search,
   X,
   ChevronLeft,
-  Share2,
-  UserCheck,
-  Undo2,
-  Ban,
   Plus,
   MoreHorizontal,
   FileText,
@@ -366,8 +362,10 @@ function RecordList({
   )
 
   if (fullHeight) {
+    // 不用 flex-1(會把表格撐滿留白);改 max-h-full 讓筆數少時 hug 內容、
+    // 超過可用高度才在容器內捲動
     return (
-      <div className="flex-1 min-h-0 overflow-auto rounded-lg border border-divider">
+      <div className="max-h-full min-h-0 overflow-auto rounded-lg border border-divider">
         {tableEl}
       </div>
     )
@@ -551,8 +549,8 @@ function ApprovalPage() {
       </div>
 
       {/* Search + filter bar — 搜尋+篩選為同一 toolbar 區,內部 gap-3;
-          pt-8 明顯拉開與上方 tab 的距離(table 上方不加 divider) */}
-      <div className="flex flex-col gap-3 px-[var(--layout-space-loose)] pt-8 pb-4">
+          pt-6(24px)tab↔search、pb-3(12px)chip↔table */}
+      <div className="flex flex-col gap-3 px-[var(--layout-space-loose)] pt-6 pb-3">
         {/* Search row */}
         <Input
           startIcon={Search}
@@ -633,7 +631,7 @@ function ApprovalPage() {
       </div>
 
       {/* Content */}
-      <div className={`flex-1 min-h-0 ${view === 'list' ? 'flex flex-col p-4' : 'overflow-y-auto px-[var(--layout-space-loose)] py-4'}`}>
+      <div className={`flex-1 min-h-0 ${view === 'list' ? 'flex flex-col px-[var(--layout-space-loose)] pb-4' : 'overflow-y-auto px-[var(--layout-space-loose)] py-4'}`}>
         {filtered.length === 0 ? (
           <EmptyState message="目前沒有相關單據" />
         ) : view === 'card' ? (
@@ -684,18 +682,10 @@ function ApprovalPage() {
 
               <div className="flex-1" />
 
-              {/* Secondary actions */}
-              <div className="flex items-center gap-1">
-                <Button variant="tertiary" size="sm" startIcon={Share2} onClick={() => handleStub('轉寄')}>轉寄</Button>
-                <Button variant="tertiary" size="sm" startIcon={UserCheck} onClick={() => handleStub('移交 Owner')}>移交</Button>
-                <Button variant="tertiary" size="sm" startIcon={Undo2} onClick={() => handleStub('退回給申請人')}>退回</Button>
-                <Button variant="tertiary" size="sm" danger startIcon={Ban} onClick={() => handleStub('作廢')}>作廢</Button>
-              </div>
-
-              {/* Primary actions */}
+              {/* Primary actions — 僅退件 / 核准 */}
               <div className="flex items-center gap-2 shrink-0">
                 <Button variant="secondary" danger onClick={() => { setRejectComment(''); setBottomBarMode('reject') }}>
-                  拒絕
+                  退件
                 </Button>
                 <Button variant="secondary" onClick={handleBatchApprove}>
                   核准
