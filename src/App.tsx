@@ -87,12 +87,11 @@ function personAvatarSrc(name: string): string {
 function personProfileCard(name: string) {
   const p = getPerson(name)
   return (
-    // DS「+ Info fields」版本:subtitle + status + fields(無 actions / viewMore)
+    // DS「+ Info fields」版本:subtitle + fields(移除 status 區:燈號 + 簡易訊息)
     <ProfileCard
       name={name}
       avatar={{ src: personAvatarSrc(name), alt: name }}
       subtitle={p.title}
-      status={p.status}
       defaultFieldValues={{ id: p.id, employeeNumber: p.employeeNumber }}
       fields={[
         { label: '組織課名代碼', value: p.deptCode },
