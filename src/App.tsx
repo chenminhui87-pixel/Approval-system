@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import {
   TooltipProvider,
   AppShell,
@@ -307,6 +307,26 @@ function RecordList({
       (per 設計決策:跨類型一鍵全選是盲簽最常發生處,批次鎖在單一類型內) */
   showSelectAll: boolean
 }) {
+  // 凍結欄捲動深度陰影:橫向捲動時從左/右凍結面板投一道陰影,讓內容讀作「滑到下面」
+  // 而非被硬邊切斷。依 center 捲動位置 toggle attr,CSS 投向性陰影(globals.css)。
+  const wrapRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const wrap = wrapRef.current
+    if (!wrap) return
+    const scroller = wrap.querySelector<HTMLElement>('[data-datatable-hscroll]')
+    if (!scroller) return
+    const update = () => {
+      const max = scroller.scrollWidth - scroller.clientWidth
+      wrap.toggleAttribute('data-shadow-left', scroller.scrollLeft > 1)
+      wrap.toggleAttribute('data-shadow-right', max > 1 && scroller.scrollLeft < max - 1)
+    }
+    update()
+    scroller.addEventListener('scroll', update, { passive: true })
+    const ro = new ResizeObserver(update)
+    ro.observe(scroller)
+    return () => { scroller.removeEventListener('scroll', update); ro.disconnect() }
+  }, [records])
+
   // DS DataTable 欄位定義。凍結欄用 pinnedLeft(select / title)+ pinnedRight(info),
   // 取代原手刻 sticky + z-index。height="100%" + 父層 flex 約束 → 少筆 hug、多筆內捲
   // (data-table.spec.md L78)。選取不另上 row 底色(L249:有 checkbox 就只用 checkbox)。
@@ -409,21 +429,23 @@ function RecordList({
   ]
 
   return (
-    <DataTable
-      className="approval-datatable"
-      columns={columns}
-      data={records}
-      getRowId={(r) => r.id}
-      height="100%"
-      size="md"
-      // 多行列(標題換行)時 cell 頂對齊,不垂直置中(DS row-mode:auto → items-start)
-      autoRowHeight
-      pinnedLeftColumns={['select', 'title']}
-      pinnedRightColumns={['info']}
-      // 呈現型表格,維持原手刻版的乾淨表頭:關閉欄位排序 / 隱藏(header ⌄ 空選單由
-      // globals.css `.approval-datatable [data-col-menu]` 隱藏,避免蓋住 select 欄全選)
-      tableOptions={{ enableSorting: false, enableHiding: false }}
-    />
+    <div ref={wrapRef} className="approval-datatable-wrap h-full min-h-0">
+      <DataTable
+        className="approval-datatable"
+        columns={columns}
+        data={records}
+        getRowId={(r) => r.id}
+        height="100%"
+        size="md"
+        // 多行列(標題換行)時 cell 頂對齊,不垂直置中(DS row-mode:auto → items-start)
+        autoRowHeight
+        pinnedLeftColumns={['select', 'title']}
+        pinnedRightColumns={['info']}
+        // 呈現型表格,維持原手刻版的乾淨表頭:關閉欄位排序 / 隱藏(header ⌄ 空選單由
+        // globals.css `.approval-datatable [data-col-menu]` 隱藏,避免蓋住 select 欄全選)
+        tableOptions={{ enableSorting: false, enableHiding: false }}
+      />
+    </div>
   )
 }
 
@@ -448,7 +470,7 @@ function EmptyState({ message }: { message: string }) {
 
 type TabId = 'pending-me' | 'submitted' | 'signed' | 'cc'
 type ViewMode = 'card' | 'list'
-type BottomBarMode = 'action' | 'reject'
+type BottomBarMode = 'action' | 'reject' | 'approveConfirm'
 
 const TAB_LABELS: Record<TabId, string> = {
   'pending-me': '待簽核',
@@ -491,6 +513,9 @@ function ApprovalPage() {
   const isSelecting = selectedIds.size > 0
   const allVisibleSelected = filtered.length > 0 && filtered.every((r) => selectedIds.has(r.id))
   const someSelected = selectedIds.size > 0 && !allVisibleSelected
+  // 同分類內搜尋保留選取;已選但被目前搜尋隱藏的筆數(對齊 mobile submitBatch 的提示)
+  const filteredIds = new Set(filtered.map((r) => r.id))
+  const hiddenSelectedCount = [...selectedIds].filter((id) => !filteredIds.has(id)).length
 
   function showToast(msg: string) {
     toast({ variant: 'success', title: msg })
@@ -602,9 +627,9 @@ function ApprovalPage() {
         <Input
           startIcon={Search}
           value={search}
-          onChange={(e) => { setSearch(e.target.value); clearSelection() }}
+          onChange={(e) => setSearch(e.target.value)}
           placeholder="搜尋單號、標題、申請者…"
-          endAction={search ? { icon: X, label: '清除搜尋', onClick: () => { setSearch(''); clearSelection() } } : undefined}
+          endAction={search ? { icon: X, label: '清除搜尋', onClick: () => setSearch('') } : undefined}
           className="!bg-muted"
         />
 
@@ -716,7 +741,12 @@ function ApprovalPage() {
             <div className="flex items-center gap-3 px-[var(--layout-space-loose)] py-3">
               {/* Left: count + cancel */}
               <div className="flex items-center gap-2 shrink-0">
-                <span className="text-body text-fg-secondary">已選取 {selectedIds.size} 項</span>
+                <span className="text-body text-fg-secondary">
+                  已選取 {selectedIds.size} 項
+                  {hiddenSelectedCount > 0 && (
+                    <span className="text-fg-placeholder">（{hiddenSelectedCount} 項被搜尋隱藏）</span>
+                  )}
+                </span>
                 <Button
                   variant="tertiary"
                   size="sm"
@@ -734,10 +764,31 @@ function ApprovalPage() {
                 <Button variant="secondary" danger onClick={() => { setRejectComment(''); setBottomBarMode('reject') }}>
                   退件
                 </Button>
-                <Button variant="secondary" onClick={handleBatchApprove}>
+                <Button
+                  variant="secondary"
+                  onClick={() => hiddenSelectedCount > 0 ? setBottomBarMode('approveConfirm') : handleBatchApprove()}
+                >
                   核准
                 </Button>
               </div>
+            </div>
+          ) : bottomBarMode === 'approveConfirm' ? (
+            /* 有已選單據被搜尋隱藏 → 核准前確認(對齊 mobile) */
+            <div className="flex items-center gap-3 px-[var(--layout-space-loose)] py-3">
+              <Button
+                variant="tertiary"
+                size="sm"
+                startIcon={ChevronLeft}
+                onClick={() => setBottomBarMode('action')}
+              >
+                返回
+              </Button>
+              <span className="text-body flex-1">
+                有 <span className="font-medium">{hiddenSelectedCount}</span> 項已選單據被目前搜尋隱藏，仍要一併核准共 <span className="font-medium">{selectedIds.size}</span> 項？
+              </span>
+              <Button variant="secondary" onClick={handleBatchApprove}>
+                確認核准
+              </Button>
             </div>
           ) : (
             /* Reject confirm mode */

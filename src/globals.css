@@ -28,3 +28,24 @@
 .approval-datatable [data-col-menu] {
   display: none;
 }
+
+/* 凍結欄捲動深度陰影(② 2026):橫向捲動時,左/右凍結面板投一道投向性陰影,
+   讓捲動內容讀作「滑到凍結欄下面」而非被硬邊切斷。
+   - 由 RecordList 的 scroll listener toggle `data-shadow-left/right`
+   - 凍結面板需疊在 center 之上才看得到陰影(左面板 DOM 在 center 前)→ 給 z-index
+   - DS 禁「用陰影畫 1px 線」;此為深度陰影(非畫線),語意不同、scope 在本表 */
+.approval-datatable-wrap [data-datatable-panel='left'],
+.approval-datatable-wrap [data-datatable-header-panel='left'],
+.approval-datatable-wrap [data-datatable-panel='right'],
+.approval-datatable-wrap [data-datatable-header-panel='right'] {
+  position: relative;
+  z-index: 3;
+}
+.approval-datatable-wrap[data-shadow-left] [data-datatable-panel='left'],
+.approval-datatable-wrap[data-shadow-left] [data-datatable-header-panel='left'] {
+  box-shadow: 6px 0 7px -5px rgb(15 23 42 / 0.18);
+}
+.approval-datatable-wrap[data-shadow-right] [data-datatable-panel='right'],
+.approval-datatable-wrap[data-shadow-right] [data-datatable-header-panel='right'] {
+  box-shadow: -6px 0 7px -5px rgb(15 23 42 / 0.18);
+}
