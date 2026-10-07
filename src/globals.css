@@ -11,16 +11,6 @@
   }
 }
 
-/* 分類 chip 溢出的 ▼ 收合鈕:DS ChipGroup layout="menu" 內建 variant="text"(無框),
-   consumer override 成 chip pill 樣式(圓角 + 邊框),對齊同列 chip 視覺。
-   目標為 DropdownMenuTrigger(aria-haspopup="menu");不改 node_modules。 */
-.category-chips [aria-haspopup='menu'] {
-  @apply rounded-full border border-border;
-}
-.category-chips [aria-haspopup='menu']:hover {
-  @apply border-border-hover;
-}
-
 /* 簽核清單 DataTable:呈現型表格,已關閉欄位排序 / 隱藏(tableOptions)。
    DS 的 header ⌄ 欄位選單 trigger 不隨「無選項」自動收起(只逐項 gate),
    在 48px 寬的 select 欄還會在 hover 時蓋住「全選」checkbox → 隱藏空選單 trigger。
