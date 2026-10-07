@@ -1345,6 +1345,28 @@ export const MOCK_RECORDS: ApprovalRecord[] = [
 
 export const CURRENT_USER = '陳美惠'
 
+// 人員通訊錄 — 供頭像 hover 的 ProfileCard 顯示部門 / 職稱
+export interface Person {
+  department: string
+  title?: string
+}
+export const PEOPLE: Record<string, Person> = {
+  黃建偉: { department: '行銷部', title: '行銷企劃' },
+  林志明: { department: '資訊部', title: 'IT 工程師' },
+  陳美惠: { department: '財務部', title: '財務專員' },
+  周總監: { department: '業務部', title: '業務總監' },
+  王大明: { department: '行政部', title: '行政專員' },
+  張法務: { department: '法務部', title: '法務專員' },
+  林法務: { department: '法務部', title: '法務專員' },
+  林處長: { department: '管理部', title: '處長' },
+  人資專員: { department: '人力資源部', title: '人資專員' },
+  人資助理: { department: '人力資源部', title: '人資助理' },
+  採購協辦: { department: '採購部', title: '採購協辦' },
+}
+export function getPerson(name: string): Person {
+  return PEOPLE[name] ?? { department: '—' }
+}
+
 export function getTabRecords(
   tab: 'pending-me' | 'submitted' | 'signed' | 'cc',
   records: ApprovalRecord[],

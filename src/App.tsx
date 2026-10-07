@@ -22,6 +22,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
+  ProfileCard,
 } from '@qijenchen/design-system'
 import {
   LayoutGrid,
@@ -50,6 +51,7 @@ import {
   getTabRecords,
   approveRecord,
   rejectRecord,
+  getPerson,
   type ApprovalRecord,
   type CategoryId,
 } from './data'
@@ -67,6 +69,55 @@ function nameToAvatarColor(name: string) {
 }
 const STATUS_COLOR = { pending: 'blue', approved: 'green', rejected: 'red' } as const
 const STATUS_LABEL = { pending: '簽核中', approved: '已核准', rejected: '已退件' } as const
+
+// 人員頭像 — hover 顯示 DS ProfileCard(名字 / 職稱 / 部門)
+function PersonAvatar({ name, size = 22 }: { name: string; size?: number }) {
+  const color = nameToAvatarColor(name) as Parameters<typeof Avatar>[0]['color']
+  const p = getPerson(name)
+  return (
+    <Avatar
+      alt={name}
+      size={size}
+      color={color}
+      hoverCard={
+        <ProfileCard
+          name={name}
+          avatar={{ alt: name, color }}
+          subtitle={p.title}
+          fields={[{ label: '部門', value: p.department }]}
+        />
+      }
+    />
+  )
+}
+
+// 申請人 — 頭像 + 名字
+function Applicant({ name }: { name: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+      <PersonAvatar name={name} />
+      <span>{name}</span>
+    </span>
+  )
+}
+
+// 代理人 — 多頭像 overlap stack(可能多位),各自 hover ProfileCard
+function AgentAvatars({ agents }: { agents?: string[] }) {
+  if (!agents || agents.length === 0) return <span className="text-fg-placeholder">-</span>
+  return (
+    <span className="inline-flex items-center">
+      {agents.map((a, i) => (
+        <span
+          key={a + i}
+          className={`rounded-full ring-2 ring-surface ${i > 0 ? '-ml-2' : ''}`}
+          style={{ zIndex: agents.length - i }}
+        >
+          <PersonAvatar name={a} />
+        </span>
+      ))}
+    </span>
+  )
+}
 
 function RowCheckbox({ checked, indeterminate, onChange }: {
   checked: boolean
@@ -253,9 +304,11 @@ function RecordList({
                   {r.title}
                 </button>
               </td>
-              <td className={`${tdBase} text-fg-secondary whitespace-nowrap`}>{r.applicant}</td>
+              <td className={`${tdBase} text-fg-secondary whitespace-nowrap`}>
+                <Applicant name={r.applicant} />
+              </td>
               <td className={`${tdBase} text-fg-secondary hidden md:table-cell`}>
-                {r.agents && r.agents.length > 0 ? r.agents.join('、') : '-'}
+                <AgentAvatars agents={r.agents} />
               </td>
               <td className={`${tdBase} text-caption text-fg-secondary whitespace-nowrap`}>{submittedDate}</td>
               <td className={tdBase}>
