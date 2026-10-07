@@ -11,6 +11,12 @@
   }
 }
 
+/* 分類列已自組 ▼ 單選選單當導覽 → 隱藏 DS ScrollChipGroup 的左右捲動箭頭,
+   避免 `>` 與 ▼ 兩個 affordance 並存;邊緣 fade 遮罩保留(仍暗示可捲)。 */
+.category-chips [data-overflow-arrow] {
+  display: none;
+}
+
 /* 簽核清單 DataTable:呈現型表格,已關閉欄位排序 / 隱藏(tableOptions)。
    DS 的 header ⌄ 欄位選單 trigger 不隨「無選項」自動收起(只逐項 gate),
    在 48px 寬的 select 欄還會在 hover 時蓋住「全選」checkbox → 隱藏空選單 trigger。
