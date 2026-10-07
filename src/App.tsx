@@ -180,6 +180,7 @@ function RecordList({
   onToggleSelectAll,
   onToggleSelect,
   onClick,
+  onOpenModal,
   activeId,
   fullHeight,
 }: {
@@ -189,34 +190,39 @@ function RecordList({
   someSelected: boolean
   onToggleSelectAll: () => void
   onToggleSelect: (id: string) => void
+  /** 點列 / info 鈕 → 開右側面板 */
   onClick: (r: ApprovalRecord) => void
+  /** 點標題 → 開完整 modal */
+  onOpenModal: (r: ApprovalRecord) => void
   /** 目前面板開著的單據 id → 該列 info 鈕呈 pressed/checked */
   activeId: string | null
   fullHeight?: boolean
 }) {
   const thCls = 'text-left px-4 py-2.5 text-caption text-fg-secondary font-medium whitespace-nowrap'
+  // 一般 header:sticky top(z-10);凍結欄 header:sticky top+left/right(z-30 蓋過 body 凍結 z-20)
+  const thSticky = `${thCls} sticky top-0 z-10 bg-[var(--color-neutral-2-opaque)]`
   const tdBase = 'px-4 py-3 cursor-pointer'
 
   const tableEl = (
     <table className="w-full text-body min-w-[860px]">
       <thead>
-        <tr className="border-b border-divider bg-muted">
-          {/* 凍結左欄:checkbox + 標題(各自右緣 stroke)。bg 用不透明 muted
-              避免疊在 tr 的半透明 bg-muted 上變深 */}
-          <th className="sticky left-0 z-20 bg-[var(--color-neutral-2-opaque)] w-12 px-0 py-2.5">
+        <tr className="border-b border-divider">
+          {/* 凍結左欄:checkbox + 標題(標題右緣 stroke)。bg 用不透明 muted;
+              corner(sticky top+left)z-30 蓋過 body 凍結欄 z-20 */}
+          <th className="sticky top-0 left-0 z-30 bg-[var(--color-neutral-2-opaque)] w-12 px-0 py-2.5">
             <div className="flex items-center justify-center">
               <RowCheckbox checked={allSelected} indeterminate={someSelected} onChange={onToggleSelectAll} />
             </div>
           </th>
-          <th className={`${thCls} sticky left-12 z-20 bg-[var(--color-neutral-2-opaque)] border-r border-divider`}>標題</th>
-          <th className={thCls}>申請人</th>
-          <th className={`${thCls} hidden md:table-cell`}>代理人</th>
-          <th className={thCls}>申請時間</th>
-          <th className={thCls}>狀態</th>
-          <th className={`${thCls} hidden sm:table-cell`}>緊急程度</th>
-          <th className={`${thCls} hidden md:table-cell`}>到期時間</th>
+          <th className={`${thCls} sticky top-0 left-12 z-30 bg-[var(--color-neutral-2-opaque)] border-r border-divider`}>標題</th>
+          <th className={thSticky}>申請人</th>
+          <th className={`${thSticky} hidden md:table-cell`}>代理人</th>
+          <th className={thSticky}>申請時間</th>
+          <th className={thSticky}>狀態</th>
+          <th className={`${thSticky} hidden sm:table-cell`}>緊急程度</th>
+          <th className={`${thSticky} hidden md:table-cell`}>到期時間</th>
           {/* 凍結右欄:操作(左緣 stroke) */}
-          <th className="sticky right-0 z-20 bg-[var(--color-neutral-2-opaque)] border-l border-divider px-3 py-2.5 w-12" aria-label="操作" />
+          <th className="sticky top-0 right-0 z-30 bg-[var(--color-neutral-2-opaque)] border-l border-divider px-3 py-2.5 w-12" aria-label="操作" />
         </tr>
       </thead>
       <tbody>
@@ -238,7 +244,14 @@ function RecordList({
                 </div>
               </td>
               <td className={`${tdBase} sticky left-12 z-20 bg-surface group-hover:bg-surface-hover border-r border-divider font-medium max-w-xs`}>
-                <span className="line-clamp-2">{r.title}</span>
+                {/* 點標題開完整 modal(與列點擊/info 開面板區分) */}
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); onOpenModal(r) }}
+                  className="text-left line-clamp-2 hover:text-primary hover:underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+                >
+                  {r.title}
+                </button>
               </td>
               <td className={`${tdBase} text-fg-secondary whitespace-nowrap`}>{r.applicant}</td>
               <td className={`${tdBase} text-fg-secondary hidden md:table-cell`}>
@@ -387,6 +400,11 @@ function ApprovalPage() {
   function openRecord(r: ApprovalRecord) {
     setSelectedId(r.id)
     setPanelOpen(true)
+  }
+
+  function openModalFor(r: ApprovalRecord) {
+    setSelectedId(r.id)
+    setModalOpen(true)
   }
 
   function handleApprove(id: string, comment?: string) {
@@ -563,6 +581,7 @@ function ApprovalPage() {
             onToggleSelectAll={handleSelectAll}
             onToggleSelect={toggleSelect}
             onClick={openRecord}
+            onOpenModal={openModalFor}
             activeId={panelOpen ? selectedId : null}
             fullHeight
           />
