@@ -22,8 +22,6 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   ProfileCard,
   DataTable,
   type DataTableProps,
@@ -54,7 +52,6 @@ import {
   Send,
   Forward,
   Info,
-  ChevronDown,
 } from 'lucide-react'
 import {
   MOCK_RECORDS,
@@ -668,72 +665,36 @@ function ApprovalPage() {
 
         {/* Chips + view toggle row */}
         <div className="flex items-center justify-between gap-4">
-          {/* 分類列:chips 水平捲動 + 自組單選下拉(導覽 / 溢出)。
-              DS ChipGroup layout="menu" 的下拉用 checkbox item,不符「一次選一個」語意,
-              故改 layout="scroll" + 自組 DropdownMenuRadioGroup(單選 + selected 高亮)。 */}
-          <div className="flex-1 min-w-0 flex items-center gap-2 category-chips">
-            {/* ScrollChipGroup 根節點(relative)無寬度約束 + className 只進內層 ToggleGroup,
-                故需外包 flex-1 min-w-0 讓它填滿並由內層 overflow-x-auto 捲動(修 RWD) */}
-            <div className="flex-1 min-w-0">
-              <ChipGroup
-                type="single"
-                value={category}
-                onValueChange={(v: string) => { setCategory((v ?? 'all') as CategoryId | 'all'); clearSelection() }}
-                layout="scroll"
-              >
-                <Chip value="all">
+          {/* 分類列:走 DS ChipGroup layout="menu"(溢出才收合成 ▼ 導覽選單;
+              選單 item 直接渲染 chip children → 自帶 Badge)。category-chips class 供
+              globals.css 微調。flex-1 min-w-0 讓 menu 內層 overflow-x-auto 能收縮捲動。 */}
+          <div className="flex-1 min-w-0 category-chips">
+            <ChipGroup
+              type="single"
+              value={category}
+              onValueChange={(v: string) => { setCategory((v ?? 'all') as CategoryId | 'all'); clearSelection() }}
+              layout="menu"
+            >
+              <Chip value="all">
+                <span className="flex items-center gap-1">
+                  全部類別
+                  {(search ? true : searchFiltered.length > 0) && (
+                    <Badge
+                      variant={searchFiltered.some((r) => r.urgency === 'high') ? 'critical' : 'low'}
+                      count={searchFiltered.length}
+                    />
+                  )}
+                </span>
+              </Chip>
+              {categoryStats.map((c) => (
+                <Chip key={c.id} value={c.id}>
                   <span className="flex items-center gap-1">
-                    全部類別
-                    {(search ? true : searchFiltered.length > 0) && (
-                      <Badge
-                        variant={searchFiltered.some((r) => r.urgency === 'high') ? 'critical' : 'low'}
-                        count={searchFiltered.length}
-                      />
-                    )}
+                    {c.label}
+                    <Badge variant={c.hasAlert ? 'critical' : 'low'} count={c.count} />
                   </span>
                 </Chip>
-                {categoryStats.map((c) => (
-                  <Chip key={c.id} value={c.id}>
-                    <span className="flex items-center gap-1">
-                      {c.label}
-                      <Badge variant={c.hasAlert ? 'critical' : 'low'} count={c.count} />
-                    </span>
-                  </Chip>
-                ))}
-              </ChipGroup>
-            </div>
-
-            {/* 單選分類選單:一次只選一個 → Radio(selected 高亮),非 checkbox。
-                簽單數用與 chip 相同的 Badge(不用純文字括號) */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="text" size="sm" iconOnly startIcon={ChevronDown} aria-label="分類選單" className="shrink-0" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="max-h-[60vh] overflow-auto">
-                <DropdownMenuRadioGroup
-                  value={category}
-                  onValueChange={(v: string) => { setCategory(v as CategoryId | 'all'); clearSelection() }}
-                >
-                  <DropdownMenuRadioItem value="all">
-                    <span className="flex items-center gap-1.5">
-                      全部類別
-                      <Badge
-                        variant={searchFiltered.some((r) => r.urgency === 'high') ? 'critical' : 'low'}
-                        count={searchFiltered.length}
-                      />
-                    </span>
-                  </DropdownMenuRadioItem>
-                  {categoryStats.map((c) => (
-                    <DropdownMenuRadioItem key={c.id} value={c.id}>
-                      <span className="flex items-center gap-1.5">
-                        {c.label}
-                        <Badge variant={c.hasAlert ? 'critical' : 'low'} count={c.count} />
-                      </span>
-                    </DropdownMenuRadioItem>
-                  ))}
-                </DropdownMenuRadioGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
+              ))}
+            </ChipGroup>
           </div>
 
           {/* 新增申請單 — 弱化:只在「已申請」(申請者視角)出現的次級按鈕。
