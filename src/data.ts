@@ -1363,6 +1363,10 @@ export const PEOPLE: Record<string, Person> = {
   人資助理: { department: '人力資源部', title: '人資助理' },
   採購協辦: { department: '採購部', title: '採購協辦' },
 }
+const DEPT_CODE: Record<string, string> = {
+  行銷部: 'MKT', 資訊部: 'IT', 財務部: 'FIN', 業務部: 'SALES', 行政部: 'ADM',
+  法務部: 'LEGAL', 管理部: 'MGT', 人力資源部: 'HR', 採購部: 'PUR',
+}
 export interface PersonInfo extends Person {
   id: string
   employeeNumber: string
@@ -1370,6 +1374,8 @@ export interface PersonInfo extends Person {
   phone: string
   location: string
   status: 'online' | 'away' | 'busy' | 'offline'
+  /** 組織課名代碼(部門 + 代碼) */
+  deptCode: string
 }
 const STATUSES = ['online', 'away', 'busy', 'offline'] as const
 function hashName(name: string): number {
@@ -1390,6 +1396,7 @@ export function getPerson(name: string): PersonInfo {
     phone: `02-${2700 + (h % 100)}-${1000 + (h % 9000)}`,
     location: '台北總部',
     status: STATUSES[h % STATUSES.length],
+    deptCode: DEPT_CODE[base.department] ? `${base.department} ${DEPT_CODE[base.department]}` : base.department,
   }
 }
 

@@ -23,7 +23,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   ProfileCard,
-  ProfileCardDefaultActions,
 } from '@qijenchen/design-system'
 import {
   LayoutGrid,
@@ -82,6 +81,7 @@ function personAvatarSrc(name: string): string {
 function personProfileCard(name: string) {
   const p = getPerson(name)
   return (
+    // DS「+ Info fields」版本:subtitle + status + fields(無 actions / viewMore)
     <ProfileCard
       name={name}
       avatar={{ src: personAvatarSrc(name), alt: name }}
@@ -89,13 +89,11 @@ function personProfileCard(name: string) {
       status={p.status}
       defaultFieldValues={{ id: p.id, employeeNumber: p.employeeNumber }}
       fields={[
-        { label: '部門', value: p.department },
+        { label: '組織課名代碼', value: p.deptCode },
         { label: '電子郵件', value: p.email },
         { label: '電話', value: p.phone },
         { label: '地點', value: p.location },
       ]}
-      actions={<ProfileCardDefaultActions onChat={() => {}} onCall={() => {}} />}
-      onViewMore={() => {}}
     />
   )
 }
@@ -121,8 +119,37 @@ function Applicant({ name }: { name: string }) {
 }
 
 // 代理人 — 多頭像 overlap stack(可能多位),各自 hover ProfileCard
+// 代理人 hover 的自刻清單卡 — 每人:組織課名代碼 ｜ ID ｜ 工號
+function AgentListCard({ agents }: { agents: string[] }) {
+  return (
+    <div className="w-[320px] bg-surface-raised rounded-lg border border-border overflow-hidden">
+      <div className="px-4 py-2.5 border-b border-divider text-caption font-medium text-fg-secondary">
+        代理人 · {agents.length} 人
+      </div>
+      <div className="divide-y divide-divider max-h-[320px] overflow-auto">
+        {agents.map((name) => {
+          const p = getPerson(name)
+          return (
+            <div key={name} className="px-4 py-3 flex items-start gap-2.5">
+              <Avatar alt={name} size={28} src={personAvatarSrc(name)} />
+              <div className="min-w-0 flex-1">
+                <div className="text-body font-medium mb-1 truncate">{name}</div>
+                <div className="text-caption text-fg-secondary">
+                  {p.deptCode} ｜ {p.id} ｜ {p.employeeNumber}
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// 代理人 — 多頭像 overlap stack;hover 任一顯示「代理人清單卡」
 function AgentAvatars({ agents }: { agents?: string[] }) {
   if (!agents || agents.length === 0) return <span className="text-fg-placeholder">-</span>
+  const card = <AgentListCard agents={agents} />
   return (
     <span className="inline-flex items-center">
       {agents.map((a, i) => (
@@ -131,7 +158,7 @@ function AgentAvatars({ agents }: { agents?: string[] }) {
           className={`rounded-full ring-2 ring-surface ${i > 0 ? '-ml-2' : ''}`}
           style={{ zIndex: agents.length - i }}
         >
-          <PersonAvatar name={a} />
+          <Avatar alt={a} size={22} src={personAvatarSrc(a)} hoverCard={card} />
         </span>
       ))}
     </span>
