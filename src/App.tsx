@@ -170,19 +170,34 @@ function AgentListCard({ agents }: { agents: string[] }) {
 // 可用 align="start" 讓卡片靠頭像組左緣對齊。
 function AgentAvatars({ agents }: { agents?: string[] }) {
   if (!agents || agents.length === 0) return <span className="text-fg-placeholder">-</span>
+  // 走 DS Avatar `stacked`(遮罩挖空,非寫死 ring-surface → 不會框線外溢);
+  // 疊放量用 --avatar-stack-overlap。超過 MAX 顯示「+N」溢出圈。
+  const MAX = 4
+  const overflow = agents.length > MAX
+  const visible = overflow ? agents.slice(0, MAX - 1) : agents
+  const hiddenCount = agents.length - visible.length
   return (
     <HoverCard>
       <HoverCardTrigger asChild>
         <span className="inline-flex items-center cursor-default">
-          {agents.map((a, i) => (
+          {visible.map((a, i) => (
             <span
               key={a + i}
-              className={`rounded-full ring-2 ring-surface ${i > 0 ? '-ml-2' : ''}`}
+              className="relative inline-flex -ml-[var(--avatar-stack-overlap)] first:ml-0"
               style={{ zIndex: agents.length - i }}
             >
-              <Avatar alt={a} size={22} src={personAvatarSrc(a)} />
+              <Avatar alt={a} size={22} src={personAvatarSrc(a)} stacked />
             </span>
           ))}
+          {overflow && (
+            <span
+              className="relative inline-flex items-center justify-center -ml-[var(--avatar-stack-overlap)] rounded-full bg-muted text-fg-secondary text-caption font-medium"
+              style={{ width: 22, height: 22, zIndex: 0 }}
+              aria-label={`另外 ${hiddenCount} 人`}
+            >
+              +{hiddenCount}
+            </span>
+          )}
         </span>
       </HoverCardTrigger>
       <HoverCardContent align="start" className="p-0 w-auto border-0 bg-transparent shadow-none">

@@ -168,6 +168,7 @@ export const MOCK_RECORDS: ApprovalRecord[] = [
       { id: 'a2', name: 'banner.png', url: '#', type: 'image', size: '340 KB' },
     ],
     dueDate: '2026-06-20',
+    agents: ['黃建偉', '王大明'],
   },
   {
     id: 'REQ-2026-0002',
@@ -214,7 +215,7 @@ export const MOCK_RECORDS: ApprovalRecord[] = [
     attachments: [
       { id: 'a3', name: '報價單.pdf', url: '#', type: 'file', size: '892 KB' },
     ],
-    agents: ['採購協辦'],
+    agents: ['採購協辦', '王大明', '林志明'],
   },
   {
     id: 'REQ-2026-0003',
@@ -538,7 +539,7 @@ export const MOCK_RECORDS: ApprovalRecord[] = [
       { label: '備註', value: '回鄉探親' },
     ],
     attachments: [],
-    agents: ['黃建偉'],
+    agents: ['黃建偉', '林法務'],
   },
   {
     id: 'REQ-2026-0010',
@@ -589,7 +590,7 @@ export const MOCK_RECORDS: ApprovalRecord[] = [
       { id: 'a11', name: '職務說明書.pdf', url: '#', type: 'file', size: '210 KB' },
     ],
     dueDate: '2026-07-01',
-    agents: ['人資專員', '人資助理'],
+    agents: ['人資專員', '人資助理', '王大明', '林志明', '張法務', '周總監'],
   },
   {
     id: 'REQ-2026-0011',
@@ -656,7 +657,7 @@ export const MOCK_RECORDS: ApprovalRecord[] = [
     ],
     attachments: [],
     dueDate: '2026-06-20',
-    agents: ['黃建偉'],
+    agents: ['黃建偉', '張法務', '林法務'],
   },
   // ── badge demo: urgent-no-overdue (red "緊急待審") ──────────────────────────
   {
@@ -985,7 +986,7 @@ export const MOCK_RECORDS: ApprovalRecord[] = [
     ],
     attachments: [],
     dueDate: '2026-06-27',
-    agents: ['黃建偉'],
+    agents: ['黃建偉', '周總監', '林處長', '陳美惠'],
   },
   {
     id: 'REQ-2026-0023',
