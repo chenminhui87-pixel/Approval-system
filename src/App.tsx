@@ -52,6 +52,7 @@ import {
   ClipboardPen,
   ClipboardCopy,
   Info,
+  ListChecks,
 } from 'lucide-react'
 import {
   MOCK_RECORDS,
@@ -475,6 +476,19 @@ function EmptyState({ message }: { message: string }) {
   )
 }
 
+// 批次選取時的側面板空狀態:避免面板一邊顯示單張內容、一邊又在批次選多張造成混亂。
+function BatchSelectPanel({ count }: { count: number }) {
+  return (
+    <div className="flex flex-col items-center justify-center h-full text-center gap-3 px-6 text-fg-placeholder">
+      <ListChecks size={40} />
+      <div>
+        <p className="text-body font-medium text-fg-secondary">批次選取中</p>
+        <p className="text-caption mt-1">已選取 {count} 項,請從下方操作列進行核准或退件。</p>
+      </div>
+    </div>
+  )
+}
+
 type TabId = 'pending-me' | 'submitted' | 'signed' | 'cc'
 type ViewMode = 'card' | 'list'
 
@@ -561,6 +575,8 @@ function ApprovalPage() {
   }
 
   function openRecord(r: ApprovalRecord) {
+    // 開單張詳情 = 進入「專注一張」模式 → 退出批次(與批次空狀態互斥,避免兩種模式並存)
+    if (isSelecting) clearSelection()
     setSelectedId(r.id)
     setPanelOpen(true)
   }
@@ -610,16 +626,23 @@ function ApprovalPage() {
       onAsideOpenChange={setPanelOpen}
       aside={
         selectedRecord ? (
-          <DetailAside title={selectedRecord.title} onExpand={() => setModalOpen(true)}>
-            <ApprovalDetailPanel
-              key={selectedRecord.id}
-              record={selectedRecord}
-              mode={tab === 'pending-me' ? 'approve' : 'view'}
-              onApprove={handleApprove}
-              onReject={handleReject}
-              onMoreAction={handleStub}
-            />
-          </DetailAside>
+          isSelecting ? (
+            // 批次選取中 → 面板顯示空狀態,不顯示單張內容(避免「看一張卻選多張」的混亂)
+            <DetailAside title="批次選取中">
+              <BatchSelectPanel count={selectedIds.size} />
+            </DetailAside>
+          ) : (
+            <DetailAside title={selectedRecord.title} onExpand={() => setModalOpen(true)}>
+              <ApprovalDetailPanel
+                key={selectedRecord.id}
+                record={selectedRecord}
+                mode={tab === 'pending-me' ? 'approve' : 'view'}
+                onApprove={handleApprove}
+                onReject={handleReject}
+                onMoreAction={handleStub}
+              />
+            </DetailAside>
+          )
         ) : undefined
       }
     >
