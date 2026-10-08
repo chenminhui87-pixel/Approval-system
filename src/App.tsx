@@ -773,11 +773,13 @@ function ApprovalPage() {
             }}
             actions={
               <>
-                <Button variant="secondary" danger onClick={() => { setRejectComment(''); setRejectConfirmOpen(true) }}>
-                  退件
-                </Button>
+                {/* BulkActionBar actions 左對齊:主要動作(核准)最左,danger(退件)排其後遠離焦點
+                    (action-bar.spec.md L121/L122) */}
                 <Button variant="secondary" onClick={() => { setApproveComment(''); setApproveConfirmOpen(true) }}>
                   核准
+                </Button>
+                <Button variant="secondary" danger onClick={() => { setRejectComment(''); setRejectConfirmOpen(true) }}>
+                  退件
                 </Button>
               </>
             }
