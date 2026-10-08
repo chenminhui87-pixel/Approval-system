@@ -14,6 +14,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarMenuBadge,
+  useSidebar,
   Chip,
   ChipGroup,
   SegmentedControl,
@@ -207,9 +208,11 @@ function RowCheckbox({ checked, indeterminate, onChange }: {
 }
 
 function PageHeader({ title, onOpenForms }: { title: string; onOpenForms: () => void }) {
+  // sidebar 收合時,展開鈕移到內容 header 最左;展開時展開鈕在 sidebar header 內
+  const { state } = useSidebar()
   return (
     <header className="flex items-center gap-3 h-[var(--chrome-header-height)] px-[var(--layout-space-loose)] bg-surface border-b border-divider">
-      <SidebarTrigger />
+      {state === 'collapsed' && <SidebarTrigger />}
       <h1 className="text-body-lg font-medium flex-1 truncate">{title}</h1>
       {/* 管理/設定類暫時入口 — 創建申請單表單(未來交下游系統) */}
       <DropdownMenu>
@@ -242,9 +245,10 @@ function ApprovalSidebar({ records }: { records: ApprovalRecord[] }) {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
-        <div className="flex items-center gap-2 px-2 py-1">
-          <Avatar alt="Approvals" size={24} shape="square" color="blue" solid />
-          <span className="text-body-lg font-semibold truncate group-data-[collapsible=icon]:hidden">Approvals</span>
+        {/* 展開時:標題 Approvals + 收合鈕在右;收合(icon)時整列隱藏,改由內容 header 的展開鈕 */}
+        <div className="flex items-center gap-2 px-2 py-1 group-data-[collapsible=icon]:hidden">
+          <span className="text-body-lg font-semibold truncate flex-1">Approvals</span>
+          <SidebarTrigger />
         </div>
       </SidebarHeader>
       <SidebarContent>
