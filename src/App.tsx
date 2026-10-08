@@ -3,9 +3,16 @@ import {
   TooltipProvider,
   AppShell,
   Avatar,
-  Tabs,
-  TabsList,
-  TabsTrigger,
+  Sidebar,
+  SidebarProvider,
+  SidebarTrigger,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarMenuBadge,
   Chip,
   ChipGroup,
   SegmentedControl,
@@ -201,6 +208,7 @@ function RowCheckbox({ checked, indeterminate, onChange }: {
 function PageHeader({ title, onOpenForms }: { title: string; onOpenForms: () => void }) {
   return (
     <header className="flex items-center gap-3 h-[var(--chrome-header-height)] px-[var(--layout-space-loose)] bg-surface border-b border-divider">
+      <SidebarTrigger />
       <Avatar alt="簽核系統" size={24} shape="square" color="blue" solid />
       <h1 className="text-body-lg font-medium flex-1 truncate">{title}</h1>
       {/* 管理/設定類暫時入口 — 創建申請單表單(未來交下游系統) */}
@@ -220,6 +228,41 @@ function PageHeader({ title, onOpenForms }: { title: string; onOpenForms: () => 
         <Avatar alt={CURRENT_USER} size={32} color="blue" />
       </button>
     </header>
+  )
+}
+
+// 主導覽改走左側 sidebar(待簽核/已簽核/已申請/轉寄給我),對齊整合平台的統一框架。
+// active 狀態由 SidebarProvider controlled(activeId=tab);待辦類(待簽核/轉寄給我)顯示筆數 badge。
+function ApprovalSidebar({ records }: { records: ApprovalRecord[] }) {
+  const badgeFor = (t: TabId): number | null => {
+    if (t !== 'pending-me' && t !== 'cc') return null
+    const n = getTabRecords(t, records, CURRENT_USER).length
+    return n > 0 ? n : null
+  }
+  return (
+    <Sidebar collapsible="icon">
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {TAB_ORDER.map((t) => {
+                const badge = badgeFor(t)
+                return (
+                  <SidebarMenuItem key={t}>
+                    <SidebarMenuButton id={t} startIcon={TAB_ICONS[t]} tooltip={TAB_LABELS[t]}>
+                      {TAB_LABELS[t]}
+                    </SidebarMenuButton>
+                    {badge !== null && (
+                      <SidebarMenuBadge variant={t === 'pending-me' ? 'critical' : 'low'} count={badge} />
+                    )}
+                  </SidebarMenuItem>
+                )
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+    </Sidebar>
   )
 }
 
@@ -574,6 +617,17 @@ function ApprovalPage() {
     setRejectComment('')
   }
 
+  // 切換主導覽(sidebar / 原 tab 共用):清選取 + 清搜尋 + Q2 分類退回
+  function handleTabChange(nextTab: TabId) {
+    setTab(nextTab)
+    setSelectedIds(new Set())
+    setSearch('')
+    if (category !== 'all') {
+      const has = getTabRecords(nextTab, records, CURRENT_USER).some((r) => r.category === category)
+      if (!has) setCategory('all')
+    }
+  }
+
   function openRecord(r: ApprovalRecord) {
     // 開單張詳情 = 進入「專注一張」模式 → 退出批次(與批次空狀態互斥,避免兩種模式並存)
     if (isSelecting) clearSelection()
@@ -619,9 +673,11 @@ function ApprovalPage() {
   }
 
   return (
+    <SidebarProvider activeId={tab} onActiveChange={(id: string) => handleTabChange(id as TabId)}>
     <AppShell
-      layout="primary-header"
-      globalHeader={<PageHeader title="簽核管理" onOpenForms={() => setFormMgrOpen(true)} />}
+      layout="primary-sidebar"
+      header={<PageHeader title="簽核管理" onOpenForms={() => setFormMgrOpen(true)} />}
+      sidebar={<ApprovalSidebar records={records} />}
       asideOpen={panelOpen && !!selectedRecord}
       onAsideOpenChange={setPanelOpen}
       aside={
@@ -647,32 +703,8 @@ function ApprovalPage() {
       }
     >
     <div className="flex flex-col h-full">
-      {/* Tabs — 不加 border-b,DS TabsList 自帶底線(避免雙線);pt-2 與 header 拉開 */}
-      <div className="px-[var(--layout-space-loose)] pt-2">
-        <Tabs value={tab} onValueChange={(v: string) => {
-          const nextTab = v as TabId
-          setTab(nextTab)
-          setSelectedIds(new Set())
-          setSearch('')
-          // Q2 幽靈空清單修正:切 tab 後若目前分類在新 tab 沒有任何單據 → 退回「全部類別」,
-          // 避免顯示一個 0 筆的分類 filter + 空表;分類在新 tab 仍有單據則保留(跨 tab 連續性)。
-          if (category !== 'all') {
-            const has = getTabRecords(nextTab, records, CURRENT_USER).some((r) => r.category === category)
-            if (!has) setCategory('all')
-          }
-        }}>
-          <TabsList>
-            {TAB_ORDER.map((t) => (
-              <TabsTrigger key={t} value={t} startIcon={TAB_ICONS[t]}>
-                {TAB_LABELS[t]}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
-      </div>
-
-      {/* Search + filter bar — 搜尋+篩選為同一 toolbar 區,內部 gap-3;
-          pt-6(24px)tab↔search、pb-3(12px)chip↔table */}
+      {/* 主導覽改左側 sidebar(見 ApprovalSidebar);此處只剩搜尋 + 篩選 toolbar。
+          Search + filter bar — 內部 gap-3;pt-6(24px)頂距、pb-3(12px)chip↔table */}
       <div className="flex flex-col gap-3 px-[var(--layout-space-loose)] pt-6 pb-3">
         {/* Search row */}
         <Input
@@ -906,6 +938,7 @@ function ApprovalPage() {
       </Dialog>
     </div>
     </AppShell>
+    </SidebarProvider>
   )
 }
 
