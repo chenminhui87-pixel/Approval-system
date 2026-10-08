@@ -12,6 +12,7 @@ import {
   SegmentedControlItem,
   Tag,
   Button,
+  BulkActionBar,
   Textarea,
   Checkbox,
   Input,
@@ -43,7 +44,6 @@ import {
   AlertCircle,
   Search,
   X,
-  ChevronLeft,
   Plus,
   MoreHorizontal,
   FileText,
@@ -477,7 +477,6 @@ function EmptyState({ message }: { message: string }) {
 
 type TabId = 'pending-me' | 'submitted' | 'signed' | 'cc'
 type ViewMode = 'card' | 'list'
-type BottomBarMode = 'action' | 'reject'
 
 const TAB_LABELS: Record<TabId, string> = {
   'pending-me': '待簽核',
@@ -507,9 +506,9 @@ function ApprovalPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [formMgrOpen, setFormMgrOpen] = useState(false)
   const [records, setRecords] = useState<ApprovalRecord[]>(MOCK_RECORDS)
-  const [bottomBarMode, setBottomBarMode] = useState<BottomBarMode>('action')
   const [rejectComment, setRejectComment] = useState('')
-  // 批次核准確認 modal(對齊 DS「確認 = Dialog」+ mobile);附核准意見(選填,跟單張/退件一致)
+  // 批次退件 / 核准確認 modal(對齊 DS「確認 = Dialog」+ mobile);退件原因必填、核准意見選填
+  const [rejectConfirmOpen, setRejectConfirmOpen] = useState(false)
   const [approveConfirmOpen, setApproveConfirmOpen] = useState(false)
   const [approveComment, setApproveComment] = useState('')
 
@@ -558,7 +557,6 @@ function ApprovalPage() {
 
   function clearSelection() {
     setSelectedIds(new Set())
-    setBottomBarMode('action')
     setRejectComment('')
   }
 
@@ -759,74 +757,31 @@ function ApprovalPage() {
         )}
       </div>
 
-      {/* Bottom action bar */}
+      {/* 批次操作列 — 走 DS BulkActionBar(內建計數 / 取消 / hiddenByFilter)。
+          actions slot 的退件 / 核准 variant 維持原本(secondary / secondary+danger)。
+          退件 / 核准皆開確認 dialog。 */}
       {isSelecting && (
-        <div className="shrink-0 border-t border-divider bg-surface">
-          {bottomBarMode === 'action' ? (
-            <div className="flex items-center gap-3 px-[var(--layout-space-loose)] py-3">
-              {/* Left: count + cancel */}
-              <div className="flex items-center gap-2 shrink-0">
-                <span className="text-body text-fg-secondary">
-                  已選取 {selectedIds.size} 項
-                  {hiddenSelectedCount > 0 && (
-                    <span className="text-fg-placeholder">（{hiddenSelectedCount} 項被搜尋隱藏）</span>
-                  )}
-                </span>
-                <Button
-                  variant="tertiary"
-                  size="sm"
-                  iconOnly
-                  startIcon={X}
-                  onClick={clearSelection}
-                  aria-label="取消選取"
-                />
-              </div>
-
-              <div className="flex-1" />
-
-              {/* Primary actions — 僅退件 / 核准 */}
-              <div className="flex items-center gap-2 shrink-0">
-                <Button variant="secondary" danger onClick={() => { setRejectComment(''); setBottomBarMode('reject') }}>
+        <div className="shrink-0 border-t border-divider">
+          <BulkActionBar
+            selection={[...selectedIds]}
+            onClearSelection={clearSelection}
+            hiddenByFilter={hiddenSelectedCount}
+            labels={{
+              count: (n: number) => `已選取 ${n} 項`,
+              hiddenSuffix: (hidden: number) => ` · ${hidden} 項被搜尋隱藏`,
+              clear: '取消選取',
+            }}
+            actions={
+              <>
+                <Button variant="secondary" danger onClick={() => { setRejectComment(''); setRejectConfirmOpen(true) }}>
                   退件
                 </Button>
-                <Button
-                  variant="secondary"
-                  onClick={() => { setApproveComment(''); setApproveConfirmOpen(true) }}
-                >
+                <Button variant="secondary" onClick={() => { setApproveComment(''); setApproveConfirmOpen(true) }}>
                   核准
                 </Button>
-              </div>
-            </div>
-          ) : (
-            /* Reject confirm mode */
-            <div className="flex flex-col gap-3 px-[var(--layout-space-loose)] py-3">
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="tertiary"
-                  size="sm"
-                  startIcon={ChevronLeft}
-                  onClick={() => setBottomBarMode('action')}
-                >
-                  返回
-                </Button>
-                <span className="text-body font-medium flex-1">退件原因 <span className="text-fg-danger">*</span></span>
-                <Button
-                  variant="secondary"
-                  danger
-                  disabled={rejectComment.trim().length === 0}
-                  onClick={handleBatchRejectSubmit}
-                >
-                  確認退件
-                </Button>
-              </div>
-              <Textarea
-                value={rejectComment}
-                onChange={(e) => setRejectComment(e.target.value)}
-                rows={2}
-                placeholder="請說明退件原因，讓申請人能依此修正再送"
-              />
-            </div>
-          )}
+              </>
+            }
+          />
         </div>
       )}
 
@@ -878,6 +833,48 @@ function ApprovalPage() {
             </DialogClose>
             <Button variant="secondary" onClick={() => { setApproveConfirmOpen(false); handleBatchApprove(approveComment.trim() || undefined) }}>
               確認核准
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 批次退件確認 modal — 退件原因必填;紅色強調留給 dialog 內最終確認(DS canonical) */}
+      <Dialog open={rejectConfirmOpen} onOpenChange={setRejectConfirmOpen}>
+        <DialogContent height="hug" maxWidth={440}>
+          <DialogHeader>
+            <DialogTitle>退件 {selectedIds.size} 件申請單</DialogTitle>
+          </DialogHeader>
+          <DialogBody>
+            <div className="flex flex-col gap-3">
+              {hiddenSelectedCount > 0 && (
+                <p className="text-body text-fg-secondary">
+                  其中 {hiddenSelectedCount} 張已勾選的單據不在目前搜尋結果中，確認後將一併退件。
+                </p>
+              )}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-body font-medium">
+                  退件原因 <span className="text-fg-danger">*</span>
+                </span>
+                <Textarea
+                  value={rejectComment}
+                  onChange={(e) => setRejectComment(e.target.value)}
+                  rows={3}
+                  placeholder="請說明退件原因，讓申請人能依此修正再送"
+                />
+              </div>
+            </div>
+          </DialogBody>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="tertiary">取消</Button>
+            </DialogClose>
+            <Button
+              variant="secondary"
+              danger
+              disabled={rejectComment.trim().length === 0}
+              onClick={() => { setRejectConfirmOpen(false); handleBatchRejectSubmit() }}
+            >
+              確認退件
             </Button>
           </DialogFooter>
         </DialogContent>
