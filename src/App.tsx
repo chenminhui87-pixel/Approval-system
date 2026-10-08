@@ -261,7 +261,7 @@ function ApprovalSidebar({ records }: { records: ApprovalRecord[] }) {
     <Sidebar collapsible="offcanvas">
       <SidebarHeader>
         {/* 展開時:標題 Approvals + 收合鈕在右;收合(icon)時整列隱藏,改由內容 header 的展開鈕 */}
-        <div className="flex items-center gap-2 px-2 py-1 group-data-[collapsible=icon]:hidden">
+        <div className="flex w-full items-center gap-2 px-2 py-1 group-data-[collapsible=icon]:hidden">
           <span className="text-body-lg font-semibold truncate flex-1">Approvals</span>
           <SidebarTrigger />
         </div>
