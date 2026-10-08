@@ -25,7 +25,7 @@
    nav panel 用較低一階的中性底色與內容區分(DS 無 navpanel token,先用 --muted subtle 底)。
    目標 inner [data-sidebar="sidebar"](className 只到外層);不改 node_modules。 */
 [data-sidebar='sidebar'] {
-  background-color: var(--muted);
+  background-color: #f5f5f5;
 }
 
 /* 簽核清單 DataTable:呈現型表格,已關閉欄位排序 / 隱藏(tableOptions)。

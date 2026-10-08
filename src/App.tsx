@@ -61,7 +61,6 @@ import {
   ClipboardPen,
   ClipboardCopy,
   Info,
-  ListChecks,
 } from 'lucide-react'
 import {
   MOCK_RECORDS,
@@ -253,7 +252,6 @@ function PageHeader({ title, onOpenForms }: { title: string; onOpenForms: () => 
 // active 狀態由 SidebarProvider controlled(activeId=tab);待辦類(待簽核/轉寄給我)顯示筆數 badge。
 function ApprovalSidebar({ records }: { records: ApprovalRecord[] }) {
   const badgeFor = (t: TabId): number | null => {
-    if (t !== 'pending-me' && t !== 'cc') return null
     const n = getTabRecords(t, records, CURRENT_USER).length
     return n > 0 ? n : null
   }
@@ -545,14 +543,13 @@ function EmptyState({ message }: { message: string }) {
 }
 
 // 批次選取時的側面板空狀態:避免面板一邊顯示單張內容、一邊又在批次選多張造成混亂。
+// 弱化處理(不搶批次操作列焦點):無 icon、頂部對齊、文字 muted。
 function BatchSelectPanel({ count }: { count: number }) {
   return (
-    <div className="flex flex-col items-center justify-center h-full text-center gap-3 px-6 text-fg-placeholder">
-      <ListChecks size={40} />
-      <div>
-        <p className="text-body font-medium text-fg-secondary">批次選取中</p>
-        <p className="text-caption mt-1">已選取 {count} 項,請從下方操作列進行核准或退件。</p>
-      </div>
+    <div className="px-[var(--layout-space-loose)] py-4 text-fg-muted">
+      <p className="text-caption">
+        已選取 {count} 項，請從下方操作列進行核准或退件。
+      </p>
     </div>
   )
 }
@@ -705,29 +702,12 @@ function ApprovalPage() {
       sidebar={<ApprovalSidebar records={records} />}
       asideOpen={panelOpen && !!selectedRecord}
       onAsideOpenChange={setPanelOpen}
-      aside={
-        selectedRecord ? (
-          isSelecting ? (
-            // 批次選取中 → 面板顯示空狀態,不顯示單張內容(避免「看一張卻選多張」的混亂)
-            <DetailAside title="批次選取中">
-              <BatchSelectPanel count={selectedIds.size} />
-            </DetailAside>
-          ) : (
-            <DetailAside title={selectedRecord.title} onExpand={() => setModalOpen(true)}>
-              <ApprovalDetailPanel
-                key={selectedRecord.id}
-                record={selectedRecord}
-                mode={tab === 'pending-me' ? 'approve' : 'view'}
-                onApprove={handleApprove}
-                onReject={handleReject}
-                onMoreAction={handleStub}
-              />
-            </DetailAside>
-          )
-        ) : undefined
-      }
     >
     <div className="flex flex-col h-full">
+      {/* 內容 body row:左側清單欄 + 右側詳情面板(面板長在內容 header 下方,非 AppShell 頂天 aside)*/}
+      <div className="flex flex-1 min-h-0">
+      {/* 左側:搜尋/篩選 toolbar + 清單 + 批次操作列 */}
+      <div className="flex flex-col flex-1 min-w-0 min-h-0">
       {/* 主導覽改左側 sidebar(見 ApprovalSidebar);此處只剩搜尋 + 篩選 toolbar。
           Search + filter bar — 內部 gap-3;pt-6(24px)頂距、pb-3(12px)chip↔table */}
       <div className="flex flex-col gap-3 px-[var(--layout-space-loose)] pt-6 pb-3">
@@ -841,7 +821,7 @@ function ApprovalPage() {
           actions slot 的退件 / 核准 variant 維持原本(secondary / secondary+danger)。
           退件 / 核准皆開確認 dialog。 */}
       {isSelecting && (
-        <div className="shrink-0 border-t border-divider">
+        <div className="shrink-0">
           <BulkActionBar
             selection={[...selectedIds]}
             onClearSelection={clearSelection}
@@ -866,6 +846,29 @@ function ApprovalPage() {
           />
         </div>
       )}
+      </div>{/* /左側清單欄 */}
+
+      {/* 右側詳情面板 — 置於內容 header 下方(DetailAside 讀 AppShell context 自決 inline/Sheet)*/}
+      {selectedRecord && (
+        isSelecting ? (
+          // 批次選取中 → 面板顯示空狀態,不顯示單張內容(避免「看一張卻選多張」的混亂)
+          <DetailAside title="批次選取中">
+            <BatchSelectPanel count={selectedIds.size} />
+          </DetailAside>
+        ) : (
+          <DetailAside title={selectedRecord.title} onExpand={() => setModalOpen(true)}>
+            <ApprovalDetailPanel
+              key={selectedRecord.id}
+              record={selectedRecord}
+              mode={tab === 'pending-me' ? 'approve' : 'view'}
+              onApprove={handleApprove}
+              onReject={handleReject}
+              onMoreAction={handleStub}
+            />
+          </DetailAside>
+        )
+      )}
+      </div>{/* /body row */}
 
       <Toaster />
       <ApprovalModal
