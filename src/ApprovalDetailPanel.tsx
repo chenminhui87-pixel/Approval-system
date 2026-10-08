@@ -81,9 +81,10 @@ export function ApprovalDetailPanel({
         {/* Tab bar — 固定頂部;不加 border-b(TabsList 自帶底線,避免雙線)、
             不加 pt(與內容 px-4 對齊、避免跟主內容 tab 高度差) */}
         <div className="shrink-0 bg-surface px-4">
-          <TabsList>
-            <TabsTrigger value="content">申請內容</TabsTrigger>
-            <TabsTrigger value="route">簽核流程</TabsTrigger>
+          {/* 均分 tab:TabsList 收掉預設 gap、trigger flex-1 → 兩頁各佔 50%,置中、底線貫穿 */}
+          <TabsList className="gap-0">
+            <TabsTrigger value="content" className="flex-1">申請內容</TabsTrigger>
+            <TabsTrigger value="route" className="flex-1">簽核流程</TabsTrigger>
           </TabsList>
         </div>
 
