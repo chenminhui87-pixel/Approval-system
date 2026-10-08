@@ -6,6 +6,7 @@ import {
   Sidebar,
   SidebarProvider,
   SidebarTrigger,
+  SidebarHeader,
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
@@ -209,7 +210,6 @@ function PageHeader({ title, onOpenForms }: { title: string; onOpenForms: () => 
   return (
     <header className="flex items-center gap-3 h-[var(--chrome-header-height)] px-[var(--layout-space-loose)] bg-surface border-b border-divider">
       <SidebarTrigger />
-      <Avatar alt="簽核系統" size={24} shape="square" color="blue" solid />
       <h1 className="text-body-lg font-medium flex-1 truncate">{title}</h1>
       {/* 管理/設定類暫時入口 — 創建申請單表單(未來交下游系統) */}
       <DropdownMenu>
@@ -241,6 +241,12 @@ function ApprovalSidebar({ records }: { records: ApprovalRecord[] }) {
   }
   return (
     <Sidebar collapsible="icon">
+      <SidebarHeader>
+        <div className="flex items-center gap-2 px-2 py-1">
+          <Avatar alt="Approvals" size={24} shape="square" color="blue" solid />
+          <span className="text-body-lg font-semibold truncate group-data-[collapsible=icon]:hidden">Approvals</span>
+        </div>
+      </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
@@ -676,7 +682,7 @@ function ApprovalPage() {
     <SidebarProvider activeId={tab} onActiveChange={(id: string) => handleTabChange(id as TabId)}>
     <AppShell
       layout="primary-sidebar"
-      header={<PageHeader title="簽核管理" onOpenForms={() => setFormMgrOpen(true)} />}
+      header={<PageHeader title={TAB_LABELS[tab]} onOpenForms={() => setFormMgrOpen(true)} />}
       sidebar={<ApprovalSidebar records={records} />}
       asideOpen={panelOpen && !!selectedRecord}
       onAsideOpenChange={setPanelOpen}
