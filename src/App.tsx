@@ -243,7 +243,7 @@ function ApprovalSidebar({ records }: { records: ApprovalRecord[] }) {
     return n > 0 ? n : null
   }
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="offcanvas">
       <SidebarHeader>
         {/* 展開時:標題 Approvals + 收合鈕在右;收合(icon)時整列隱藏,改由內容 header 的展開鈕 */}
         <div className="flex items-center gap-2 px-2 py-1 group-data-[collapsible=icon]:hidden">
