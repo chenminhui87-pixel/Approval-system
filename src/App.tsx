@@ -816,32 +816,31 @@ function ApprovalPage() {
             </Button>
           )}
 
-          {/* 外層 filter(A)— 統一入口(DS data-table.spec.md L278);只在列表模式出現(驅動 DataTable)。
-              pressed:套用條件後維持 active 視覺。表頭「依此欄篩選…」捷徑也開這個面板(預填該欄)。 */}
-          {view === 'list' && (
-            <Popover open={filterOpen} onOpenChange={setFilterOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="text"
-                  size="sm"
-                  iconOnly
-                  startIcon={Filter}
-                  aria-label="篩選"
-                  pressed={isFilterTreeActive(filterTree)}
-                />
-              </PopoverTrigger>
-              <PopoverContent align="end" className="w-auto p-0">
-                <DataTableFilterPanel
-                  columns={FILTER_COLUMNS}
-                  value={filterTree}
-                  onChange={setFilterTree}
-                  prefilledColumnId={filterPrefilledId}
-                  onPrefillConsumed={() => setFilterPrefilledId(undefined)}
-                  onClose={() => setFilterOpen(false)}
-                />
-              </PopoverContent>
-            </Popover>
-          )}
+          {/* 外層 filter(A)— 統一入口(DS data-table.spec.md L278)。filter 套在 data 層,
+              卡片 / 列表共用同一份篩完資料 → 兩種檢視都顯示此鈕(避免卡片模式 filter 隱形卻仍作用)。
+              pressed:套用條件後維持 active 視覺。表頭「依此欄篩選…」捷徑另在列表表頭(卡片無欄位表頭)。 */}
+          <Popover open={filterOpen} onOpenChange={setFilterOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="text"
+                size="sm"
+                iconOnly
+                startIcon={Filter}
+                aria-label="篩選"
+                pressed={isFilterTreeActive(filterTree)}
+              />
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-auto p-0">
+              <DataTableFilterPanel
+                columns={FILTER_COLUMNS}
+                value={filterTree}
+                onChange={setFilterTree}
+                prefilledColumnId={filterPrefilledId}
+                onPrefillConsumed={() => setFilterPrefilledId(undefined)}
+                onClose={() => setFilterOpen(false)}
+              />
+            </PopoverContent>
+          </Popover>
 
           <SegmentedControl
             value={view}
