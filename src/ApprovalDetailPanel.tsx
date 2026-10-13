@@ -33,8 +33,6 @@ interface ApprovalDetailPanelProps {
   mode: 'approve' | 'view'
   /** 批次選取中:面板當唯讀預覽,隱藏單張操作列(改走底部批次列) */
   batchMode?: boolean
-  /** 批次已選筆數(供唯讀提示文案) */
-  batchCount?: number
   onApprove: (id: string, comment?: string) => void
   onReject: (id: string, comment: string) => void
   onMoreAction: (label: string) => void
@@ -49,7 +47,6 @@ export function ApprovalDetailPanel({
   record,
   mode,
   batchMode = false,
-  batchCount = 0,
   onApprove,
   onReject,
   onMoreAction,
@@ -237,15 +234,6 @@ export function ApprovalDetailPanel({
               />
             </div>
           )}
-        </div>
-      )}
-
-      {/* 批次模式:以輕量提示取代單張操作列,說明為何操作鈕不在此(改走底部批次列) */}
-      {batchMode && mode === 'approve' && record.status === 'pending' && (
-        <div className="shrink-0 bg-surface border-t border-divider px-4 py-2.5">
-          <p className="text-caption text-fg-muted">
-            批次選取中(已選 {batchCount} 項)· 單張操作已停用,請用下方操作列一併處理。
-          </p>
         </div>
       )}
     </div>

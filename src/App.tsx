@@ -805,9 +805,32 @@ function ApprovalPage() {
         )}
       </div>
 
-      {/* 批次操作列 — 走 DS BulkActionBar(內建計數 / 取消 / hiddenByFilter)。
-          actions slot 的退件 / 核准 variant 維持原本(secondary / secondary+danger)。
-          退件 / 核准皆開確認 dialog。 */}
+      </div>{/* /左側清單欄 */}
+
+      {/* 右側詳情面板 — 置於內容 header 下方(DetailAside 讀 AppShell context 自決 inline/Sheet)。
+          批次模式:仍可瀏覽單張 detail,但走唯讀(隱藏面板單張操作列);expand 大視圖在批次中關閉,
+          避免從 modal 繞回單張操作。 */}
+      {selectedRecord && (
+        <DetailAside
+          title={selectedRecord.title}
+          onExpand={isSelecting ? undefined : () => setModalOpen(true)}
+        >
+          <ApprovalDetailPanel
+            key={selectedRecord.id}
+            record={selectedRecord}
+            mode={tab === 'pending-me' ? 'approve' : 'view'}
+            batchMode={isSelecting}
+            onApprove={handleApprove}
+            onReject={handleReject}
+            onMoreAction={handleStub}
+          />
+        </DetailAside>
+      )}
+      </div>{/* /body row */}
+
+      {/* 批次操作列 — 置於 body row 下方 = 橫跨「清單 + 右側面板」全寬(Gmail / Apple Mail 式底部工具列)。
+          作用域靠位置區隔:批次操作 = 底部全寬列;單張操作 = 面板內 footer(批次時隱藏)。
+          走 DS BulkActionBar(自帶上分隔線 border-t;placement 由 consumer 決定,全寬合法)。 */}
       {isSelecting && (
         <div className="shrink-0">
           <BulkActionBar
@@ -834,29 +857,6 @@ function ApprovalPage() {
           />
         </div>
       )}
-      </div>{/* /左側清單欄 */}
-
-      {/* 右側詳情面板 — 置於內容 header 下方(DetailAside 讀 AppShell context 自決 inline/Sheet)。
-          批次模式:仍可瀏覽單張 detail,但走唯讀(隱藏面板單張操作列);expand 大視圖在批次中關閉,
-          避免從 modal 繞回單張操作。 */}
-      {selectedRecord && (
-        <DetailAside
-          title={selectedRecord.title}
-          onExpand={isSelecting ? undefined : () => setModalOpen(true)}
-        >
-          <ApprovalDetailPanel
-            key={selectedRecord.id}
-            record={selectedRecord}
-            mode={tab === 'pending-me' ? 'approve' : 'view'}
-            batchMode={isSelecting}
-            batchCount={selectedIds.size}
-            onApprove={handleApprove}
-            onReject={handleReject}
-            onMoreAction={handleStub}
-          />
-        </DetailAside>
-      )}
-      </div>{/* /body row */}
 
       <Toaster />
       <ApprovalModal
