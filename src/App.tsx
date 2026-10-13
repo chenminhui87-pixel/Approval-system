@@ -35,6 +35,14 @@ import {
   ProfileCard,
   DataTable,
   type DataTableProps,
+  DataTableFilterPanel,
+  createEmptyFilterTree,
+  evaluateTree,
+  isFilterTreeActive,
+  type FilterTree,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
   Dialog,
   DialogContent,
   DialogHeader,
@@ -61,6 +69,7 @@ import {
   ClipboardPen,
   ClipboardCopy,
   Info,
+  Filter,
 } from 'lucide-react'
 import {
   MOCK_RECORDS,
@@ -77,6 +86,47 @@ import { ApprovalDetailPanel } from './ApprovalDetailPanel'
 import { ApprovalModal } from './ApprovalModal'
 import { FormTemplateManager } from './FormTemplateManager'
 import { DetailAside } from './DetailAside'
+
+// ── 外層 filter(A / PM 2026-10-13)──────────────────────────────────────────────
+// 只放「簽核系統固定/共同欄位」:狀態 / 緊急程度 / 申請人 / 到期區間。
+// 這些欄位每個類別都有 → 切類別不需清除 filter(避免類別專屬欄位的 stale-filter 問題)。
+// 篩選邏輯走 DS 統一入口 DataTableFilterPanel(data-table.spec.md L278),不做表頭 inline filter;
+// 表頭只提供「依此欄篩選…」捷徑(onColumnFilterTrigger)跳進此面板並預填。
+const APPLICANT_OPTIONS = Array.from(new Set(MOCK_RECORDS.map((r) => r.applicant))).map((name) => ({
+  value: name,
+  label: name,
+}))
+
+const FILTER_COLUMNS: DataTableProps<ApprovalRecord>['columns'] = [
+  {
+    id: 'status',
+    header: '狀態',
+    meta: {
+      type: 'select',
+      options: [
+        { value: 'pending', label: '簽核中' },
+        { value: 'approved', label: '已核准' },
+        { value: 'rejected', label: '已退件' },
+      ],
+    },
+  },
+  {
+    id: 'urgency',
+    header: '緊急程度',
+    meta: {
+      type: 'select',
+      options: [
+        { value: 'high', label: '緊急' },
+        { value: 'medium', label: '一般' },
+        { value: 'low', label: '低' },
+      ],
+    },
+  },
+  { id: 'applicant', header: '申請人', meta: { type: 'select', options: APPLICANT_OPTIONS } },
+  { id: 'dueDate', header: '到期時間', meta: { type: 'date' } },
+]
+
+const FILTERABLE_IDS = new Set((FILTER_COLUMNS ?? []).map((c) => (c as { id: string }).id))
 
 
 const AVATAR_COLORS = ['blue', 'violet', 'emerald', 'amber', 'rose', 'cyan', 'orange'] as const
@@ -364,6 +414,7 @@ function RecordList({
   onOpenModal,
   activeId,
   showSelectAll,
+  onColumnFilterTrigger,
 }: {
   records: ApprovalRecord[]
   selectedIds: Set<string>
@@ -377,6 +428,8 @@ function RecordList({
   onOpenModal: (r: ApprovalRecord) => void
   /** 目前面板開著的單據 id → 該列 info 鈕呈 pressed/checked */
   activeId: string | null
+  /** 表頭「依此欄篩選…」捷徑 → 開外層面板並預填該欄 */
+  onColumnFilterTrigger: (columnId: string) => void
   /** 只有「選定具體分類」時才顯示表頭「全選」;全部類別僅列可勾、無一鍵全選
       (per 設計決策:跨類型一鍵全選是盲簽最常發生處,批次鎖在單一類型內) */
   showSelectAll: boolean
@@ -515,8 +568,10 @@ function RecordList({
         autoRowHeight
         pinnedLeftColumns={['select', 'title']}
         pinnedRightColumns={['info']}
-        // 呈現型表格,維持原手刻版的乾淨表頭:關閉欄位排序 / 隱藏(header ⌄ 空選單由
-        // globals.css `.approval-datatable [data-col-menu]` 隱藏,避免蓋住 select 欄全選)
+        // 表頭「依此欄篩選…」捷徑 → 開外層面板並預填(僅可篩選欄顯示此 ⌄ 選單,見 globals.css)
+        onColumnFilterTrigger={onColumnFilterTrigger}
+        // 呈現型表格:關閉欄位排序 / 隱藏。filter 在 data 層以 evaluateTree 套用(見上層 `filtered`),
+        // 不走 DataTable 內部 globalFilter(DS dist 自帶 bundled TanStack,跨 instance 無法驅動)。
         tableOptions={{ enableSorting: false, enableHiding: false }}
       />
     </div>
@@ -578,12 +633,22 @@ function ApprovalPage() {
   const [rejectConfirmOpen, setRejectConfirmOpen] = useState(false)
   const [approveConfirmOpen, setApproveConfirmOpen] = useState(false)
   const [approveComment, setApproveComment] = useState('')
+  // 外層 filter(A):FilterTree controlled + popover 開關 + 表頭捷徑預填欄位
+  const [filterTree, setFilterTree] = useState<FilterTree>(() => createEmptyFilterTree('flat'))
+  const [filterOpen, setFilterOpen] = useState(false)
+  const [filterPrefilledId, setFilterPrefilledId] = useState<string | undefined>(undefined)
 
   const tabRecords = getTabRecords(tab, records, CURRENT_USER)
   const searchFiltered = tabRecords
     .filter((r) => !search || r.title.includes(search) || r.applicant.includes(search) || r.id.includes(search))
-  const filtered = searchFiltered
+  const categoryFiltered = searchFiltered
     .filter((r) => category === 'all' || r.category === category)
+  // 外層 filter(A):走 DS 匯出的 evaluateTree 在 data 層過濾。
+  // (DS dist 自帶 bundled TanStack,consumer 的 getFilteredRowModel 是不同 module instance、
+  //  無法驅動 DataTable 內部 globalFilter → 改在 data 層套用,等效且無跨 instance 問題。)
+  const filtered = isFilterTreeActive(filterTree)
+    ? categoryFiltered.filter((r) => evaluateTree(filterTree, r))
+    : categoryFiltered
 
   // 分類統計(給 chips + 下拉選單共用):只留該 tab(+搜尋)有單據的類別,
   // 目前選取中的類別一律保留(避免 chip / 選項消失)
@@ -751,6 +816,33 @@ function ApprovalPage() {
             </Button>
           )}
 
+          {/* 外層 filter(A)— 統一入口(DS data-table.spec.md L278);只在列表模式出現(驅動 DataTable)。
+              pressed:套用條件後維持 active 視覺。表頭「依此欄篩選…」捷徑也開這個面板(預填該欄)。 */}
+          {view === 'list' && (
+            <Popover open={filterOpen} onOpenChange={setFilterOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="text"
+                  size="sm"
+                  iconOnly
+                  startIcon={Filter}
+                  aria-label="篩選"
+                  pressed={isFilterTreeActive(filterTree)}
+                />
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-auto p-0">
+                <DataTableFilterPanel
+                  columns={FILTER_COLUMNS}
+                  value={filterTree}
+                  onChange={setFilterTree}
+                  prefilledColumnId={filterPrefilledId}
+                  onPrefillConsumed={() => setFilterPrefilledId(undefined)}
+                  onClose={() => setFilterOpen(false)}
+                />
+              </PopoverContent>
+            </Popover>
+          )}
+
           <SegmentedControl
             value={view}
             onValueChange={(v: string | undefined) => v && setView(v as ViewMode)}
@@ -801,6 +893,13 @@ function ApprovalPage() {
             onOpenModal={openModalFor}
             activeId={panelOpen ? selectedId : null}
             showSelectAll={category !== 'all'}
+            onColumnFilterTrigger={(columnId) => {
+              const prefill = FILTERABLE_IDS.has(columnId) ? columnId : undefined
+              // 延一 tick 開 popover:等表頭 ⌄ DropdownMenu 關閉完成,
+              // 否則 Radix 會把剛開的 filter popover 當成「外點」立刻關掉(跨浮層 gotcha)。
+              setFilterPrefilledId(prefill)
+              setTimeout(() => setFilterOpen(true), 0)
+            }}
           />
         )}
       </div>

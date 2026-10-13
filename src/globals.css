@@ -29,10 +29,15 @@
 }
 
 /* 簽核清單 DataTable:呈現型表格,已關閉欄位排序 / 隱藏(tableOptions)。
-   DS 的 header ⌄ 欄位選單 trigger 不隨「無選項」自動收起(只逐項 gate),
-   在 48px 寬的 select 欄還會在 hover 時蓋住「全選」checkbox → 隱藏空選單 trigger。
-   目標 [data-col-menu];scope 在本表,不動 node_modules。 */
-.approval-datatable [data-col-menu] {
+   header ⌄ 欄位選單只在「可篩選欄位」(狀態/緊急程度/申請人/到期時間)露出,內含
+   「依此欄篩選…」捷徑(跳外層 filter 面板 + 預填);其餘欄位隱藏保持乾淨表頭
+   (select 欄選單還會在 hover 蓋住「全選」checkbox)。元件自帶 hover/focus 才現。
+   目標依 data-column-id 逐欄 scope;不動 node_modules。 */
+.approval-datatable [data-column-id='select'] [data-col-menu],
+.approval-datatable [data-column-id='title'] [data-col-menu],
+.approval-datatable [data-column-id='agents'] [data-col-menu],
+.approval-datatable [data-column-id='submittedAt'] [data-col-menu],
+.approval-datatable [data-column-id='info'] [data-col-menu] {
   display: none;
 }
 
