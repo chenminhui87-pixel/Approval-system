@@ -542,18 +542,6 @@ function EmptyState({ message }: { message: string }) {
   )
 }
 
-// 批次選取時的側面板空狀態:避免面板一邊顯示單張內容、一邊又在批次選多張造成混亂。
-// 弱化處理(不搶批次操作列焦點):無 icon、頂部對齊、文字 muted。
-function BatchSelectPanel({ count }: { count: number }) {
-  return (
-    <div className="px-[var(--layout-space-loose)] py-4 text-fg-muted">
-      <p className="text-caption">
-        已選取 {count} 項，請從下方操作列進行核准或退件。
-      </p>
-    </div>
-  )
-}
-
 type TabId = 'pending-me' | 'submitted' | 'signed' | 'cc'
 type ViewMode = 'card' | 'list'
 
@@ -651,8 +639,8 @@ function ApprovalPage() {
   }
 
   function openRecord(r: ApprovalRecord) {
-    // 開單張詳情 = 進入「專注一張」模式 → 退出批次(與批次空狀態互斥,避免兩種模式並存)
-    if (isSelecting) clearSelection()
+    // 批次中也可開單張「唯讀預覽」:保留勾選(不清),面板隱藏單張操作列,
+    // 作用域由底部批次列表達(per PM 2026-10-13 item B)。
     setSelectedId(r.id)
     setPanelOpen(true)
   }
@@ -848,25 +836,25 @@ function ApprovalPage() {
       )}
       </div>{/* /左側清單欄 */}
 
-      {/* 右側詳情面板 — 置於內容 header 下方(DetailAside 讀 AppShell context 自決 inline/Sheet)*/}
+      {/* 右側詳情面板 — 置於內容 header 下方(DetailAside 讀 AppShell context 自決 inline/Sheet)。
+          批次模式:仍可瀏覽單張 detail,但走唯讀(隱藏面板單張操作列);expand 大視圖在批次中關閉,
+          避免從 modal 繞回單張操作。 */}
       {selectedRecord && (
-        isSelecting ? (
-          // 批次選取中 → 面板顯示空狀態,不顯示單張內容(避免「看一張卻選多張」的混亂)
-          <DetailAside title="批次選取中">
-            <BatchSelectPanel count={selectedIds.size} />
-          </DetailAside>
-        ) : (
-          <DetailAside title={selectedRecord.title} onExpand={() => setModalOpen(true)}>
-            <ApprovalDetailPanel
-              key={selectedRecord.id}
-              record={selectedRecord}
-              mode={tab === 'pending-me' ? 'approve' : 'view'}
-              onApprove={handleApprove}
-              onReject={handleReject}
-              onMoreAction={handleStub}
-            />
-          </DetailAside>
-        )
+        <DetailAside
+          title={selectedRecord.title}
+          onExpand={isSelecting ? undefined : () => setModalOpen(true)}
+        >
+          <ApprovalDetailPanel
+            key={selectedRecord.id}
+            record={selectedRecord}
+            mode={tab === 'pending-me' ? 'approve' : 'view'}
+            batchMode={isSelecting}
+            batchCount={selectedIds.size}
+            onApprove={handleApprove}
+            onReject={handleReject}
+            onMoreAction={handleStub}
+          />
+        </DetailAside>
       )}
       </div>{/* /body row */}
 

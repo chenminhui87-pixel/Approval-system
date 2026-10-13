@@ -31,6 +31,10 @@ import { ApprovalRoute } from './ApprovalRoute'
 interface ApprovalDetailPanelProps {
   record: ApprovalRecord
   mode: 'approve' | 'view'
+  /** 批次選取中:面板當唯讀預覽,隱藏單張操作列(改走底部批次列) */
+  batchMode?: boolean
+  /** 批次已選筆數(供唯讀提示文案) */
+  batchCount?: number
   onApprove: (id: string, comment?: string) => void
   onReject: (id: string, comment: string) => void
   onMoreAction: (label: string) => void
@@ -44,6 +48,8 @@ const STATUS_LABEL = { pending: '簽核中', approved: '已核准', rejected: '�
 export function ApprovalDetailPanel({
   record,
   mode,
+  batchMode = false,
+  batchCount = 0,
   onApprove,
   onReject,
   onMoreAction,
@@ -57,7 +63,8 @@ export function ApprovalDetailPanel({
   const errorValues = record.steps.filter((s) => s.status === 'error').map((s) => s.id)
   const hasRichRoute = record.steps.some((s) => s.people && s.people.length > 0)
 
-  const showActions = mode === 'approve' && record.status === 'pending'
+  // 批次模式:面板為唯讀預覽,不顯示單張操作列(作用域交給底部批次列)
+  const showActions = mode === 'approve' && record.status === 'pending' && !batchMode
   const submitDisabled = confirmAction === 'reject' && comment.trim().length === 0
 
   function openConfirm(action: 'approve' | 'reject') {
@@ -230,6 +237,15 @@ export function ApprovalDetailPanel({
               />
             </div>
           )}
+        </div>
+      )}
+
+      {/* 批次模式:以輕量提示取代單張操作列,說明為何操作鈕不在此(改走底部批次列) */}
+      {batchMode && mode === 'approve' && record.status === 'pending' && (
+        <div className="shrink-0 bg-surface border-t border-divider px-4 py-2.5">
+          <p className="text-caption text-fg-muted">
+            批次選取中(已選 {batchCount} 項)· 單張操作已停用,請用下方操作列一併處理。
+          </p>
         </div>
       )}
     </div>
