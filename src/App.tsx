@@ -658,6 +658,7 @@ function ApprovalPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [selectedFormId, setSelectedFormId] = useState<string | null>(null)
   const [formEditing, setFormEditing] = useState(false)
+  const [formView, setFormView] = useState<'content' | 'submissions'>('content')
   const [records, setRecords] = useState<ApprovalRecord[]>(MOCK_RECORDS)
   const [rejectComment, setRejectComment] = useState('')
   // 批次退件 / 核准確認 modal(對齊 DS「確認 = Dialog」+ mobile);退件原因必填、核准意見選填
@@ -733,6 +734,7 @@ function ApprovalPage() {
       setSection('forms')
       setSelectedFormId(null) // 點 sidebar「表單管理」一律回清單
       setFormEditing(false)
+      setFormView('content')
       return
     }
     setSection('approvals')
@@ -796,33 +798,44 @@ function ApprovalPage() {
   // ── 表單管理(C)header 計算:麵包屑 + 情境操作(建立 / 編輯 / 停用),集中在最上方 header ──
   const selectedForm = selectedFormId ? MOCK_FORMS.find((f) => f.id === selectedFormId) ?? null : null
   const formStub = (label: string) => showToast(`${label}(施工中)`)
-  function openForm(id: string | null, edit = false) {
+  function openForm(id: string | null, opts?: { edit?: boolean; view?: 'content' | 'submissions' }) {
     setSelectedFormId(id)
-    setFormEditing(edit && id !== null)
+    setFormEditing(!!opts?.edit && id !== null)
+    setFormView(opts?.view ?? 'content')
   }
-  const formsBreadcrumb = selectedForm
-    ? [{ label: '表單管理', onClick: () => openForm(null) }, { label: selectedForm.name }]
-    : undefined
+  const formsBreadcrumb = !selectedForm
+    ? undefined
+    : formView === 'submissions'
+      ? [
+          { label: '表單管理', onClick: () => openForm(null) },
+          { label: selectedForm.name, onClick: () => openForm(selectedForm.id) },
+          { label: '送審清單' },
+        ]
+      : [{ label: '表單管理', onClick: () => openForm(null) }, { label: selectedForm.name }]
   const formsHeaderRight: ReactNode =
-    section !== 'forms' ? null : selectedForm ? (
-      formEditing ? (
-        <Button variant="primary" size="sm" onClick={() => setFormEditing(false)}>完成</Button>
-      ) : (
-        <div className="flex items-center gap-2">
-          <Tag size="sm" color={FORM_STATUS_COLOR[selectedForm.status]} solid={selectedForm.status === 'published'}>
-            {FORM_STATUS_LABEL[selectedForm.status]}
-          </Tag>
-          {canForm(formRole, 'editForm') && (
-            <Button variant="tertiary" size="sm" onClick={() => setFormEditing(true)}>編輯表單</Button>
-          )}
-          {canForm(formRole, 'disableForm') && selectedForm.status === 'published' && (
-            <Button variant="text" size="sm" danger onClick={() => formStub('停用表單')}>停用</Button>
-          )}
-        </div>
-      )
-    ) : canForm(formRole, 'createForm') ? (
-      <Button variant="primary" size="sm" startIcon={Plus} onClick={() => formStub('建立表單')}>建立表單</Button>
-    ) : null
+    section !== 'forms'
+      ? null
+      : !selectedForm
+        ? canForm(formRole, 'createForm')
+          ? <Button variant="primary" size="sm" startIcon={Plus} onClick={() => formStub('建立表單')}>建立表單</Button>
+          : null
+        : formView === 'submissions'
+          ? null // 送審清單子頁的操作(批次 / 代理)於增量 2b 接上
+          : formEditing
+            ? <Button variant="primary" size="sm" onClick={() => setFormEditing(false)}>完成</Button>
+            : (
+              <div className="flex items-center gap-2">
+                <Tag size="sm" color={FORM_STATUS_COLOR[selectedForm.status]} solid={selectedForm.status === 'published'}>
+                  {FORM_STATUS_LABEL[selectedForm.status]}
+                </Tag>
+                {canForm(formRole, 'editForm') && (
+                  <Button variant="tertiary" size="sm" onClick={() => setFormEditing(true)}>編輯表單</Button>
+                )}
+                {canForm(formRole, 'disableForm') && selectedForm.status === 'published' && (
+                  <Button variant="text" size="sm" danger onClick={() => formStub('停用表單')}>停用</Button>
+                )}
+              </div>
+            )
 
   return (
     <SidebarProvider activeId={section === 'forms' ? 'forms' : tab} onActiveChange={handleSidebarChange}>
@@ -844,9 +857,11 @@ function ApprovalPage() {
         role={formRole}
         onRoleChange={setFormRole}
         selectedForm={selectedForm}
+        view={formView}
         editing={formEditing}
         onSelectForm={(f) => openForm(f ? f.id : null)}
-        onEditForm={(f) => openForm(f.id, true)}
+        onEditForm={(f) => openForm(f.id, { edit: true })}
+        onViewSubmissions={(f) => openForm(f.id, { view: 'submissions' })}
         stub={formStub}
       />
     )}
