@@ -70,6 +70,7 @@ import {
   ClipboardCopy,
   Info,
   Filter,
+  FileCog,
 } from 'lucide-react'
 import {
   MOCK_RECORDS,
@@ -86,6 +87,8 @@ import { ApprovalDetailPanel } from './ApprovalDetailPanel'
 import { ApprovalModal } from './ApprovalModal'
 import { FormTemplateManager } from './FormTemplateManager'
 import { DetailAside } from './DetailAside'
+import { FormManagementView } from './FormManagementView'
+import type { FormRole } from './formsData'
 
 // ── 外層 filter(A / PM 2026-10-13)──────────────────────────────────────────────
 // 只放「簽核系統固定/共同欄位」:狀態 / 緊急程度 / 申請人 / 到期區間。
@@ -331,6 +334,18 @@ function ApprovalSidebar({ records }: { records: ApprovalRecord[] }) {
                   </SidebarMenuItem>
                 )
               })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+        {/* 表單管理模組(C)— 獨立 group;prototype 先對所有人顯示(存取控管 demo 待增量) */}
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton id="forms" startIcon={FileCog} tooltip="表單管理">
+                  表單管理
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -637,6 +652,9 @@ function ApprovalPage() {
   const [filterTree, setFilterTree] = useState<FilterTree>(() => createEmptyFilterTree('flat'))
   const [filterOpen, setFilterOpen] = useState(false)
   const [filterPrefilledId, setFilterPrefilledId] = useState<string | undefined>(undefined)
+  // 表單管理模組(C):section 切換(簽核 vs 表單管理)+ prototype 檢視身分(角色切換器)
+  const [section, setSection] = useState<'approvals' | 'forms'>('approvals')
+  const [formRole, setFormRole] = useState<FormRole>('owner')
 
   const tabRecords = getTabRecords(tab, records, CURRENT_USER)
   const searchFiltered = tabRecords
@@ -693,6 +711,16 @@ function ApprovalPage() {
   }
 
   // 切換主導覽(sidebar / 原 tab 共用):清選取 + 清搜尋 + Q2 分類退回
+  // sidebar 點選:'forms' → 表單管理 section;其餘為簽核 tab
+  function handleSidebarChange(id: string) {
+    if (id === 'forms') {
+      setSection('forms')
+      return
+    }
+    setSection('approvals')
+    handleTabChange(id as TabId)
+  }
+
   function handleTabChange(nextTab: TabId) {
     setTab(nextTab)
     setSelectedIds(new Set())
@@ -748,15 +776,20 @@ function ApprovalPage() {
   }
 
   return (
-    <SidebarProvider activeId={tab} onActiveChange={(id: string) => handleTabChange(id as TabId)}>
+    <SidebarProvider activeId={section === 'forms' ? 'forms' : tab} onActiveChange={handleSidebarChange}>
     <AppShell
       layout="primary-sidebar"
-      header={<PageHeader title={TAB_LABELS[tab]} onOpenForms={() => setFormMgrOpen(true)} />}
+      header={<PageHeader title={section === 'forms' ? '表單管理' : TAB_LABELS[tab]} onOpenForms={() => setFormMgrOpen(true)} />}
       sidebar={<ApprovalSidebar records={records} />}
-      asideOpen={panelOpen && !!selectedRecord}
+      asideOpen={section === 'approvals' && panelOpen && !!selectedRecord}
       onAsideOpenChange={setPanelOpen}
     >
-    <div className="flex flex-col h-full">
+    {/* 表單管理 section:渲染獨立 view(增量 1);簽核 section 保持原內容(用 hidden 保留掛載,
+        讓 Toaster / modal 在兩 section 都在) */}
+    {section === 'forms' && (
+      <FormManagementView role={formRole} onRoleChange={setFormRole} />
+    )}
+    <div className={`flex flex-col h-full ${section === 'forms' ? 'hidden' : ''}`}>
       {/* 內容 body row:左側清單欄 + 右側詳情面板(面板長在內容 header 下方,非 AppShell 頂天 aside)*/}
       <div className="flex flex-1 min-h-0">
       {/* 左側:搜尋/篩選 toolbar + 清單 + 批次操作列 */}
