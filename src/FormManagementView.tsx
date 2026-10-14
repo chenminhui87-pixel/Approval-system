@@ -27,23 +27,7 @@ import {
   type ManagedForm,
 } from './formsData'
 import { FormDetailView } from './FormDetailView'
-
-// 送審清單子頁(增量 2b 將複用簽核 DataTable + 右側面板 + 代理操作)
-function SubmissionsView({ form }: { form: ManagedForm }) {
-  return (
-    <div className="flex-1 min-h-0 overflow-y-auto px-[var(--layout-space-loose)] py-5">
-      <div className="mb-4">
-        <h3 className="text-h4 font-semibold">{form.name}</h3>
-        <p className="text-caption text-fg-placeholder mt-1">送審清單 · 以此表單送出的審核</p>
-      </div>
-      <div className="rounded-lg border border-dashed border-divider px-4 py-10 text-center text-fg-placeholder">
-        <p className="text-body">此處將複用簽核清單(DataTable + 右側詳情面板)呈現以此表單送出的審核,</p>
-        <p className="text-body">owner / admin 可對送審單執行代理操作(轉寄 / 移交簽核者 / 退回 / 作廢 / 催辦…)。</p>
-        <p className="text-caption mt-2">— 增量 2b 施工中 —</p>
-      </div>
-    </div>
-  )
-}
+import { FormSubmissionsView } from './FormSubmissionsView'
 
 export function FormManagementView({
   role,
@@ -161,7 +145,7 @@ export function FormManagementView({
       <div className="flex-1 min-h-0 flex flex-col">
         {selectedForm ? (
           view === 'submissions' ? (
-            <SubmissionsView form={selectedForm} />
+            <FormSubmissionsView key={selectedForm.id} form={selectedForm} role={role} stub={stub} />
           ) : (
             <FormDetailView key={selectedForm.id} form={selectedForm} editing={editing} />
           )
