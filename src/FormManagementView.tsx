@@ -14,7 +14,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from '@qijenchen/design-system'
-import { Pencil, Ban, Inbox, MoreVertical } from 'lucide-react'
+import { Pencil, Ban, MoreVertical } from 'lucide-react'
 import {
   MOCK_FORMS,
   FORM_ROLES,
@@ -33,6 +33,10 @@ import { FormDetailView } from './FormDetailView'
 function SubmissionsView({ form }: { form: ManagedForm }) {
   return (
     <div className="flex-1 min-h-0 overflow-y-auto px-[var(--layout-space-loose)] py-5">
+      <div className="mb-4">
+        <h3 className="text-h4 font-semibold">{form.name}</h3>
+        <p className="text-caption text-fg-placeholder mt-1">送審清單 · 以此表單送出的審核</p>
+      </div>
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <span className="inline-flex items-center gap-2 text-body">
           累計送審
@@ -127,8 +131,8 @@ export function FormManagementView({
     {
       id: 'actions',
       header: () => <span className="block text-right w-full">操作</span>,
-      meta: { width: 120 },
-      // DS row-action 規則:主要動作(查看送審單)inline,其餘(編輯 / 停用)收進 ⋯ overflow。
+      meta: { width: 160 },
+      // DS row-action 規則:主要動作(查看送審單)inline 文字鈕,其餘(編輯 / 停用)收進 ⋯ overflow。
       // 檢視表單 = 點表單名開啟。viewer 無編輯/停用 → 不顯示 ⋯。
       cell: ({ row }) => {
         const canEdit = can(role, 'editForm')
@@ -136,14 +140,9 @@ export function FormManagementView({
         const hasOverflow = canEdit || canDisable
         return (
           <div className="flex items-center gap-0.5 justify-end" onClick={(e) => e.stopPropagation()}>
-            <Button
-              variant="text"
-              size="sm"
-              iconOnly
-              startIcon={Inbox}
-              aria-label="查看送審單"
-              onClick={() => onViewSubmissions(row.original)}
-            />
+            <Button variant="text" size="sm" onClick={() => onViewSubmissions(row.original)}>
+              查看送審單
+            </Button>
             {hasOverflow && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
