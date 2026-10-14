@@ -5,7 +5,6 @@ import {
   SegmentedControl,
   SegmentedControlItem,
   Tag,
-  Badge,
   Button,
   DataTable,
   type DataTableProps,
@@ -36,18 +35,6 @@ function SubmissionsView({ form }: { form: ManagedForm }) {
       <div className="mb-4">
         <h3 className="text-h4 font-semibold">{form.name}</h3>
         <p className="text-caption text-fg-placeholder mt-1">送審清單 · 以此表單送出的審核</p>
-      </div>
-      <div className="flex flex-wrap items-center gap-3 mb-4">
-        <span className="inline-flex items-center gap-2 text-body">
-          累計送審
-          <Badge variant="low" count={form.submissionCount} />
-        </span>
-        {form.pendingCount > 0 && (
-          <span className="inline-flex items-center gap-2 text-body">
-            簽核中
-            <Badge variant="critical" count={form.pendingCount} />
-          </span>
-        )}
       </div>
       <div className="rounded-lg border border-dashed border-divider px-4 py-10 text-center text-fg-placeholder">
         <p className="text-body">此處將複用簽核清單(DataTable + 右側詳情面板)呈現以此表單送出的審核,</p>
