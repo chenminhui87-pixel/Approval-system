@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, type ReactNode } from 'react'
 import {
   TooltipProvider,
   AppShell,
@@ -28,10 +28,6 @@ import {
   Badge,
   toast,
   Toaster,
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
   ProfileCard,
   DataTable,
   type DataTableProps,
@@ -62,8 +58,6 @@ import {
   Search,
   X,
   Plus,
-  MoreHorizontal,
-  FileText,
   ClipboardList,
   ClipboardCheck,
   ClipboardPen,
@@ -85,10 +79,15 @@ import {
 } from './data'
 import { ApprovalDetailPanel } from './ApprovalDetailPanel'
 import { ApprovalModal } from './ApprovalModal'
-import { FormTemplateManager } from './FormTemplateManager'
 import { DetailAside } from './DetailAside'
 import { FormManagementView } from './FormManagementView'
-import type { FormRole } from './formsData'
+import {
+  MOCK_FORMS,
+  FORM_STATUS_LABEL,
+  FORM_STATUS_COLOR,
+  can as canForm,
+  type FormRole,
+} from './formsData'
 
 // ── 外層 filter(A / PM 2026-10-13)──────────────────────────────────────────────
 // 只放「簽核系統固定/共同欄位」:狀態 / 緊急程度 / 申請人 / 到期區間。
@@ -274,29 +273,45 @@ function RowCheckbox({ checked, indeterminate, onChange }: {
   )
 }
 
-function PageHeader({ title, onOpenForms }: { title: string; onOpenForms: () => void }) {
+function PageHeader({
+  title,
+  breadcrumb,
+  rightSlot,
+}: {
+  title: string
+  /** 有值時改以麵包屑呈現(如 表單管理 / 表單名),取代單一標題;進詳情不另長 header */
+  breadcrumb?: { label: string; onClick?: () => void }[]
+  /** 標題右側的情境操作(如表單的狀態 + 編輯/停用 / 建立表單) */
+  rightSlot?: ReactNode
+}) {
   // sidebar 收合時,展開鈕移到內容 header 最左;展開時展開鈕在 sidebar header 內
   const { state } = useSidebar()
   return (
     <header className="flex items-center gap-3 h-[var(--chrome-header-height)] px-[var(--layout-space-loose)] bg-surface border-b border-divider">
       {state === 'collapsed' && <SidebarTrigger />}
-      <h1 className="text-body-lg font-medium flex-1 truncate">{title}</h1>
-      {/* 管理/設定類暫時入口 — 創建申請單表單(未來交下游系統) */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="text" size="sm" iconOnly startIcon={MoreHorizontal} aria-label="更多" />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem startIcon={FileText} onClick={onOpenForms}>創建申請單表單</DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-      <button
-        type="button"
-        aria-label={`${CURRENT_USER}（個人設定）`}
-        className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      >
-        <Avatar alt={CURRENT_USER} size={32} color="blue" />
-      </button>
+      {breadcrumb ? (
+        <nav aria-label="麵包屑" className="flex items-center gap-1.5 flex-1 min-w-0 text-body-lg font-medium">
+          {breadcrumb.map((b, i) => (
+            <span key={i} className="flex items-center gap-1.5 min-w-0">
+              {i > 0 && <span className="text-fg-placeholder shrink-0">/</span>}
+              {b.onClick ? (
+                <button
+                  type="button"
+                  onClick={b.onClick}
+                  className="text-fg-secondary hover:text-foreground truncate focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+                >
+                  {b.label}
+                </button>
+              ) : (
+                <span className="truncate">{b.label}</span>
+              )}
+            </span>
+          ))}
+        </nav>
+      ) : (
+        <h1 className="text-body-lg font-medium flex-1 truncate">{title}</h1>
+      )}
+      {rightSlot}
     </header>
   )
 }
@@ -641,7 +656,7 @@ function ApprovalPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [panelOpen, setPanelOpen] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
-  const [formMgrOpen, setFormMgrOpen] = useState(false)
+  const [selectedFormId, setSelectedFormId] = useState<string | null>(null)
   const [records, setRecords] = useState<ApprovalRecord[]>(MOCK_RECORDS)
   const [rejectComment, setRejectComment] = useState('')
   // 批次退件 / 核准確認 modal(對齊 DS「確認 = Dialog」+ mobile);退件原因必填、核准意見選填
@@ -715,6 +730,7 @@ function ApprovalPage() {
   function handleSidebarChange(id: string) {
     if (id === 'forms') {
       setSection('forms')
+      setSelectedFormId(null) // 點 sidebar「表單管理」一律回清單
       return
     }
     setSection('approvals')
@@ -775,11 +791,38 @@ function ApprovalPage() {
     showToast(`${label} — 功能開發中`)
   }
 
+  // ── 表單管理(C)header 計算:麵包屑 + 情境操作(建立 / 編輯 / 停用),集中在最上方 header ──
+  const selectedForm = selectedFormId ? MOCK_FORMS.find((f) => f.id === selectedFormId) ?? null : null
+  const formStub = (label: string) => showToast(`${label}(施工中)`)
+  const formsBreadcrumb = selectedForm
+    ? [{ label: '表單管理', onClick: () => setSelectedFormId(null) }, { label: selectedForm.name }]
+    : undefined
+  const formsHeaderRight: ReactNode =
+    section !== 'forms' ? null : selectedForm ? (
+      <div className="flex items-center gap-2">
+        <Tag size="sm" color={FORM_STATUS_COLOR[selectedForm.status]} solid={selectedForm.status === 'published'}>
+          {FORM_STATUS_LABEL[selectedForm.status]}
+        </Tag>
+        {canForm(formRole, 'editForm') && (
+          <Button variant="tertiary" size="sm" onClick={() => formStub('編輯表單')}>編輯</Button>
+        )}
+        {canForm(formRole, 'disableForm') && selectedForm.status === 'published' && (
+          <Button variant="text" size="sm" danger onClick={() => formStub('停用表單')}>停用</Button>
+        )}
+      </div>
+    ) : canForm(formRole, 'createForm') ? (
+      <Button variant="primary" size="sm" startIcon={Plus} onClick={() => formStub('建立表單')}>建立表單</Button>
+    ) : null
+
   return (
     <SidebarProvider activeId={section === 'forms' ? 'forms' : tab} onActiveChange={handleSidebarChange}>
     <AppShell
       layout="primary-sidebar"
-      header={<PageHeader title={section === 'forms' ? '表單管理' : TAB_LABELS[tab]} onOpenForms={() => setFormMgrOpen(true)} />}
+      header={
+        section === 'forms'
+          ? <PageHeader title="表單管理" breadcrumb={formsBreadcrumb} rightSlot={formsHeaderRight} />
+          : <PageHeader title={TAB_LABELS[tab]} />
+      }
       sidebar={<ApprovalSidebar records={records} />}
       asideOpen={section === 'approvals' && panelOpen && !!selectedRecord}
       onAsideOpenChange={setPanelOpen}
@@ -787,7 +830,13 @@ function ApprovalPage() {
     {/* 表單管理 section:渲染獨立 view(增量 1);簽核 section 保持原內容(用 hidden 保留掛載,
         讓 Toaster / modal 在兩 section 都在) */}
     {section === 'forms' && (
-      <FormManagementView role={formRole} onRoleChange={setFormRole} />
+      <FormManagementView
+        role={formRole}
+        onRoleChange={setFormRole}
+        selectedForm={selectedForm}
+        onSelectForm={(f) => setSelectedFormId(f ? f.id : null)}
+        stub={formStub}
+      />
     )}
     <div className={`flex flex-col h-full ${section === 'forms' ? 'hidden' : ''}`}>
       {/* 內容 body row:左側清單欄 + 右側詳情面板(面板長在內容 header 下方,非 AppShell 頂天 aside)*/}
@@ -998,11 +1047,6 @@ function ApprovalPage() {
         onApprove={handleApprove}
         onReject={handleReject}
         onMoreAction={handleStub}
-      />
-      <FormTemplateManager
-        open={formMgrOpen}
-        onClose={() => setFormMgrOpen(false)}
-        onCreate={() => handleStub('新建表單')}
       />
       {/* 批次核准確認 modal(DS「確認 = Dialog」+ 對齊 mobile)。附核准意見(選填),
           跟單張核准 / 退件一致;有被搜尋隱藏的已選單據時,另顯示一併核准提示。 */}

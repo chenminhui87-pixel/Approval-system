@@ -1,4 +1,5 @@
-// 表單管理模組(C)— 增量 2a:表單詳情(欄位內容 read-only + 依角色操作鈕)。
+// 表單管理模組(C)— 增量 2a:表單詳情(欄位內容 read-only)。詳情的麵包屑 + 編輯/停用
+// 操作在最上方 header(App PageHeader),本元件不另長 header,只渲染 tabs 內容。
 // 送審清單(複用簽核 DataTable + 代理操作)於增量 2b 接上。
 // 註:人員層「owner」是下游指派的「負責窗口」,非系統最高權限(系統 token 才是,不以人呈現)。
 import {
@@ -6,16 +7,12 @@ import {
   TabsList,
   TabsTrigger,
   TabsContent,
-  Button,
-  Tag,
   Badge,
+  Tag,
   DescriptionList,
   DescriptionItem,
 } from '@qijenchen/design-system'
-import { ChevronLeft, Pencil, Ban } from 'lucide-react'
 import {
-  FORM_STATUS_LABEL,
-  FORM_STATUS_COLOR,
   FIELD_TYPE_LABEL,
   can,
   categoryLabel,
@@ -23,42 +20,11 @@ import {
   type ManagedForm,
 } from './formsData'
 
-export function FormDetailView({
-  form,
-  role,
-  onBack,
-  onStub,
-}: {
-  form: ManagedForm
-  role: FormRole
-  onBack: () => void
-  onStub: (label: string) => void
-}) {
+export function FormDetailView({ form, role }: { form: ManagedForm; role: FormRole }) {
   const canEdit = can(role, 'editForm')
-  const canDisable = can(role, 'disableForm') && form.status === 'published'
 
   return (
     <div className="flex flex-col h-full">
-      {/* Top bar:返回 + 名稱 + 狀態 + 依角色操作 */}
-      <div className="flex items-center gap-2 px-[var(--layout-space-loose)] pt-5 pb-3 shrink-0 border-b border-divider">
-        <Button variant="text" size="sm" iconOnly startIcon={ChevronLeft} aria-label="返回表單清單" onClick={onBack} />
-        <h2 className="text-body-lg font-medium truncate">{form.name}</h2>
-        <Tag size="sm" color={FORM_STATUS_COLOR[form.status]} solid={form.status === 'published'}>
-          {FORM_STATUS_LABEL[form.status]}
-        </Tag>
-        <div className="flex-1" />
-        {canEdit && (
-          <Button variant="tertiary" size="sm" startIcon={Pencil} onClick={() => onStub('編輯表單')}>
-            編輯
-          </Button>
-        )}
-        {canDisable && (
-          <Button variant="text" size="sm" danger startIcon={Ban} onClick={() => onStub('停用表單')}>
-            停用
-          </Button>
-        )}
-      </div>
-
       <Tabs defaultValue="fields" className="flex-1 flex flex-col min-h-0">
         <div className="shrink-0 bg-surface px-[var(--layout-space-loose)] pt-2">
           <TabsList>
@@ -81,14 +47,7 @@ export function FormDetailView({
             </section>
 
             <section>
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-h5 font-medium">欄位設定（{form.fields.length}）</p>
-                {canEdit && (
-                  <Button variant="text" size="sm" startIcon={Pencil} onClick={() => onStub('編輯欄位')}>
-                    編輯欄位
-                  </Button>
-                )}
-              </div>
+              <p className="text-h5 font-medium mb-3">欄位設定（{form.fields.length}）</p>
               <ul className="flex flex-col list-none m-0 p-0 border border-divider rounded-lg overflow-hidden">
                 {form.fields.map((f, i) => (
                   <li
