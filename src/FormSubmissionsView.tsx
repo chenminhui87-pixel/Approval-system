@@ -3,18 +3,8 @@
 // owner / admin 可對「簽核中」的單執行代理操作(催辦 / 轉寄 / 移交簽核者 / 退回 / 撤回 / 作廢);
 // viewer 唯讀(只看明細)。代理動作同現有簽核 prototype,先以 toast 佔位。
 import { useState } from 'react'
-import {
-  DataTable,
-  type DataTableProps,
-  Tag,
-  Button,
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-} from '@qijenchen/design-system'
-import { MoreVertical, Bell, Share2, UserCheck, Undo2, RotateCcw, Ban } from 'lucide-react'
+import { DataTable, type DataTableProps, Tag, Button } from '@qijenchen/design-system'
+import { Info } from 'lucide-react'
 import { MOCK_RECORDS, type ApprovalRecord, type ApprovalStatus } from './data'
 import { can, type FormRole, type ManagedForm } from './formsData'
 import { ApprovalModal } from './ApprovalModal'
@@ -114,35 +104,22 @@ export function FormSubmissionsView({
     },
     {
       id: 'actions',
-      header: () => <span className="block text-right w-full">操作</span>,
-      meta: { width: canOperate ? 148 : 92 },
-      cell: ({ row }) => {
-        // 代理操作只對「簽核中」的單開放(已決的不再操作)
-        const rowCanOperate = canOperate && row.original.status === 'pending'
-        return (
-          <div className="flex items-center gap-0.5 justify-end" onClick={(e) => e.stopPropagation()}>
-            <Button variant="text" size="sm" onClick={() => setOpenId(row.original.id)}>
-              明細
-            </Button>
-            {rowCanOperate && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="text" size="sm" iconOnly startIcon={MoreVertical} aria-label="代理操作" />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem startIcon={Bell} onClick={() => stub('催辦')}>催辦</DropdownMenuItem>
-                  <DropdownMenuItem startIcon={Share2} onClick={() => stub('轉寄')}>轉寄</DropdownMenuItem>
-                  <DropdownMenuItem startIcon={UserCheck} onClick={() => stub('移交簽核者')}>移交簽核者</DropdownMenuItem>
-                  <DropdownMenuItem startIcon={Undo2} onClick={() => stub('退回給申請人')}>退回給申請人</DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem startIcon={RotateCcw} onClick={() => stub('撤回')}>撤回</DropdownMenuItem>
-                  <DropdownMenuItem startIcon={Ban} className="text-fg-danger" onClick={() => stub('作廢')}>作廢</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-          </div>
-        )
-      },
+      header: () => <span className="block text-right w-full">明細</span>,
+      meta: { width: 72 },
+      // 與簽核清單一致:info icon 開明細;代理操作(核准/退件/轉寄/移交/退回/作廢)在明細 modal 內
+      cell: ({ row }) => (
+        <div className="flex items-center justify-end" onClick={(e) => e.stopPropagation()}>
+          <Button
+            variant="text"
+            size="sm"
+            iconOnly
+            startIcon={Info}
+            aria-label="展開明細"
+            pressed={openId === row.original.id}
+            onClick={() => setOpenId(row.original.id)}
+          />
+        </div>
+      ),
     },
   ]
 
