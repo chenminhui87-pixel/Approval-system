@@ -1,27 +1,69 @@
-// 表單管理模組(C)— 增量 2a:表單詳情(欄位內容 read-only)。詳情的麵包屑 + 編輯/停用
-// 操作在最上方 header(App PageHeader),本元件不另長 header,只渲染 tabs 內容。
+// 表單管理模組(C)— 表單詳情。「表單欄位」tab = 完整表單 view(非欄位清單):
+//   - 檢視模式:像一張真實表單公版(標題 + 各欄位 label + 對應 input,read-only 預覽)
+//   - 編輯模式(header「編輯表單」進入):每個欄位可改標題 / 型別 / 必填,最下方「新增欄位」
+// 簡單 input 版,先訂關鍵介面;實際存檔(prototype)為 session 內本地狀態。
 // 送審清單(複用簽核 DataTable + 代理操作)於增量 2b 接上。
-// 註:人員層「owner」是下游指派的「負責窗口」,非系統最高權限(系統 token 才是,不以人呈現)。
+// 註:人員層「owner」是下游指派的「負責窗口」,非系統最高權限。
+import { useState } from 'react'
 import {
   Tabs,
   TabsList,
   TabsTrigger,
   TabsContent,
   Badge,
-  Tag,
-  DescriptionList,
-  DescriptionItem,
+  Input,
+  Textarea,
+  Select,
+  Checkbox,
+  Button,
 } from '@qijenchen/design-system'
+import { Plus, Trash2 } from 'lucide-react'
 import {
   FIELD_TYPE_LABEL,
-  can,
   categoryLabel,
   type FormRole,
   type ManagedForm,
+  type FormField,
+  type FormFieldType,
 } from './formsData'
 
-export function FormDetailView({ form, role }: { form: ManagedForm; role: FormRole }) {
-  const canEdit = can(role, 'editForm')
+const TYPE_OPTIONS = (Object.keys(FIELD_TYPE_LABEL) as FormFieldType[]).map((t) => ({
+  value: t,
+  label: FIELD_TYPE_LABEL[t],
+}))
+
+// 檢視模式:依型別渲染 read-only 的 input 預覽(簡單版)
+function FieldPreview({ field }: { field: FormField }) {
+  if (field.type === 'textarea') return <Textarea disabled rows={2} placeholder="多行文字…" />
+  if (field.type === 'select') {
+    return (
+      <Select
+        disabled
+        placeholder="請選擇…"
+        options={(field.options ?? []).map((o) => ({ value: o, label: o }))}
+      />
+    )
+  }
+  const placeholder =
+    field.type === 'date' ? 'YYYY / MM / DD' : field.type === 'currency' ? '$ 0' : field.type === 'number' ? '0' : '請輸入…'
+  return <Input disabled placeholder={placeholder} />
+}
+
+export function FormDetailView({
+  form,
+  editing,
+}: {
+  form: ManagedForm
+  role: FormRole
+  editing: boolean
+}) {
+  // prototype:欄位草稿存本地(component 以 form.id 為 key 掛載 → 切表單自動重置)
+  const [fields, setFields] = useState<FormField[]>(form.fields)
+
+  const updateField = (i: number, patch: Partial<FormField>) =>
+    setFields((prev) => prev.map((f, idx) => (idx === i ? { ...f, ...patch } : f)))
+  const removeField = (i: number) => setFields((prev) => prev.filter((_, idx) => idx !== i))
+  const addField = () => setFields((prev) => [...prev, { label: '新欄位', type: 'string', required: false }])
 
   return (
     <div className="flex flex-col h-full">
@@ -33,45 +75,77 @@ export function FormDetailView({ form, role }: { form: ManagedForm; role: FormRo
           </TabsList>
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto px-[var(--layout-space-loose)] py-4">
-          {/* 表單欄位 */}
-          <TabsContent value="fields" className="flex flex-col gap-5">
-            <section>
-              <p className="text-h5 font-medium mb-3">基本資訊</p>
-              <DescriptionList orientation="horizontal">
-                <DescriptionItem label="表單編號">{form.id}</DescriptionItem>
-                <DescriptionItem label="分類">{categoryLabel(form.category)}</DescriptionItem>
-                <DescriptionItem label="負責窗口">{form.owner}</DescriptionItem>
-                <DescriptionItem label="最後更新">{form.updatedAt}</DescriptionItem>
-              </DescriptionList>
-            </section>
+        <div className="flex-1 min-h-0 overflow-y-auto px-[var(--layout-space-loose)] py-5">
+          {/* 表單欄位 = 完整表單 view(公版);編輯模式進 builder */}
+          <TabsContent value="fields">
+            <div className="mx-auto w-full max-w-xl">
+              <div className="bg-surface border border-divider rounded-xl px-6 py-6">
+                {/* 表單公版標題 */}
+                <div className="pb-4 mb-5 border-b border-divider">
+                  <h3 className="text-h4 font-semibold">{form.name}</h3>
+                  <p className="text-caption text-fg-placeholder mt-1">
+                    {categoryLabel(form.category)} · 使用者以此表單送出審核
+                  </p>
+                </div>
 
-            <section>
-              <p className="text-h5 font-medium mb-3">欄位設定（{form.fields.length}）</p>
-              <ul className="flex flex-col list-none m-0 p-0 border border-divider rounded-lg overflow-hidden">
-                {form.fields.map((f, i) => (
-                  <li
-                    key={f.label + i}
-                    className="flex items-start gap-3 px-4 py-3 bg-surface border-b border-divider last:border-b-0"
-                  >
-                    <span className="text-caption text-fg-placeholder tabular-nums mt-0.5 w-5 shrink-0">{i + 1}</span>
-                    <div className="flex-1 min-w-0">
-                      <span className="text-body font-medium">{f.label}</span>
-                      {f.options && f.options.length > 0 && (
-                        <div className="text-caption text-fg-placeholder mt-0.5">選項：{f.options.join('、')}</div>
-                      )}
-                    </div>
-                    <Tag size="sm" color="neutral">{FIELD_TYPE_LABEL[f.type]}</Tag>
-                    {f.required && <Tag size="sm" color="red">必填</Tag>}
-                  </li>
-                ))}
-              </ul>
-              {!canEdit && (
-                <p className="text-caption text-fg-placeholder mt-2">
-                  目前身分為唯讀檢視,欄位設定由 owner / admin（下游指派）維護。
-                </p>
-              )}
-            </section>
+                {editing ? (
+                  // ── 編輯模式(builder)──
+                  <div className="flex flex-col gap-3">
+                    {fields.map((f, i) => (
+                      <div key={i} className="rounded-lg border border-divider bg-canvas p-3 flex flex-col gap-2.5">
+                        <div className="flex items-center gap-2">
+                          <Input
+                            value={f.label}
+                            onChange={(e) => updateField(i, { label: e.target.value })}
+                            placeholder="欄位標題"
+                            className="flex-1"
+                          />
+                          <Select
+                            value={f.type}
+                            onChange={(v) => updateField(i, { type: v as FormFieldType })}
+                            options={TYPE_OPTIONS}
+                            width="hug"
+                          />
+                          <Button
+                            variant="text"
+                            size="sm"
+                            iconOnly
+                            danger
+                            startIcon={Trash2}
+                            aria-label="移除欄位"
+                            onClick={() => removeField(i)}
+                          />
+                        </div>
+                        <Checkbox
+                          checked={f.required}
+                          onCheckedChange={(c) => updateField(i, { required: c === true })}
+                          label="必填"
+                        />
+                      </div>
+                    ))}
+                    <Button variant="tertiary" startIcon={Plus} onClick={addField} className="w-full">
+                      新增欄位
+                    </Button>
+                  </div>
+                ) : (
+                  // ── 檢視模式(表單公版預覽)──
+                  <div className="flex flex-col gap-4">
+                    {fields.map((f, i) => (
+                      <div key={i} className="flex flex-col gap-1.5">
+                        <label className="text-body font-medium">
+                          {f.label}
+                          {f.required && <span className="text-fg-danger ml-1">*</span>}
+                        </label>
+                        <FieldPreview field={f} />
+                      </div>
+                    ))}
+                    {fields.length === 0 && (
+                      <p className="text-body text-fg-placeholder text-center py-6">此表單尚無欄位。</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
           </TabsContent>
 
           {/* 送審清單（增量 2b 複用簽核 DataTable + 代理操作）*/}

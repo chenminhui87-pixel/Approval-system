@@ -28,13 +28,17 @@ export function FormManagementView({
   role,
   onRoleChange,
   selectedForm,
+  editing,
   onSelectForm,
+  onEditForm,
   stub,
 }: {
   role: FormRole
   onRoleChange: (r: FormRole) => void
   selectedForm: ManagedForm | null
+  editing: boolean
   onSelectForm: (f: ManagedForm | null) => void
+  onEditForm: (f: ManagedForm) => void
   stub: (label: string) => void
 }) {
   // DataTable 欄位 — 操作欄依角色渲染(pinned right,與簽核清單 info 欄一致)
@@ -90,24 +94,19 @@ export function FormManagementView({
     {
       id: 'actions',
       header: () => <span className="block text-right w-full">操作</span>,
-      meta: { width: 268 },
+      meta: { width: 148 },
+      // 一律 icon-only 無框(variant text),視覺一致;依角色顯示
       cell: ({ row }) => {
         const canEdit = can(role, 'editForm')
         const canDisable = can(role, 'disableForm') && row.original.status === 'published'
         return (
-          <div className="flex items-center gap-1 justify-end" onClick={(e) => e.stopPropagation()}>
-            <Button variant="text" size="sm" startIcon={Eye} onClick={() => onSelectForm(row.original)}>
-              檢視
-            </Button>
+          <div className="flex items-center gap-0.5 justify-end" onClick={(e) => e.stopPropagation()}>
+            <Button variant="text" size="sm" iconOnly startIcon={Eye} aria-label="檢視" onClick={() => onSelectForm(row.original)} />
             {canEdit && (
-              <Button variant="tertiary" size="sm" startIcon={Pencil} onClick={() => stub('編輯表單')}>
-                編輯
-              </Button>
+              <Button variant="text" size="sm" iconOnly startIcon={Pencil} aria-label="編輯表單" onClick={() => onEditForm(row.original)} />
             )}
             {canDisable && (
-              <Button variant="text" size="sm" danger startIcon={Ban} onClick={() => stub('停用表單')}>
-                停用
-              </Button>
+              <Button variant="text" size="sm" iconOnly danger startIcon={Ban} aria-label="停用表單" onClick={() => stub('停用表單')} />
             )}
           </div>
         )
@@ -120,7 +119,7 @@ export function FormManagementView({
       {/* 主體:清單 or 詳情 */}
       <div className="flex-1 min-h-0">
         {selectedForm ? (
-          <FormDetailView form={selectedForm} role={role} />
+          <FormDetailView key={selectedForm.id} form={selectedForm} role={role} editing={editing} />
         ) : (
           <div className="h-full px-[var(--layout-space-loose)] pt-4 pb-4">
             <DataTable

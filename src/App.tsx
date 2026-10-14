@@ -657,6 +657,7 @@ function ApprovalPage() {
   const [panelOpen, setPanelOpen] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [selectedFormId, setSelectedFormId] = useState<string | null>(null)
+  const [formEditing, setFormEditing] = useState(false)
   const [records, setRecords] = useState<ApprovalRecord[]>(MOCK_RECORDS)
   const [rejectComment, setRejectComment] = useState('')
   // 批次退件 / 核准確認 modal(對齊 DS「確認 = Dialog」+ mobile);退件原因必填、核准意見選填
@@ -731,6 +732,7 @@ function ApprovalPage() {
     if (id === 'forms') {
       setSection('forms')
       setSelectedFormId(null) // 點 sidebar「表單管理」一律回清單
+      setFormEditing(false)
       return
     }
     setSection('approvals')
@@ -794,22 +796,30 @@ function ApprovalPage() {
   // ── 表單管理(C)header 計算:麵包屑 + 情境操作(建立 / 編輯 / 停用),集中在最上方 header ──
   const selectedForm = selectedFormId ? MOCK_FORMS.find((f) => f.id === selectedFormId) ?? null : null
   const formStub = (label: string) => showToast(`${label}(施工中)`)
+  function openForm(id: string | null, edit = false) {
+    setSelectedFormId(id)
+    setFormEditing(edit && id !== null)
+  }
   const formsBreadcrumb = selectedForm
-    ? [{ label: '表單管理', onClick: () => setSelectedFormId(null) }, { label: selectedForm.name }]
+    ? [{ label: '表單管理', onClick: () => openForm(null) }, { label: selectedForm.name }]
     : undefined
   const formsHeaderRight: ReactNode =
     section !== 'forms' ? null : selectedForm ? (
-      <div className="flex items-center gap-2">
-        <Tag size="sm" color={FORM_STATUS_COLOR[selectedForm.status]} solid={selectedForm.status === 'published'}>
-          {FORM_STATUS_LABEL[selectedForm.status]}
-        </Tag>
-        {canForm(formRole, 'editForm') && (
-          <Button variant="tertiary" size="sm" onClick={() => formStub('編輯表單')}>編輯</Button>
-        )}
-        {canForm(formRole, 'disableForm') && selectedForm.status === 'published' && (
-          <Button variant="text" size="sm" danger onClick={() => formStub('停用表單')}>停用</Button>
-        )}
-      </div>
+      formEditing ? (
+        <Button variant="primary" size="sm" onClick={() => setFormEditing(false)}>完成</Button>
+      ) : (
+        <div className="flex items-center gap-2">
+          <Tag size="sm" color={FORM_STATUS_COLOR[selectedForm.status]} solid={selectedForm.status === 'published'}>
+            {FORM_STATUS_LABEL[selectedForm.status]}
+          </Tag>
+          {canForm(formRole, 'editForm') && (
+            <Button variant="tertiary" size="sm" onClick={() => setFormEditing(true)}>編輯表單</Button>
+          )}
+          {canForm(formRole, 'disableForm') && selectedForm.status === 'published' && (
+            <Button variant="text" size="sm" danger onClick={() => formStub('停用表單')}>停用</Button>
+          )}
+        </div>
+      )
     ) : canForm(formRole, 'createForm') ? (
       <Button variant="primary" size="sm" startIcon={Plus} onClick={() => formStub('建立表單')}>建立表單</Button>
     ) : null
@@ -834,7 +844,9 @@ function ApprovalPage() {
         role={formRole}
         onRoleChange={setFormRole}
         selectedForm={selectedForm}
-        onSelectForm={(f) => setSelectedFormId(f ? f.id : null)}
+        editing={formEditing}
+        onSelectForm={(f) => openForm(f ? f.id : null)}
+        onEditForm={(f) => openForm(f.id, true)}
         stub={formStub}
       />
     )}
