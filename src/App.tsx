@@ -814,7 +814,7 @@ function ApprovalPage() {
       ? null
       : !selectedForm
         ? canForm(formRole, 'createForm')
-          ? <Button variant="primary" size="sm" startIcon={Plus} onClick={() => formStub('建立表單')}>建立表單</Button>
+          ? <Button variant="tertiary" size="sm" startIcon={Plus} onClick={() => formStub('建立表單')}>建立表單</Button>
           : null
         : formView === 'submissions'
           ? null // 送審清單子頁的操作(批次 / 代理)於增量 2b 接上
