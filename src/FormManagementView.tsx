@@ -1,6 +1,7 @@
-// 表單管理模組(C)— 增量 1:角色切換器 + 表單清單(依角色顯示對應操作)。
+// 表單管理模組(C)— 角色切換器(persistent)+ 表單清單 / 表單詳情。
 // 清單走 DS DataTable(與簽核清單視覺一致)。角色由下游系統指派,此處以「檢視身分」
-// 切換器呈現三種角色的 feature 完整度差異。詳情 / 建立 / 編輯(增量 2–3)以 toast 佔位。
+// 切換器呈現三種角色的 feature 完整度差異。建立 / 編輯(增量 3)以 toast 佔位。
+import { useState } from 'react'
 import {
   SegmentedControl,
   SegmentedControlItem,
@@ -23,6 +24,7 @@ import {
   type FormRole,
   type ManagedForm,
 } from './formsData'
+import { FormDetailView } from './FormDetailView'
 
 export function FormManagementView({
   role,
@@ -31,7 +33,8 @@ export function FormManagementView({
   role: FormRole
   onRoleChange: (r: FormRole) => void
 }) {
-  const stub = (label: string) => toast({ variant: 'info', title: `${label}(增量 2 / 3 施工中)` })
+  const [selectedForm, setSelectedForm] = useState<ManagedForm | null>(null)
+  const stub = (label: string) => toast({ variant: 'info', title: `${label}(施工中)` })
 
   // DataTable 欄位 — 操作欄依角色渲染(pinned right,與簽核清單 info 欄一致)
   const columns: DataTableProps<ManagedForm>['columns'] = [
@@ -43,7 +46,7 @@ export function FormManagementView({
         <div className="flex flex-col gap-0.5 py-1">
           <button
             type="button"
-            onClick={() => stub('表單詳情')}
+            onClick={() => setSelectedForm(row.original)}
             className="text-left font-medium hover:text-primary hover:underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
           >
             {row.original.name}
@@ -92,8 +95,7 @@ export function FormManagementView({
         const canDisable = can(role, 'disableForm') && row.original.status === 'published'
         return (
           <div className="flex items-center gap-1 justify-end" onClick={(e) => e.stopPropagation()}>
-            {/* 檢視:所有角色皆可(含 viewer 唯讀) */}
-            <Button variant="text" size="sm" startIcon={Eye} onClick={() => stub('表單詳情')}>
+            <Button variant="text" size="sm" startIcon={Eye} onClick={() => setSelectedForm(row.original)}>
               檢視
             </Button>
             {canEdit && (
@@ -114,8 +116,8 @@ export function FormManagementView({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Toolbar:檢視身分切換器(prototype demo)+ 建立表單(依角色) */}
-      <div className="flex flex-col gap-2 px-[var(--layout-space-loose)] pt-6 pb-3 shrink-0">
+      {/* 持久的「檢視身分」切換器(prototype demo:看三種角色的功能差異,清單 / 詳情都在) */}
+      <div className="flex flex-col gap-1.5 px-[var(--layout-space-loose)] pt-4 pb-3 shrink-0">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
             <span className="text-caption text-fg-muted shrink-0">檢視身分</span>
@@ -131,30 +133,33 @@ export function FormManagementView({
               ))}
             </SegmentedControl>
           </div>
-          {can(role, 'createForm') && (
+          {!selectedForm && can(role, 'createForm') && (
             <Button variant="primary" size="sm" startIcon={Plus} onClick={() => stub('建立表單')}>
               建立表單
             </Button>
           )}
         </div>
         <p className="text-caption text-fg-placeholder">
-          {FORM_ROLE_DESC[role]} · 下方操作鈕依此身分顯示(角色由下游系統指派,簽核系統僅呈現差異)
+          {FORM_ROLE_DESC[role]} · 操作鈕依此身分顯示(角色由下游系統指派,簽核系統僅呈現差異)
         </p>
       </div>
 
-      {/* 表單清單 — DS DataTable(與簽核清單一致) */}
-      <div className="flex-1 min-h-0 px-[var(--layout-space-loose)] pb-4">
-        <DataTable
-          columns={columns}
-          data={MOCK_FORMS}
-          getRowId={(f) => f.id}
-          height="100%"
-          size="md"
-          autoRowHeight
-          pinnedRightColumns={['actions']}
-          tableOptions={{ enableSorting: false, enableHiding: false }}
-        />
-      </div>
+      {selectedForm ? (
+        <FormDetailView form={selectedForm} role={role} onBack={() => setSelectedForm(null)} onStub={stub} />
+      ) : (
+        <div className="flex-1 min-h-0 px-[var(--layout-space-loose)] pb-4">
+          <DataTable
+            columns={columns}
+            data={MOCK_FORMS}
+            getRowId={(f) => f.id}
+            height="100%"
+            size="md"
+            autoRowHeight
+            pinnedRightColumns={['actions']}
+            tableOptions={{ enableSorting: false, enableHiding: false }}
+          />
+        </div>
+      )}
     </div>
   )
 }
