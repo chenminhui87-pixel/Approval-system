@@ -841,7 +841,20 @@ function ApprovalPage() {
       header={
         section === 'forms'
           ? <PageHeader title="表單管理" breadcrumb={formsBreadcrumb} rightSlot={formsHeaderRight} />
-          : <PageHeader title={TAB_LABELS[tab]} />
+          : (
+            <PageHeader
+              title={TAB_LABELS[tab]}
+              rightSlot={
+                // 新增申請單 — 移到 header(與表單模組「建立表單」同位置);弱化用 tertiary,
+                // 只在「已申請」(申請者視角)出現。未來交下游系統時移除此一按鈕即可。
+                tab === 'submitted' ? (
+                  <Button variant="tertiary" size="sm" startIcon={Plus} onClick={() => handleStub('新增申請單')}>
+                    新增申請單
+                  </Button>
+                ) : undefined
+              }
+            />
+          )
       }
       sidebar={<ApprovalSidebar records={records} />}
       asideOpen={section === 'approvals' && panelOpen && !!selectedRecord}
@@ -913,14 +926,6 @@ function ApprovalPage() {
               ))}
             </ChipGroup>
           </div>
-
-          {/* 新增申請單 — 弱化:只在「已申請」(申請者視角)出現的次級按鈕。
-              未來送單改由下游系統處理時,移除此一按鈕即可。 */}
-          {tab === 'submitted' && (
-            <Button variant="tertiary" size="sm" startIcon={Plus} onClick={() => handleStub('新增申請單')}>
-              新增申請單
-            </Button>
-          )}
 
           {/* 外層 filter(A)— 統一入口(DS data-table.spec.md L278)。filter 套在 data 層,
               卡片 / 列表共用同一份篩完資料 → 兩種檢視都顯示此鈕(避免卡片模式 filter 隱形卻仍作用)。
