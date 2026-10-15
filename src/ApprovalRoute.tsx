@@ -157,8 +157,12 @@ function StepNode({ step, isLast, defaultOpen }: StepNodeProps) {
           人員列表可操作,不是 muted 定義的「不可操作/placeholder」),但這塊
           面積大,6% 視覺份量感偏重,user 實測比較後選 muted(4%)———明知語意
           略寬鬆,視覺優先,保留在此記錄取捨,不要之後又改回 secondary。 */}
+      {/* pointer-events-none 必加:這層拿掉 -z-10 後變成單純 position:absolute
+          (z-index:auto),CSS 繪製順序會疊在 static 的內容 sibling 之上(即使
+          4% 透明度視覺上看不出來),沒加會整個擋住底下 chevron/header 的點擊,
+          展開後點不到收合按鈕(2026-10-15 user 回報抓到的 regression)。 */}
       {sectionOpen && (
-        <div className="absolute -left-2 -right-2 top-0 bottom-4 rounded-md bg-muted" aria-hidden="true" />
+        <div className="absolute -left-2 -right-2 top-0 bottom-4 rounded-md bg-muted pointer-events-none" aria-hidden="true" />
       )}
       {/* Left rail:箭頭回到原本位置(dot 左側)+ dot + connector。
           pt 要跟右側 header 的 pt 同步,不然灰底頂邊貼著 dot(dot 自己的 pt-1
