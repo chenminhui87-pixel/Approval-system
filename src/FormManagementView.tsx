@@ -95,8 +95,9 @@ export function FormManagementView({
       meta: { width: 140 },
       // 跟送審清單子頁(FormSubmissionsView)共用同一個 formSubmissionCounts,
       // 不能各自維護數字 —— 這是之前「清單數字跟點進去看到的不一致」的根因。
+      // 跟「簽核中」欄統一用 secondary(灰字正常粗細),不特別加粗。
       cell: ({ row }) => (
-        <span className="text-body text-foreground font-medium tabular-nums whitespace-nowrap">
+        <span className="text-body text-fg-secondary tabular-nums whitespace-nowrap">
           {formSubmissionCounts(row.original, records).total}
         </span>
       ),
@@ -105,9 +106,6 @@ export function FormManagementView({
       id: 'pending',
       header: '簽核中',
       meta: { width: 100 },
-      // 跟「簽核單送出總數」做主從區分:總數是 primary(foreground + font-medium),
-      // 這欄是衍生出來的子集,降一階用 secondary(沿用本檔案「分類」欄同一套次要層級),
-      // 不然兩欄一樣粗一樣黑,看不出誰是誰的子集。
       cell: ({ row }) => (
         <span className="text-body text-fg-secondary tabular-nums whitespace-nowrap">
           {formSubmissionCounts(row.original, records).pending}
