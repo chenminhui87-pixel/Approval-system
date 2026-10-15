@@ -39,6 +39,7 @@ export function FormManagementView({
   onEditForm,
   onViewSubmissions,
   onDisableForm,
+  onUpdateForm,
   stub,
 }: {
   forms: ManagedForm[]
@@ -51,6 +52,7 @@ export function FormManagementView({
   onEditForm: (f: ManagedForm) => void
   onViewSubmissions: (f: ManagedForm) => void
   onDisableForm: (f: ManagedForm) => void
+  onUpdateForm: (id: string, patch: Partial<ManagedForm>) => void
   stub: (label: string) => void
 }) {
   const columns: DataTableProps<ManagedForm>['columns'] = [
@@ -150,7 +152,12 @@ export function FormManagementView({
           view === 'submissions' ? (
             <FormSubmissionsView key={selectedForm.id} form={selectedForm} role={role} stub={stub} />
           ) : (
-            <FormDetailView key={selectedForm.id} form={selectedForm} editing={editing} />
+            <FormDetailView
+              key={selectedForm.id}
+              form={selectedForm}
+              editing={editing}
+              onUpdateForm={(patch) => onUpdateForm(selectedForm.id, patch)}
+            />
           )
         ) : (
           <div className="h-full px-[var(--layout-space-loose)] pt-4 pb-4">

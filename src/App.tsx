@@ -368,7 +368,7 @@ function ApprovalSidebar({
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton id="forms" startIcon={FileCog} tooltip="表單管理">
+                  <SidebarMenuButton id="forms" size="lg" startIcon={FileCog} tooltip="表單管理">
                     表單管理
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -852,6 +852,7 @@ function ApprovalPage() {
     const blank: ManagedForm = {
       id,
       name: '未命名表單',
+      description: '',
       category: CATEGORIES[0].id,
       status: 'draft',
       owner: CURRENT_USER,
@@ -874,6 +875,11 @@ function ApprovalPage() {
     setForms((prev) => prev.map((f) => (f.id === id ? { ...f, status: 'published' } : f)))
     setFormEditing(false)
     showToast('已發佈')
+  }
+  // 編輯 builder 內(標題 / 說明 / 分類)即時寫回 forms state —— 不走「發佈」才存的 draft/commit
+  // 兩階段,跟既有 fields(localStorage 草稿)不同層次:這三個欄位 breadcrumb / 清單都要即時可見。
+  function handleUpdateForm(id: string, patch: Partial<ManagedForm>) {
+    setForms((prev) => prev.map((f) => (f.id === id ? { ...f, ...patch } : f)))
   }
   const formsBreadcrumb = !selectedForm
     ? undefined
@@ -946,6 +952,7 @@ function ApprovalPage() {
         onEditForm={(f) => openForm(f.id)}
         onViewSubmissions={(f) => openForm(f.id, { view: 'submissions' })}
         onDisableForm={(f) => handleDisableForm(f.id)}
+        onUpdateForm={handleUpdateForm}
         stub={formStub}
       />
     )}

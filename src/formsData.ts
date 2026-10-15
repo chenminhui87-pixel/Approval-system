@@ -78,6 +78,8 @@ export interface FormField {
 export interface ManagedForm {
   id: string
   name: string
+  /** 這張表單的用途說明(consumer 自填,非必填) */
+  description?: string
   category: CategoryId
   status: FormStatus
   /** 下游系統指派的 owner（顯示用） */
