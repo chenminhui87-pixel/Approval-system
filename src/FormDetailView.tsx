@@ -3,7 +3,7 @@
 //   - 編輯模式(header「編輯表單」進入):每欄可改標題 / 型別 / 必填,最下方「新增欄位」
 // 送審清單不在本頁 — 由清單列的「查看送審單」進獨立子頁(見 FormManagementView)。
 // 註:人員層「owner」是下游指派的「負責窗口」,非系統最高權限。
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Input, Textarea, Select, Checkbox, Button } from '@qijenchen/design-system'
 import { Plus, Trash2 } from 'lucide-react'
 import {
@@ -18,6 +18,28 @@ const TYPE_OPTIONS = (Object.keys(FIELD_TYPE_LABEL) as FormFieldType[]).map((t) 
   value: t,
   label: FIELD_TYPE_LABEL[t],
 }))
+
+// prototype persist:per-viewer localStorage,不做共享後端(對齊 BACKLOG 既有定調)。
+// key 以 form.id 區分,讀寫失敗(無痕模式 / storage 關閉)時 fallback 回表單原始欄位,不中斷編輯。
+const fieldsStorageKey = (formId: string) => `approval-system:form-fields:${formId}`
+
+function loadFields(formId: string, fallback: FormField[]): FormField[] {
+  try {
+    const raw = localStorage.getItem(fieldsStorageKey(formId))
+    if (!raw) return fallback
+    return JSON.parse(raw) as FormField[]
+  } catch {
+    return fallback
+  }
+}
+
+function saveFields(formId: string, fields: FormField[]) {
+  try {
+    localStorage.setItem(fieldsStorageKey(formId), JSON.stringify(fields))
+  } catch {
+    // storage 不可用(無痕模式 / 容量滿)— prototype 範疇內靜默放棄 persist,不中斷編輯體驗
+  }
+}
 
 // 檢視模式:依型別渲染 read-only 的 input 預覽(簡單版)
 function FieldPreview({ field }: { field: FormField }) {
@@ -37,8 +59,14 @@ function FieldPreview({ field }: { field: FormField }) {
 }
 
 export function FormDetailView({ form, editing }: { form: ManagedForm; editing: boolean }) {
-  // prototype:欄位草稿存本地(component 以 form.id 為 key 掛載 → 切表單自動重置)
-  const [fields, setFields] = useState<FormField[]>(form.fields)
+  // prototype persist:初始值優先讀 localStorage 草稿(若有),否則用表單原始欄位；
+  // 每次變動即寫回 localStorage,離開頁面 / 重新整理後仍保留(component 以 form.id 為 key 掛載,
+  // 切表單會重新初始化,各表單草稿互不影響)。
+  const [fields, setFields] = useState<FormField[]>(() => loadFields(form.id, form.fields))
+
+  useEffect(() => {
+    saveFields(form.id, fields)
+  }, [form.id, fields])
 
   const updateField = (i: number, patch: Partial<FormField>) =>
     setFields((prev) => prev.map((f, idx) => (idx === i ? { ...f, ...patch } : f)))
