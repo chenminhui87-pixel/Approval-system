@@ -39,51 +39,49 @@ function PersonRow({ person }: { person: ApprovalPerson }) {
   const hasComment = !!person.comment
 
   return (
-    <div className="flex gap-3 py-2">
-      <Avatar alt={person.name} size={24} color={person.avatarColor ?? 'neutral'} />
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-body font-medium">{person.name}</span>
-        </div>
-        <div className="flex items-center gap-1.5 text-caption text-fg-secondary mb-1">
-          <StatusIcon
-            size={14}
-            className={
-              person.status === 'signed'
-                ? 'text-fg-success'
-                : person.status === 'rejected'
-                  ? 'text-fg-danger'
-                  : 'text-fg-placeholder'
-            }
-          />
-          <span className={person.status === 'signed' ? 'text-fg-success' : ''}>
-            {meta.label}
-          </span>
-          {person.signedAt && (
-            <span className="text-fg-placeholder">{person.signedAt}</span>
-          )}
-        </div>
-        {hasComment && (
-          <>
-            <p
-              className={
-                'text-body text-fg-secondary' +
-                (expanded ? '' : ' line-clamp-2')
-              }
-            >
-              {person.comment}
-            </p>
-            <button
-              type="button"
-              onClick={() => setExpanded((v) => !v)}
-              className="text-caption hover:underline mt-0.5"
-              style={{ color: 'var(--color-neutral-7)' }}
-            >
-              {expanded ? '收合' : '查看全部'}
-            </button>
-          </>
+    <div className="flex flex-col gap-1 py-2">
+      <div className="flex items-center gap-2">
+        <Avatar alt={person.name} size={20} color={person.avatarColor ?? 'neutral'} />
+        <span className="text-body font-medium">{person.name}</span>
+      </div>
+      <div className="flex items-center gap-1.5 text-caption text-fg-secondary">
+        <StatusIcon
+          size={14}
+          className={
+            person.status === 'signed'
+              ? 'text-fg-success'
+              : person.status === 'rejected'
+                ? 'text-fg-danger'
+                : 'text-fg-placeholder'
+          }
+        />
+        <span className={person.status === 'signed' ? 'text-fg-success' : ''}>
+          {meta.label}
+        </span>
+        {person.signedAt && (
+          <span className="text-fg-placeholder">{person.signedAt}</span>
         )}
       </div>
+      {hasComment && (
+        <>
+          <p
+            className={
+              'text-body text-fg-secondary' +
+              (expanded ? '' : ' line-clamp-2')
+            }
+          >
+            {person.comment}
+          </p>
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            className="text-caption hover:underline"
+            style={{ color: 'var(--color-neutral-7)' }}
+          >
+            {expanded ? '收合' : '查看全部'}
+          </button>
+        </>
+      )}
     </div>
   )
 }
@@ -210,9 +208,7 @@ function StepNode({ step, isLast, defaultOpen }: StepNodeProps) {
           <div
             className={
               'mt-2 rounded-md' +
-              (step.status === 'current' && isMulti
-                ? ' p-3 bg-muted'
-                : '')
+              (isMulti ? ' p-3 bg-muted' : '')
             }
           >
             {mode === 'parallel-any' && (
