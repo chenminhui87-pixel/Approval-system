@@ -84,10 +84,9 @@ import { DetailAside } from './DetailAside'
 import { FormManagementView } from './FormManagementView'
 import {
   MOCK_FORMS,
-  FORM_STATUS_LABEL,
-  FORM_STATUS_COLOR,
   can as canForm,
   type FormRole,
+  type ManagedForm,
 } from './formsData'
 
 // ── 外層 filter(A / PM 2026-10-13)──────────────────────────────────────────────
@@ -700,6 +699,8 @@ function ApprovalPage() {
   // 表單管理模組(C):section 切換(簽核 vs 表單管理)+ prototype 檢視身分(角色切換器)
   const [section, setSection] = useState<'approvals' | 'forms'>('approvals')
   const [formRole, setFormRole] = useState<FormRole>('owner')
+  // 表單清單提升為 state(建立 / 停用需要真的改資料,不能只讀 MOCK_FORMS 常數)
+  const [forms, setForms] = useState<ManagedForm[]>(MOCK_FORMS)
   // 平台層存取控管(demo)— 獨立於 formRole,管「看不看得到表單管理入口」
   const [hasFormAccess, setHasFormAccess] = useState(true)
 
@@ -837,12 +838,42 @@ function ApprovalPage() {
   }
 
   // ── 表單管理(C)header 計算:麵包屑 + 情境操作(建立 / 編輯 / 停用),集中在最上方 header ──
-  const selectedForm = selectedFormId ? MOCK_FORMS.find((f) => f.id === selectedFormId) ?? null : null
+  const selectedForm = selectedFormId ? forms.find((f) => f.id === selectedFormId) ?? null : null
   const formStub = (label: string) => showToast(`${label}(施工中)`)
   function openForm(id: string | null, opts?: { edit?: boolean; view?: 'content' | 'submissions' }) {
     setSelectedFormId(id)
     setFormEditing(!!opts?.edit && id !== null)
     setFormView(opts?.view ?? 'content')
+  }
+  // 建立表單:新增一張空白表單(草稿)並直接進編輯模式 —— 跟既有表單「先看後編」不同,
+  // 新表單還沒有內容可看,建立完直接編輯合理。
+  function handleCreateForm() {
+    const id = `FORM-NEW-${Date.now()}`
+    const blank: ManagedForm = {
+      id,
+      name: '未命名表單',
+      category: CATEGORIES[0].id,
+      status: 'draft',
+      owner: CURRENT_USER,
+      updatedAt: new Date().toISOString().slice(0, 10),
+      submissionCount: 0,
+      pendingCount: 0,
+      fields: [],
+    }
+    setForms((prev) => [blank, ...prev])
+    openForm(id, { edit: true })
+  }
+  // 停用:published → disabled;prototype 範疇內不做 reactivate(對齊現行清單只有「停用」一個方向)。
+  function handleDisableForm(id: string) {
+    setForms((prev) => prev.map((f) => (f.id === id ? { ...f, status: 'disabled' } : f)))
+    setFormEditing(false)
+    showToast('已停用')
+  }
+  // 發佈:退出編輯模式 + 把表單狀態轉為 published(草稿 → 正式可用;已發布的單純視為重新儲存)。
+  function handlePublishForm(id: string) {
+    setForms((prev) => prev.map((f) => (f.id === id ? { ...f, status: 'published' } : f)))
+    setFormEditing(false)
+    showToast('已發佈')
   }
   const formsBreadcrumb = !selectedForm
     ? undefined
@@ -852,22 +883,19 @@ function ApprovalPage() {
       ? null
       : !selectedForm
         ? canForm(formRole, 'createForm')
-          ? <Button variant="tertiary" size="sm" startIcon={Plus} onClick={() => formStub('建立表單')}>建立表單</Button>
+          ? <Button variant="tertiary" size="sm" startIcon={Plus} onClick={handleCreateForm}>建立表單</Button>
           : null
         : formView === 'submissions'
           ? null // 送審清單子頁的操作(批次 / 代理)於增量 2b 接上
           : formEditing
-            ? <Button variant="primary" size="sm" onClick={() => setFormEditing(false)}>完成</Button>
+            ? <Button variant="primary" size="sm" onClick={() => handlePublishForm(selectedForm.id)}>發佈</Button>
             : (
               <div className="flex items-center gap-2">
-                <Tag size="sm" color={FORM_STATUS_COLOR[selectedForm.status]} solid={selectedForm.status === 'published'}>
-                  {FORM_STATUS_LABEL[selectedForm.status]}
-                </Tag>
                 {canForm(formRole, 'editForm') && (
-                  <Button variant="tertiary" size="sm" onClick={() => setFormEditing(true)}>編輯表單</Button>
+                  <Button variant="secondary" size="sm" onClick={() => setFormEditing(true)}>編輯表單</Button>
                 )}
                 {canForm(formRole, 'disableForm') && selectedForm.status === 'published' && (
-                  <Button variant="text" size="sm" danger onClick={() => formStub('停用表單')}>停用</Button>
+                  <Button variant="secondary" size="sm" danger onClick={() => handleDisableForm(selectedForm.id)}>停用</Button>
                 )}
               </div>
             )
@@ -908,14 +936,16 @@ function ApprovalPage() {
         讓 Toaster / modal 在兩 section 都在) */}
     {section === 'forms' && (
       <FormManagementView
+        forms={forms}
         role={formRole}
         onRoleChange={setFormRole}
         selectedForm={selectedForm}
         view={formView}
         editing={formEditing}
         onSelectForm={(f) => openForm(f ? f.id : null)}
-        onEditForm={(f) => openForm(f.id, { edit: true })}
+        onEditForm={(f) => openForm(f.id)}
         onViewSubmissions={(f) => openForm(f.id, { view: 'submissions' })}
+        onDisableForm={(f) => handleDisableForm(f.id)}
         stub={formStub}
       />
     )}

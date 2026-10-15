@@ -4,10 +4,12 @@
 // 送審清單不在本頁 — 由清單列的「查看送審單」進獨立子頁(見 FormManagementView)。
 // 註:人員層「owner」是下游指派的「負責窗口」,非系統最高權限。
 import { useEffect, useState } from 'react'
-import { Input, Textarea, Select, Checkbox, Button } from '@qijenchen/design-system'
+import { Input, Textarea, Select, Checkbox, Button, Tag } from '@qijenchen/design-system'
 import { Plus, Trash2 } from 'lucide-react'
 import {
   FIELD_TYPE_LABEL,
+  FORM_STATUS_LABEL,
+  FORM_STATUS_COLOR,
   categoryLabel,
   type ManagedForm,
   type FormField,
@@ -77,9 +79,14 @@ export function FormDetailView({ form, editing }: { form: ManagedForm; editing: 
     <div className="flex-1 min-h-0 overflow-y-auto px-[var(--layout-space-loose)] py-5">
       <div className="mx-auto w-full max-w-xl">
         <div className="bg-surface border border-divider rounded-xl px-6 py-6">
-          {/* 表單公版標題 */}
+          {/* 表單公版標題 — 狀態 tag 緊接標題,不放到頁面 header 右側(跟操作按鈕混一起) */}
           <div className="pb-4 mb-5 border-b border-divider">
-            <h3 className="text-h4 font-semibold">{form.name}</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-h4 font-semibold">{form.name}</h3>
+              <Tag size="sm" color={FORM_STATUS_COLOR[form.status]} solid={form.status === 'published'}>
+                {FORM_STATUS_LABEL[form.status]}
+              </Tag>
+            </div>
             <p className="text-caption text-fg-placeholder mt-1">
               {categoryLabel(form.category)} · 使用者以此表單送出審核
             </p>

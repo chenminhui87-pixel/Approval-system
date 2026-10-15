@@ -15,7 +15,6 @@ import {
 } from '@qijenchen/design-system'
 import { Pencil, Ban, MoreVertical } from 'lucide-react'
 import {
-  MOCK_FORMS,
   FORM_ROLES,
   FORM_ROLE_LABEL,
   FORM_ROLE_DESC,
@@ -30,6 +29,7 @@ import { FormDetailView } from './FormDetailView'
 import { FormSubmissionsView } from './FormSubmissionsView'
 
 export function FormManagementView({
+  forms,
   role,
   onRoleChange,
   selectedForm,
@@ -38,8 +38,10 @@ export function FormManagementView({
   onSelectForm,
   onEditForm,
   onViewSubmissions,
+  onDisableForm,
   stub,
 }: {
+  forms: ManagedForm[]
   role: FormRole
   onRoleChange: (r: FormRole) => void
   selectedForm: ManagedForm | null
@@ -48,6 +50,7 @@ export function FormManagementView({
   onSelectForm: (f: ManagedForm | null) => void
   onEditForm: (f: ManagedForm) => void
   onViewSubmissions: (f: ManagedForm) => void
+  onDisableForm: (f: ManagedForm) => void
   stub: (label: string) => void
 }) {
   const columns: DataTableProps<ManagedForm>['columns'] = [
@@ -126,7 +129,7 @@ export function FormManagementView({
                     </DropdownMenuItem>
                   )}
                   {canDisable && (
-                    <DropdownMenuItem startIcon={Ban} className="text-fg-danger" onClick={() => stub('停用表單')}>
+                    <DropdownMenuItem startIcon={Ban} className="text-fg-danger" onClick={() => onDisableForm(row.original)}>
                       停用表單
                     </DropdownMenuItem>
                   )}
@@ -153,7 +156,7 @@ export function FormManagementView({
           <div className="h-full px-[var(--layout-space-loose)] pt-4 pb-4">
             <DataTable
               columns={columns}
-              data={MOCK_FORMS}
+              data={forms}
               getRowId={(f) => f.id}
               height="100%"
               size="md"
