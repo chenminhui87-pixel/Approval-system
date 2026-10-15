@@ -154,37 +154,50 @@ function StepNode({ step, isLast, defaultOpen }: StepNodeProps) {
         (sectionOpen ? ' -mx-3 px-3 bg-muted' : '')
       }
     >
-      {/* Left rail:dot + connector(箭頭移進右側區段,不再跟 dot 搶同一欄寬)。 */}
-      <div className="flex flex-col items-center shrink-0 pt-1">
-        <StepDot state={step.status} />
-        {!isLast && (
-          <div
-            className="w-px flex-1 mt-1"
-            style={{
-              background:
-                step.status === 'completed'
-                  ? 'var(--color-blue-6)'
-                  : 'var(--color-neutral-4)',
-            }}
-          />
-        )}
+      {/* Left rail:箭頭回到原本位置(dot 左側)+ dot + connector。 */}
+      <div className="flex gap-1 shrink-0">
+        {/* Chevron slot — 固定 14px 寬 reservation,單人 step 留白 padding */}
+        <div className="w-[14px] shrink-0 flex items-start pt-1">
+          {isMulti && (
+            <button
+              type="button"
+              onClick={() => setOpen((v) => !v)}
+              aria-label={open ? '收合' : '展開'}
+              className="text-fg-secondary hover:text-foreground"
+            >
+              <HeaderChevron size={14} />
+            </button>
+          )}
+        </div>
+        {/* Dot + connector column */}
+        <div className="flex flex-col items-center pt-1">
+          <StepDot state={step.status} />
+          {!isLast && (
+            <div
+              className="w-px flex-1 mt-1"
+              style={{
+                background:
+                  step.status === 'completed'
+                    ? 'var(--color-blue-6)'
+                    : 'var(--color-neutral-4)',
+              }}
+            />
+          )}
+        </div>
       </div>
 
-      {/* Right side: 箭頭 + header + body */}
+      {/* Right side: header + body */}
       <div className="flex-1 min-w-0 pb-6">
         {/* Header row */}
         <button
           type="button"
           onClick={() => isMulti && setOpen((v) => !v)}
           className={
-            'flex items-center gap-1.5 w-full text-left' +
+            'flex items-center gap-2 w-full text-left' +
             (isMulti ? ' cursor-pointer' : ' cursor-default') +
             (sectionOpen ? ' pt-2' : '')
           }
         >
-          {isMulti && (
-            <HeaderChevron size={14} className="text-fg-secondary shrink-0" />
-          )}
           <span className="text-body font-medium">{step.label}</span>
           {isMulti && (
             <>
