@@ -51,10 +51,10 @@ export const FORM_STATUS_LABEL: Record<FormStatus, string> = {
   disabled: '已停用',
 }
 // Tag color（對齊 DS Tag color 語彙）
-export const FORM_STATUS_COLOR: Record<FormStatus, 'green' | 'neutral' | 'yellow'> = {
+export const FORM_STATUS_COLOR: Record<FormStatus, 'green' | 'neutral' | 'red'> = {
   published: 'green',
-  draft: 'yellow',
-  disabled: 'neutral',
+  draft: 'neutral',
+  disabled: 'red',
 }
 
 export type FormFieldType = 'string' | 'number' | 'currency' | 'date' | 'select' | 'textarea'
