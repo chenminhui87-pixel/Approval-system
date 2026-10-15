@@ -220,7 +220,7 @@ export function ApprovalModal({
           <DialogFooter>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="text" size="sm" iconOnly startIcon={MoreHorizontal} aria-label="更多" />
+                <Button variant="text" iconOnly startIcon={MoreHorizontal} aria-label="更多" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem startIcon={Share2} onClick={() => onMoreAction?.('轉寄')}>轉寄</DropdownMenuItem>
