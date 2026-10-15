@@ -29,7 +29,6 @@ import {
   Badge,
   toast,
   Toaster,
-  ProfileCard,
   DataTable,
   type DataTableProps,
   DataTableFilterPanel,
@@ -82,6 +81,7 @@ import {
   type ApprovalRecord,
   type CategoryId,
 } from './data'
+import { PersonAvatar, personAvatarSrc, nameToAvatarColor } from './PersonAvatar'
 import { ApprovalDetailPanel } from './ApprovalDetailPanel'
 import { ApprovalModal } from './ApprovalModal'
 import { DetailAside } from './DetailAside'
@@ -137,55 +137,8 @@ const FILTER_COLUMNS: DataTableProps<ApprovalRecord>['columns'] = [
 const FILTERABLE_IDS = new Set((FILTER_COLUMNS ?? []).map((c) => (c as { id: string }).id))
 
 
-const AVATAR_COLORS = ['blue', 'violet', 'emerald', 'amber', 'rose', 'cyan', 'orange'] as const
-function nameToAvatarColor(name: string) {
-  let h = 0
-  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0
-  return AVATAR_COLORS[h % AVATAR_COLORS.length]
-}
 const STATUS_COLOR = { pending: 'blue', approved: 'green', rejected: 'red' } as const
 const STATUS_LABEL = { pending: '簽核中', approved: '已核准', rejected: '已退件' } as const
-
-// 示意頭像 — 色底圓 + 白色人形 silhouette(data-uri SVG),無文字,各人以顏色區分
-const COLOR_HEX: Record<string, string> = {
-  blue: '#3b82f6', violet: '#8b5cf6', emerald: '#10b981', amber: '#f59e0b',
-  rose: '#f43f5e', cyan: '#06b6d4', orange: '#f97316',
-}
-function personAvatarSrc(name: string): string {
-  const hex = COLOR_HEX[nameToAvatarColor(name)] ?? '#64748b'
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" fill="${hex}"/><circle cx="12" cy="9" r="3.4" fill="#fff"/><path d="M12 13.1c-3.7 0-6.3 2.1-6.3 5V20h12.6v-1.9c0-2.9-2.6-5-6.3-5z" fill="#fff"/></svg>`
-  return `data:image/svg+xml,${encodeURIComponent(svg)}`
-}
-
-// 人員頭像 — hover 顯示 DS ProfileCard(完整欄位)
-function personProfileCard(name: string) {
-  const p = getPerson(name)
-  return (
-    // DS「+ Info fields」版本:subtitle + fields(移除 status 區:燈號 + 簡易訊息)
-    <ProfileCard
-      name={name}
-      avatar={{ src: personAvatarSrc(name), alt: name }}
-      subtitle={p.title}
-      defaultFieldValues={{ id: p.id, employeeNumber: p.employeeNumber }}
-      fields={[
-        { label: '組織課名代碼', value: p.deptCode },
-        { label: '電子郵件', value: p.email },
-        { label: '電話', value: p.phone },
-        { label: '地點', value: p.location },
-      ]}
-    />
-  )
-}
-function PersonAvatar({ name, size = 22 }: { name: string; size?: number }) {
-  return (
-    <Avatar
-      alt={name}
-      size={size}
-      src={personAvatarSrc(name)}
-      hoverCard={personProfileCard(name)}
-    />
-  )
-}
 
 // 申請人 — 頭像 + 名字
 function Applicant({ name }: { name: string }) {

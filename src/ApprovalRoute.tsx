@@ -6,7 +6,7 @@
 // 屬於 product-specific composition,不適合反推進 DS canonical。
 
 import { useState } from 'react'
-import { Avatar } from '@qijenchen/design-system'
+import { PersonAvatar } from './PersonAvatar'
 import {
   Check,
   Clock,
@@ -41,7 +41,7 @@ function PersonRow({ person }: { person: ApprovalPerson }) {
   return (
     <div className="flex flex-col gap-1 py-2">
       <div className="flex items-center gap-2">
-        <Avatar alt={person.name} size={20} color={person.avatarColor ?? 'neutral'} />
+        <PersonAvatar name={person.name} size={20} />
         <span className="text-body font-medium">{person.name}</span>
       </div>
       <div className="flex items-center gap-1.5 text-caption text-fg-secondary">
@@ -195,7 +195,7 @@ function StepNode({ step, isLast, defaultOpen }: StepNodeProps) {
           className={
             'flex items-center gap-2 w-full text-left' +
             (isMulti ? ' cursor-pointer' : ' cursor-default') +
-            (sectionOpen ? ' pt-2' : '')
+            (sectionOpen ? ' pt-3' : '')
           }
         >
           <span className="text-body font-medium">{step.label}</span>
@@ -215,14 +215,14 @@ function StepNode({ step, isLast, defaultOpen }: StepNodeProps) {
 
         {/* Body */}
         {(!isMulti || open) && (
-          <div className={isMulti ? 'pt-1 pb-3' : 'mt-2'}>
+          <div className={isMulti ? 'pt-3 pb-4' : 'mt-2'}>
             {mode === 'parallel-any' && (
               <div className="flex items-center gap-1.5 mb-2 text-caption text-fg-link">
                 <Info size={14} />
                 <span>任一人簽核即通過</span>
               </div>
             )}
-            <div className="divide-y divide-divider">
+            <div>
               {people.length === 0 ? (
                 <p className="text-body text-fg-placeholder py-1">未指派</p>
               ) : (
