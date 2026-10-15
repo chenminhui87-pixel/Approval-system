@@ -86,7 +86,7 @@ export function FormManagementView({
       header: '狀態',
       meta: { width: 96 },
       cell: ({ row }) => (
-        <Tag size="sm" color={FORM_STATUS_COLOR[row.original.status]} solid={row.original.status === 'published'}>
+        <Tag size="sm" color={FORM_STATUS_COLOR[row.original.status]}>
           {FORM_STATUS_LABEL[row.original.status]}
         </Tag>
       ),

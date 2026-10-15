@@ -10,7 +10,6 @@ import {
   Select,
   Checkbox,
   Button,
-  Tag,
   Field,
   FieldLabel,
   ChipGroup,
@@ -19,8 +18,6 @@ import {
 import { Plus, Trash2 } from 'lucide-react'
 import {
   FIELD_TYPE_LABEL,
-  FORM_STATUS_LABEL,
-  FORM_STATUS_COLOR,
   categoryLabel,
   type ManagedForm,
   type FormField,
@@ -136,12 +133,9 @@ export function FormDetailView({
             </div>
           ) : (
             <div className="pb-4 mb-5 border-b border-divider">
-              <div className="flex items-center gap-2">
-                <h3 className="text-h4 font-semibold">{form.name}</h3>
-                <Tag size="sm" color={FORM_STATUS_COLOR[form.status]} solid={form.status === 'published'}>
-                  {FORM_STATUS_LABEL[form.status]}
-                </Tag>
-              </div>
+              {/* 狀態 tag 移到頁面 header 麵包屑(緊接標題,view/editing 兩種模式都在),
+                  這裡(表單內容區的 header)不重複顯示 */}
+              <h3 className="text-h4 font-semibold">{form.name}</h3>
               <p className="text-caption text-fg-placeholder mt-1">
                 {form.description?.trim() ? form.description : `${categoryLabel(form.category)} · 使用者以此表單送出審核`}
               </p>

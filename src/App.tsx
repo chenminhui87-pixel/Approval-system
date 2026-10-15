@@ -65,7 +65,11 @@ import {
   ClipboardCopy,
   Info,
   Filter,
-  FileCog,
+  FormInput,
+  Pencil,
+  Ban,
+  Save,
+  Send,
 } from 'lucide-react'
 import {
   MOCK_RECORDS,
@@ -84,6 +88,8 @@ import { DetailAside } from './DetailAside'
 import { FormManagementView } from './FormManagementView'
 import {
   MOCK_FORMS,
+  FORM_STATUS_LABEL,
+  FORM_STATUS_COLOR,
   can as canForm,
   type FormRole,
   type ManagedForm,
@@ -280,7 +286,7 @@ function PageHeader({
 }: {
   title: string
   /** 有值時改以麵包屑呈現(如 表單管理 / 表單名),取代單一標題;進詳情不另長 header */
-  breadcrumb?: { label: string; onClick?: () => void }[]
+  breadcrumb?: { label: string; onClick?: () => void; tag?: ReactNode }[]
   /** 標題右側的情境操作(如表單的狀態 + 編輯/停用 / 建立表單) */
   rightSlot?: ReactNode
 }) {
@@ -305,6 +311,8 @@ function PageHeader({
               ) : (
                 <span className="truncate">{b.label}</span>
               )}
+              {/* tag 獨立於 truncate 文字之外,視窗窄也不會被連帶裁掉 */}
+              {b.tag && <span className="shrink-0">{b.tag}</span>}
             </span>
           ))}
         </nav>
@@ -368,7 +376,7 @@ function ApprovalSidebar({
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton id="forms" size="lg" startIcon={FileCog} tooltip="表單管理">
+                  <SidebarMenuButton id="forms" startIcon={FormInput} tooltip="表單管理">
                     表單管理
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -876,6 +884,13 @@ function ApprovalPage() {
     setFormEditing(false)
     showToast('已發佈')
   }
+  // 保存草稿:退出編輯模式,但不動 status —— 跟「發佈」的差異只在要不要把狀態轉成
+  // published(標題/說明/分類/fields 本來就逐欄位即時寫回,這裡不是真的「現在才存」,
+  // 是給使用者一個不想順便發佈、只想先收起編輯面板的退出路徑)。
+  function handleSaveDraftForm() {
+    setFormEditing(false)
+    showToast('已儲存草稿')
+  }
   // 編輯 builder 內(標題 / 說明 / 分類)即時寫回 forms state —— 不走「發佈」才存的 draft/commit
   // 兩階段,跟既有 fields(localStorage 草稿)不同層次:這三個欄位 breadcrumb / 清單都要即時可見。
   function handleUpdateForm(id: string, patch: Partial<ManagedForm>) {
@@ -883,7 +898,20 @@ function ApprovalPage() {
   }
   const formsBreadcrumb = !selectedForm
     ? undefined
-    : [{ label: '表單管理', onClick: () => openForm(null) }, { label: selectedForm.name }]
+    : [
+        { label: '表單管理', onClick: () => openForm(null) },
+        {
+          label: selectedForm.name,
+          // 狀態 tag 緊接表單標題,無論檢視 / 編輯模式都在(編輯模式內容區標題換成
+          // input,麵包屑是唯一兩種模式都存在的位置)。subtle(不加 solid)—— DS Tag
+          // spec:「被動分類/屬性標示」預設 subtle,solid 留給少數單一重點場景。
+          tag: (
+            <Tag size="sm" color={FORM_STATUS_COLOR[selectedForm.status]}>
+              {FORM_STATUS_LABEL[selectedForm.status]}
+            </Tag>
+          ),
+        },
+      ]
   const formsHeaderRight: ReactNode =
     section !== 'forms'
       ? null
@@ -894,14 +922,19 @@ function ApprovalPage() {
         : formView === 'submissions'
           ? null // 送審清單子頁的操作(批次 / 代理)於增量 2b 接上
           : formEditing
-            ? <Button variant="primary" size="sm" onClick={() => handlePublishForm(selectedForm.id)}>發佈</Button>
+            ? (
+              <div className="flex items-center gap-2">
+                <Button variant="secondary" size="sm" startIcon={Save} onClick={handleSaveDraftForm}>保存草稿</Button>
+                <Button variant="primary" size="sm" startIcon={Send} onClick={() => handlePublishForm(selectedForm.id)}>發佈</Button>
+              </div>
+            )
             : (
               <div className="flex items-center gap-2">
                 {canForm(formRole, 'editForm') && (
-                  <Button variant="secondary" size="sm" onClick={() => setFormEditing(true)}>編輯表單</Button>
+                  <Button variant="secondary" size="sm" startIcon={Pencil} onClick={() => setFormEditing(true)}>編輯表單</Button>
                 )}
                 {canForm(formRole, 'disableForm') && selectedForm.status === 'published' && (
-                  <Button variant="secondary" size="sm" danger onClick={() => handleDisableForm(selectedForm.id)}>停用</Button>
+                  <Button variant="secondary" size="sm" danger startIcon={Ban} onClick={() => handleDisableForm(selectedForm.id)}>停用</Button>
                 )}
               </div>
             )
