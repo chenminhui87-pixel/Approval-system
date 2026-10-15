@@ -4,10 +4,11 @@
 // (核准 / 退件 / 轉寄 / 移交簽核者 / 退回 / 作廢,在面板內);viewer 唯讀。代理動作先以 toast 佔位。
 import { useState } from 'react'
 import { DataTable, type DataTableProps, Tag, Button } from '@qijenchen/design-system'
-import { Info, X } from 'lucide-react'
+import { Info, X, Maximize2 } from 'lucide-react'
 import { MOCK_RECORDS, type ApprovalRecord, type ApprovalStatus } from './data'
 import { can, type FormRole, type ManagedForm } from './formsData'
 import { ApprovalDetailPanel } from './ApprovalDetailPanel'
+import { ApprovalModal } from './ApprovalModal'
 
 const STATUS: Record<ApprovalStatus, { label: string; color: 'blue' | 'green' | 'red' }> = {
   pending: { label: '簽核中', color: 'blue' },
@@ -36,10 +37,14 @@ export function FormSubmissionsView({
   stub: (label: string) => void
 }) {
   const [openId, setOpenId] = useState<string | null>(null)
+  // 標題欄 / 面板放大鈕共用:開完整 Modal 視圖(與簽核清單一致 — 標題開 Modal、info/row 開側面板,
+  // 側面板的放大鈕再接回同一個 Modal)
+  const [modalId, setModalId] = useState<string | null>(null)
   // prototype:以表單分類作為「此表單送出的審核」代理(MOCK 無 form↔record 關聯)
   const submissions = MOCK_RECORDS.filter((r) => r.category === form.category)
   const canOperate = can(role, 'operateSubmission')
   const openRecord = submissions.find((r) => r.id === openId) ?? null
+  const modalRecord = submissions.find((r) => r.id === modalId) ?? null
 
   const columns: DataTableProps<ApprovalRecord>['columns'] = [
     {
@@ -49,7 +54,7 @@ export function FormSubmissionsView({
       cell: ({ row }) => (
         <button
           type="button"
-          onClick={() => setOpenId(row.original.id)}
+          onClick={() => setModalId(row.original.id)}
           className="text-left font-medium line-clamp-2 hover:text-primary hover:underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm py-1"
         >
           {row.original.title}
@@ -124,8 +129,9 @@ export function FormSubmissionsView({
   ]
 
   return (
-    // 清單 + 右側詳情面板(list-detail,與簽核清單一致):面板為左欄同層兄弟 → 頂到 header,
-    // 不被左欄的表單標題區往下擠。
+    <>
+    {/* 清單 + 右側詳情面板(list-detail,與簽核清單一致):面板為左欄同層兄弟 → 頂到 header,
+        不被左欄的表單標題區往下擠。 */}
     <div className="flex-1 min-h-0 flex">
       <div className="flex-1 min-w-0 min-h-0 flex flex-col">
         <div className="px-[var(--layout-space-loose)] pt-4 pb-3 shrink-0">
@@ -168,6 +174,14 @@ export function FormSubmissionsView({
                 variant="text"
                 size="sm"
                 iconOnly
+                startIcon={Maximize2}
+                aria-label="展開為完整視圖"
+                onClick={() => setModalId(openRecord.id)}
+              />
+              <Button
+                variant="text"
+                size="sm"
+                iconOnly
                 dismiss
                 startIcon={X}
                 aria-label="關閉"
@@ -187,5 +201,16 @@ export function FormSubmissionsView({
           </aside>
         )}
       </div>
+
+    <ApprovalModal
+      record={modalRecord}
+      open={!!modalRecord}
+      onClose={() => setModalId(null)}
+      mode={canOperate && modalRecord?.status === 'pending' ? 'approve' : 'view'}
+      onApprove={() => { stub('核准'); setModalId(null) }}
+      onReject={() => { stub('退件'); setModalId(null) }}
+      onMoreAction={stub}
+    />
+    </>
   )
 }
