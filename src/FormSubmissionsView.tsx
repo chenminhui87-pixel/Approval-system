@@ -124,18 +124,19 @@ export function FormSubmissionsView({
   ]
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col">
-      <div className="px-[var(--layout-space-loose)] pt-4 pb-3 shrink-0">
-        <h3 className="text-h4 font-semibold">{form.name}</h3>
-        <p className="text-caption text-fg-placeholder mt-1">
-          送審清單 · 以此表單送出的審核
-          {canOperate ? '(可對簽核中的單代理操作)' : '(唯讀)'}
-        </p>
-      </div>
+    // 清單 + 右側詳情面板(list-detail,與簽核清單一致):面板為左欄同層兄弟 → 頂到 header,
+    // 不被左欄的表單標題區往下擠。
+    <div className="flex-1 min-h-0 flex">
+      <div className="flex-1 min-w-0 min-h-0 flex flex-col">
+        <div className="px-[var(--layout-space-loose)] pt-4 pb-3 shrink-0">
+          <h3 className="text-h4 font-semibold">{form.name}</h3>
+          <p className="text-caption text-fg-placeholder mt-1">
+            送審清單 · 以此表單送出的審核
+            {canOperate ? '(可對簽核中的單代理操作)' : '(唯讀)'}
+          </p>
+        </div>
 
-      {/* 清單 + 右側詳情面板(list-detail,與簽核清單一致)*/}
-      <div className="flex-1 min-h-0 flex">
-        <div className="flex-1 min-w-0 min-h-0 px-[var(--layout-space-loose)] pb-4">
+        <div className="flex-1 min-h-0 px-[var(--layout-space-loose)] pb-4">
           {submissions.length === 0 ? (
             <div className="rounded-lg border border-dashed border-divider px-4 py-10 text-center text-fg-placeholder">
               <p className="text-body">尚無以此表單送出的審核。</p>
@@ -154,12 +155,13 @@ export function FormSubmissionsView({
             />
           )}
         </div>
+      </div>
 
-        {openRecord && (
-          <aside
-            aria-label={openRecord.title}
-            className="flex flex-col h-full w-[380px] xl:w-[420px] shrink-0 border-l border-divider bg-surface"
-          >
+      {openRecord && (
+        <aside
+          aria-label={openRecord.title}
+          className="flex flex-col h-full w-[380px] xl:w-[420px] shrink-0 border-l border-divider bg-surface"
+        >
             <div className="flex items-center gap-2 h-[var(--chrome-header-height)] px-4 shrink-0 border-b border-divider">
               <h2 className="text-body-lg font-medium flex-1 truncate">{openRecord.title}</h2>
               <Button
@@ -185,6 +187,5 @@ export function FormSubmissionsView({
           </aside>
         )}
       </div>
-    </div>
   )
 }
