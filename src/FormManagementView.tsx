@@ -8,12 +8,8 @@ import {
   Button,
   DataTable,
   type DataTableProps,
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
 } from '@qijenchen/design-system'
-import { Pencil, Ban, MoreVertical } from 'lucide-react'
+import { Pencil, Eye } from 'lucide-react'
 import {
   FORM_ROLES,
   FORM_ROLE_LABEL,
@@ -38,7 +34,6 @@ export function FormManagementView({
   onSelectForm,
   onEditForm,
   onViewSubmissions,
-  onDisableForm,
   onUpdateForm,
   stub,
 }: {
@@ -51,7 +46,6 @@ export function FormManagementView({
   onSelectForm: (f: ManagedForm | null) => void
   onEditForm: (f: ManagedForm) => void
   onViewSubmissions: (f: ManagedForm) => void
-  onDisableForm: (f: ManagedForm) => void
   onUpdateForm: (id: string, patch: Partial<ManagedForm>) => void
   stub: (label: string) => void
 }) {
@@ -107,36 +101,21 @@ export function FormManagementView({
     {
       id: 'actions',
       header: () => <span className="block text-right w-full">操作</span>,
-      meta: { width: 160 },
-      // DS row-action 規則:主要動作(查看送審單)inline 文字鈕,其餘(編輯 / 停用)收進 ⋯ overflow。
-      // 檢視表單 = 點表單名開啟。viewer 無編輯/停用 → 不顯示 ⋯。
+      meta: { width: 300 },
+      // 只留查看所有簽核單 + 編輯表單兩個 inline 動作(都帶 prefix icon),不再用 ⋯ overflow。
+      // 停用改到表單內容頁 header(進去看過內容才停用,避免清單列一鍵誤觸);
+      // 檢視表單 = 點表單名開啟。viewer 無編輯權限 → 不顯示編輯表單。
       cell: ({ row }) => {
         const canEdit = can(role, 'editForm')
-        const canDisable = can(role, 'disableForm') && row.original.status === 'published'
-        const hasOverflow = canEdit || canDisable
         return (
-          <div className="flex items-center gap-0.5 justify-end" onClick={(e) => e.stopPropagation()}>
-            <Button variant="text" size="sm" onClick={() => onViewSubmissions(row.original)}>
-              查看送審單
+          <div className="flex items-center gap-1 justify-end" onClick={(e) => e.stopPropagation()}>
+            <Button variant="text" size="sm" startIcon={Eye} onClick={() => onViewSubmissions(row.original)}>
+              查看所有簽核單
             </Button>
-            {hasOverflow && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="text" size="sm" iconOnly startIcon={MoreVertical} aria-label="更多操作" />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {canEdit && (
-                    <DropdownMenuItem startIcon={Pencil} onClick={() => onEditForm(row.original)}>
-                      編輯表單
-                    </DropdownMenuItem>
-                  )}
-                  {canDisable && (
-                    <DropdownMenuItem startIcon={Ban} className="text-fg-danger" onClick={() => onDisableForm(row.original)}>
-                      停用表單
-                    </DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
+            {canEdit && (
+              <Button variant="text" size="sm" startIcon={Pencil} onClick={() => onEditForm(row.original)}>
+                編輯表單
+              </Button>
             )}
           </div>
         )

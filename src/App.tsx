@@ -65,7 +65,7 @@ import {
   ClipboardCopy,
   Info,
   Filter,
-  FormInput,
+  FileUser,
   Pencil,
   Ban,
   Save,
@@ -376,7 +376,7 @@ function ApprovalSidebar({
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton id="forms" startIcon={FormInput} tooltip="表單管理">
+                  <SidebarMenuButton id="forms" startIcon={FileUser} tooltip="表單管理">
                     表單管理
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -984,7 +984,6 @@ function ApprovalPage() {
         onSelectForm={(f) => openForm(f ? f.id : null)}
         onEditForm={(f) => openForm(f.id)}
         onViewSubmissions={(f) => openForm(f.id, { view: 'submissions' })}
-        onDisableForm={(f) => handleDisableForm(f.id)}
         onUpdateForm={handleUpdateForm}
         stub={formStub}
       />
