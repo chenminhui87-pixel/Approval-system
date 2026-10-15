@@ -154,10 +154,12 @@ function StepNode({ step, isLast, defaultOpen }: StepNodeProps) {
         (sectionOpen ? ' -mx-3 px-3 bg-muted' : '')
       }
     >
-      {/* Left rail:箭頭回到原本位置(dot 左側)+ dot + connector。 */}
+      {/* Left rail:箭頭回到原本位置(dot 左側)+ dot + connector。
+          pt 要跟右側 header 的 pt 同步(sectionOpen 時都是 pt-3),不然灰底頂邊
+          貼著 dot(dot 自己的 pt-1 比 header 的 pt-3 淺,灰底框頂邊幾乎撞到 dot)。 */}
       <div className="flex gap-1 shrink-0">
         {/* Chevron slot — 固定 14px 寬 reservation,單人 step 留白 padding */}
-        <div className="w-[14px] shrink-0 flex items-start pt-1">
+        <div className={'w-[14px] shrink-0 flex items-start' + (sectionOpen ? ' pt-3' : ' pt-1')}>
           {isMulti && (
             <button
               type="button"
@@ -170,7 +172,7 @@ function StepNode({ step, isLast, defaultOpen }: StepNodeProps) {
           )}
         </div>
         {/* Dot + connector column */}
-        <div className="flex flex-col items-center pt-1">
+        <div className={'flex flex-col items-center' + (sectionOpen ? ' pt-3' : ' pt-1')}>
           <StepDot state={step.status} />
           {!isLast && (
             <div
