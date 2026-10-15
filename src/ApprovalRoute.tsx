@@ -75,7 +75,7 @@ function PersonRow({ person }: { person: ApprovalPerson }) {
           <button
             type="button"
             onClick={() => setExpanded((v) => !v)}
-            className="text-caption hover:underline"
+            className="text-caption hover:underline self-start text-left"
             style={{ color: 'var(--color-neutral-7)' }}
           >
             {expanded ? '收合' : '查看全部'}
@@ -142,52 +142,48 @@ function StepNode({ step, isLast, defaultOpen }: StepNodeProps) {
 
   const HeaderChevron = open ? ChevronDown : ChevronRight
 
+  // 灰底收折區段:multi + 展開時,箭頭 + header + body 一起包進同一個灰底方塊
+  // (不是只有 body 內容單獨上色,箭頭按鈕本身也要在底色範圍內)。
+  const sectionOpen = isMulti && open
+
   return (
     <li className="relative flex gap-3">
-      {/* Left rail: chevron slot (always reserved) + dot column (dot + connector,
-          both centered to dot's X so single 和 multi step 的 dot/line 都在同一條垂直線)。 */}
-      <div className="flex gap-1 shrink-0">
-        {/* Chevron slot — 固定 14px 寬 reservation,單人 step 留白 padding */}
-        <div className="w-[14px] shrink-0 flex items-start pt-1">
-          {isMulti && (
-            <button
-              type="button"
-              onClick={() => setOpen((v) => !v)}
-              aria-label={open ? '收合' : '展開'}
-              className="text-fg-secondary hover:text-foreground"
-            >
-              <HeaderChevron size={14} />
-            </button>
-          )}
-        </div>
-        {/* Dot + connector column — items-center 對齊 dot 中軸,line 自動跟著 */}
-        <div className="flex flex-col items-center pt-1">
-          <StepDot state={step.status} />
-          {!isLast && (
-            <div
-              className="w-px flex-1 mt-1"
-              style={{
-                background:
-                  step.status === 'completed'
-                    ? 'var(--color-blue-6)'
-                    : 'var(--color-neutral-4)',
-              }}
-            />
-          )}
-        </div>
+      {/* Left rail:只剩 dot + connector(箭頭移進右側區段,不再跟 dot 搶同一欄寬)。 */}
+      <div className="flex flex-col items-center shrink-0 pt-1">
+        <StepDot state={step.status} />
+        {!isLast && (
+          <div
+            className="w-px flex-1 mt-1"
+            style={{
+              background:
+                step.status === 'completed'
+                  ? 'var(--color-blue-6)'
+                  : 'var(--color-neutral-4)',
+            }}
+          />
+        )}
       </div>
 
-      {/* Right side: header + body */}
-      <div className="flex-1 min-w-0 pb-6">
+      {/* Right side: 箭頭 + header + body,灰底(sectionOpen 時)包住整個區段 */}
+      <div
+        className={
+          'flex-1 min-w-0 pb-6 rounded-md' +
+          (sectionOpen ? ' bg-muted' : '')
+        }
+      >
         {/* Header row */}
         <button
           type="button"
           onClick={() => isMulti && setOpen((v) => !v)}
           className={
-            'flex items-center gap-2 w-full text-left' +
-            (isMulti ? ' cursor-pointer' : ' cursor-default')
+            'flex items-center gap-1.5 w-full text-left' +
+            (isMulti ? ' cursor-pointer' : ' cursor-default') +
+            (sectionOpen ? ' px-3 pt-2' : '')
           }
         >
+          {isMulti && (
+            <HeaderChevron size={14} className="text-fg-secondary shrink-0" />
+          )}
           <span className="text-body font-medium">{step.label}</span>
           {isMulti && (
             <>
@@ -205,12 +201,7 @@ function StepNode({ step, isLast, defaultOpen }: StepNodeProps) {
 
         {/* Body */}
         {(!isMulti || open) && (
-          <div
-            className={
-              'mt-2 rounded-md' +
-              (isMulti ? ' p-3 bg-muted' : '')
-            }
-          >
+          <div className={isMulti ? 'px-3 pt-1 pb-3' : 'mt-2'}>
             {mode === 'parallel-any' && (
               <div className="flex items-center gap-1.5 mb-2 text-caption text-fg-link">
                 <Info size={14} />
