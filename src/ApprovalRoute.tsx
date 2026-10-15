@@ -148,15 +148,17 @@ function StepNode({ step, isLast, defaultOpen }: StepNodeProps) {
   const sectionOpen = isMulti && open
 
   return (
-    <li
-      className={
-        'relative flex gap-3 rounded-md' +
-        (sectionOpen ? ' -mx-2 px-2 bg-muted' : '')
-      }
-    >
+    <li className="relative flex gap-3">
+      {/* 灰底用絕對定位背景層,不直接掛在 <li> 本身 —— li 的完整高度含連接線
+          要延伸的尾段留白(給下一站點),若背景跟著 li 全高走,留白會被灰底蓋滿,
+          看起來灰底貼到下一站。bottom-4 讓灰底提早收尾,尾段露出真正的留白。 */}
+      {sectionOpen && (
+        <div className="absolute -left-2 -right-2 top-0 bottom-4 rounded-md bg-muted -z-10" aria-hidden="true" />
+      )}
       {/* Left rail:箭頭回到原本位置(dot 左側)+ dot + connector。
-          pt 要跟右側 header 的 pt 同步(sectionOpen 時都是 pt-3),不然灰底頂邊
-          貼著 dot(dot 自己的 pt-1 比 header 的 pt-3 淺,灰底框頂邊幾乎撞到 dot)。 */}
+          pt 要跟右側 header 的 pt 同步,不然灰底頂邊貼著 dot(dot 自己的 pt-1
+          比 header 淺,灰底框頂邊幾乎撞到 dot)。dot 比 header 多 pt-1(4px)是
+          刻意的 —— dot/文字兩者視覺中心本來就有這個差,不能設一樣的 pt。 */}
       <div className="flex gap-1 shrink-0">
         {/* Chevron slot — 固定 14px 寬 reservation,單人 step 留白 padding */}
         <div className={'w-[14px] shrink-0 flex items-start' + (sectionOpen ? ' pt-3' : ' pt-1')}>
@@ -197,7 +199,7 @@ function StepNode({ step, isLast, defaultOpen }: StepNodeProps) {
           className={
             'flex items-center gap-2 w-full text-left' +
             (isMulti ? ' cursor-pointer' : ' cursor-default') +
-            (sectionOpen ? ' pt-3' : '')
+            (sectionOpen ? ' pt-2' : '')
           }
         >
           <span className="text-body font-medium">{step.label}</span>
