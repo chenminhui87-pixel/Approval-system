@@ -467,7 +467,7 @@ function DetailSheet({
             <Tag size="sm" color={STATUS_COLOR[record.status]} solid={record.status === 'approved'}>
               {STATUS_LABEL[record.status]}
             </Tag>
-            {record.urgency !== 'low' && (
+            {record.urgency === 'high' && (
               <Tag size="sm" color={URGENCY_COLOR[record.urgency]}>
                 {URGENCY_LABEL[record.urgency]}
               </Tag>

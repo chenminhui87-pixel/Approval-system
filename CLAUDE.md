@@ -48,7 +48,7 @@ Vite + React 19 + TypeScript + Tailwind v4 + `@qijenchen/design-system`。
 2. **DialogContent 寬度用 `maxWidth` prop**，不要用 className `max-w-*`（會被 inline style 蓋掉）
 3. **iconOnly SegmentedControlItem 的 active state** — 因 Tooltip wrap 會覆蓋 `data-state`，需用 `aria-checked:` variant 補 active 樣式
 4. **divider 貫穿 dialog 全高** — 不要包在 DS DialogBody（ScrollArea wrapper 會讓 inner height 縮 11px），直接用 plain `<div data-dialog-body>`
-5. **Tag 標籤** — 統一 `size="sm"`；低緊急程度（low）不渲染 tag 避免視覺雜訊
+5. **Tag 標籤** — 統一 `size="sm"`；緊急程度 tag 只在 `high` 渲染（medium / low 皆不渲染，避免視覺雜訊；2026-10-15 product-ui-audit 確認並統一全站寫法）
 
 ## Workflow
 
