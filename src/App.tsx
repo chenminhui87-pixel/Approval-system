@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, type ReactNode } from 'react'
+import { useState, useRef, useEffect, forwardRef, type ReactNode, type SVGProps } from 'react'
 import {
   TooltipProvider,
   AppShell,
@@ -65,7 +65,6 @@ import {
   ClipboardCopy,
   Info,
   Filter,
-  FileUser,
   Pencil,
   Ban,
   Save,
@@ -264,6 +263,35 @@ function AgentAvatars({ agents }: { agents?: string[] }) {
   )
 }
 
+// 「表單管理」sidebar icon candidate — lucide 沒有 Clipboard 家族 + 人員的複合圖示,
+// 手繪:沿用 Clipboard 外框(跟上方 ClipboardList/Check/Pen/Copy 同一視覺語言),
+// 人員(頭 + 肩)畫在 paper 區右側,stroke-width 跟外框一致(不用 scale transform,
+// 避免 transform 連帶把線寬一起縮小、跟外框線寬不一致)。
+const ClipboardUser = forwardRef<SVGSVGElement, SVGProps<SVGSVGElement> & { size?: string | number }>(
+  ({ size = 16, className, ...props }, ref) => (
+    <svg
+      ref={ref}
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden
+      {...props}
+    >
+      <rect width="8" height="4" x="8" y="2" rx="1" ry="1" />
+      <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+      <circle cx="14.5" cy="11.5" r="1.5" />
+      <path d="M17 17c0-1.7-1.1-3-2.5-3s-2.5 1.3-2.5 3" />
+    </svg>
+  )
+)
+ClipboardUser.displayName = 'ClipboardUser'
+
 function RowCheckbox({ checked, indeterminate, onChange }: {
   checked: boolean
   indeterminate?: boolean
@@ -376,7 +404,7 @@ function ApprovalSidebar({
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton id="forms" startIcon={FileUser} tooltip="表單管理">
+                  <SidebarMenuButton id="forms" startIcon={ClipboardUser} tooltip="表單管理">
                     表單管理
                   </SidebarMenuButton>
                 </SidebarMenuItem>
