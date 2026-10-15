@@ -178,7 +178,7 @@ function StepNode({ step, isLast, defaultOpen }: StepNodeProps) {
           <StepDot state={step.status} />
           {!isLast && (
             <div
-              className="w-px flex-1 mt-1 mb-2"
+              className={'w-px flex-1 mt-1' + (sectionOpen ? ' mb-6' : ' mb-2')}
               style={{
                 background:
                   step.status === 'completed'
