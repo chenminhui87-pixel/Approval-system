@@ -865,8 +865,6 @@ function ApprovalPage() {
       status: 'draft',
       owner: CURRENT_USER,
       updatedAt: new Date().toISOString().slice(0, 10),
-      submissionCount: 0,
-      pendingCount: 0,
       fields: [],
     }
     setForms((prev) => [blank, ...prev])
@@ -976,6 +974,7 @@ function ApprovalPage() {
     {section === 'forms' && (
       <FormManagementView
         forms={forms}
+        records={records}
         role={formRole}
         onRoleChange={setFormRole}
         selectedForm={selectedForm}

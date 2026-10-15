@@ -5,8 +5,8 @@
 import { useState } from 'react'
 import { DataTable, type DataTableProps, Tag, Button } from '@qijenchen/design-system'
 import { Info, X, Maximize2 } from 'lucide-react'
-import { MOCK_RECORDS, type ApprovalRecord, type ApprovalStatus } from './data'
-import { can, type FormRole, type ManagedForm } from './formsData'
+import type { ApprovalRecord, ApprovalStatus } from './data'
+import { can, formSubmissions, type FormRole, type ManagedForm } from './formsData'
 import { ApprovalDetailPanel } from './ApprovalDetailPanel'
 import { ApprovalModal } from './ApprovalModal'
 
@@ -29,10 +29,12 @@ function deadline(dueDate?: string): { text: string; urgent: boolean } {
 
 export function FormSubmissionsView({
   form,
+  records,
   role,
   stub,
 }: {
   form: ManagedForm
+  records: ApprovalRecord[]
   role: FormRole
   stub: (label: string) => void
 }) {
@@ -40,8 +42,9 @@ export function FormSubmissionsView({
   // 標題欄 / 面板放大鈕共用:開完整 Modal 視圖(與簽核清單一致 — 標題開 Modal、info/row 開側面板,
   // 側面板的放大鈕再接回同一個 Modal)
   const [modalId, setModalId] = useState<string | null>(null)
-  // prototype:以表單分類作為「此表單送出的審核」代理(MOCK 無 form↔record 關聯)
-  const submissions = MOCK_RECORDS.filter((r) => r.category === form.category)
+  // 跟清單頁(FormManagementView)的送審數/簽核中欄共用同一個 formSubmissions,
+  // 確保這裡看到的筆數跟外層清單數字永遠一致(SSOT 見 formsData.ts)。
+  const submissions = formSubmissions(form, records)
   const canOperate = can(role, 'operateSubmission')
   const openRecord = submissions.find((r) => r.id === openId) ?? null
   const modalRecord = submissions.find((r) => r.id === modalId) ?? null

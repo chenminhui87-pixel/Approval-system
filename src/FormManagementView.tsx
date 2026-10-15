@@ -18,14 +18,17 @@ import {
   FORM_STATUS_COLOR,
   can,
   categoryLabel,
+  formSubmissionCounts,
   type FormRole,
   type ManagedForm,
 } from './formsData'
+import type { ApprovalRecord } from './data'
 import { FormDetailView } from './FormDetailView'
 import { FormSubmissionsView } from './FormSubmissionsView'
 
 export function FormManagementView({
   forms,
+  records,
   role,
   onRoleChange,
   selectedForm,
@@ -38,6 +41,7 @@ export function FormManagementView({
   stub,
 }: {
   forms: ManagedForm[]
+  records: ApprovalRecord[]
   role: FormRole
   onRoleChange: (r: FormRole) => void
   selectedForm: ManagedForm | null
@@ -87,14 +91,23 @@ export function FormManagementView({
     },
     {
       id: 'submissions',
-      header: '送審數',
+      header: '簽核單送出總數',
       meta: { width: 140 },
+      // 跟送審清單子頁(FormSubmissionsView)共用同一個 formSubmissionCounts,
+      // 不能各自維護數字 —— 這是之前「清單數字跟點進去看到的不一致」的根因。
       cell: ({ row }) => (
-        <span className="whitespace-nowrap tabular-nums">
-          <span className="text-body text-foreground font-medium">{row.original.submissionCount}</span>
-          {row.original.pendingCount > 0 && (
-            <span className="text-caption text-fg-placeholder"> · {row.original.pendingCount} 簽核中</span>
-          )}
+        <span className="text-body text-foreground font-medium tabular-nums whitespace-nowrap">
+          {formSubmissionCounts(row.original, records).total}
+        </span>
+      ),
+    },
+    {
+      id: 'pending',
+      header: '簽核中',
+      meta: { width: 100 },
+      cell: ({ row }) => (
+        <span className="text-body text-foreground font-medium tabular-nums whitespace-nowrap">
+          {formSubmissionCounts(row.original, records).pending}
         </span>
       ),
     },
@@ -102,7 +115,9 @@ export function FormManagementView({
       id: 'actions',
       // 對齊 FormSubmissionsView 的 actions 欄寫法:表頭不顯文字,sr-only 保留給輔助技術
       header: () => <span className="sr-only">操作</span>,
-      meta: { width: 300 },
+      // viewer 沒有編輯表單按鈕,欄寬跟著 hug(不留編輯按鈕的空白)——role 是整張表共用的
+      // global 狀態,不是逐列不同,直接在欄定義算一次即可,不用每個 cell 各自判斷。
+      meta: { width: can(role, 'editForm') ? 300 : 170 },
       // 只留查看所有簽核單 + 編輯表單兩個 inline 動作(都帶 prefix icon),不再用 ⋯ overflow。
       // 停用改到表單內容頁 header(進去看過內容才停用,避免清單列一鍵誤觸);
       // 檢視表單 = 點表單名開啟。viewer 無編輯權限 → 不顯示編輯表單。
@@ -130,7 +145,7 @@ export function FormManagementView({
       <div className="flex-1 min-h-0 flex flex-col">
         {selectedForm ? (
           view === 'submissions' ? (
-            <FormSubmissionsView key={selectedForm.id} form={selectedForm} role={role} stub={stub} />
+            <FormSubmissionsView key={selectedForm.id} form={selectedForm} records={records} role={role} stub={stub} />
           ) : (
             <FormDetailView
               key={selectedForm.id}

@@ -1,7 +1,7 @@
 // 表單管理模組(C)資料模型 — prototype。
 // 角色(owner/admin/viewer)與欄位內容由「下游系統」透過介面指派/製作;簽核系統這邊
 // 不提供管理角色的介面,只依「目前檢視身分」呈現對應角色能操作的功能(feature 完整度差異)。
-import type { CategoryId } from './data'
+import type { CategoryId, ApprovalRecord } from './data'
 import { CATEGORIES } from './data'
 
 // ── 角色 ─────────────────────────────────────────────────────────────────────
@@ -85,15 +85,27 @@ export interface ManagedForm {
   /** 下游系統指派的 owner（顯示用） */
   owner: string
   updatedAt: string
-  /** 累計以此表單送出的審核數 */
-  submissionCount: number
-  /** 其中仍簽核中 */
-  pendingCount: number
   fields: FormField[]
 }
 
 export function categoryLabel(id: CategoryId): string {
   return CATEGORIES.find((c) => c.id === id)?.label ?? id
+}
+
+// prototype:「此表單送出的審核」以表單分類代理(MOCK 無 form↔record 關聯,
+// 詳見 FormSubmissionsView)。清單欄位的送審數/簽核中統計跟送審清單子頁必須
+// 共用同一個 filter,不能各自維護一份數字 —— 之前清單欄位是寫死的假資料,
+// 跟子頁實際過濾出來的筆數對不上(2026-10 user 回報不一致),改成單一 SSOT。
+export function formSubmissions(form: Pick<ManagedForm, 'category'>, records: ApprovalRecord[]): ApprovalRecord[] {
+  return records.filter((r) => r.category === form.category)
+}
+
+export function formSubmissionCounts(form: Pick<ManagedForm, 'category'>, records: ApprovalRecord[]): {
+  total: number
+  pending: number
+} {
+  const submissions = formSubmissions(form, records)
+  return { total: submissions.length, pending: submissions.filter((r) => r.status === 'pending').length }
 }
 
 export const MOCK_FORMS: ManagedForm[] = [
@@ -104,8 +116,6 @@ export const MOCK_FORMS: ManagedForm[] = [
     status: 'published',
     owner: '陳美惠',
     updatedAt: '2026-09-28',
-    submissionCount: 142,
-    pendingCount: 14,
     fields: [
       { label: '費用類別', type: 'select', required: true, options: ['差旅', '餐費', '辦公用品', '其他'] },
       { label: '金額', type: 'currency', required: true },
@@ -120,8 +130,6 @@ export const MOCK_FORMS: ManagedForm[] = [
     status: 'published',
     owner: '周總監',
     updatedAt: '2026-09-15',
-    submissionCount: 58,
-    pendingCount: 6,
     fields: [
       { label: '出差地點', type: 'string', required: true },
       { label: '起訖日期', type: 'date', required: true },
@@ -136,8 +144,6 @@ export const MOCK_FORMS: ManagedForm[] = [
     status: 'published',
     owner: '人資專員',
     updatedAt: '2026-08-30',
-    submissionCount: 230,
-    pendingCount: 9,
     fields: [
       { label: '假別', type: 'select', required: true, options: ['特休', '病假', '事假', '婚假', '喪假'] },
       { label: '起訖時間', type: 'date', required: true },
@@ -152,8 +158,6 @@ export const MOCK_FORMS: ManagedForm[] = [
     status: 'published',
     owner: '林志明',
     updatedAt: '2026-09-20',
-    submissionCount: 37,
-    pendingCount: 5,
     fields: [
       { label: '設備規格', type: 'string', required: true },
       { label: '數量', type: 'number', required: true },
@@ -168,8 +172,6 @@ export const MOCK_FORMS: ManagedForm[] = [
     status: 'draft',
     owner: '人資助理',
     updatedAt: '2026-10-05',
-    submissionCount: 0,
-    pendingCount: 0,
     fields: [
       { label: '課程名稱', type: 'string', required: true },
       { label: '上課日期', type: 'date', required: true },
@@ -183,8 +185,6 @@ export const MOCK_FORMS: ManagedForm[] = [
     status: 'disabled',
     owner: '黃建偉',
     updatedAt: '2026-06-10',
-    submissionCount: 86,
-    pendingCount: 0,
     fields: [
       { label: '標題', type: 'string', required: true },
       { label: '發布平台', type: 'select', required: true, options: ['官網', 'Medium', 'LinkedIn'] },
