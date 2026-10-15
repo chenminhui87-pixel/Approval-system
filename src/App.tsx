@@ -805,10 +805,7 @@ function ApprovalPage() {
   }
   const formsBreadcrumb = !selectedForm
     ? undefined
-    : formView === 'submissions'
-      ? // 送審清單是「表單管理(清單)」的下一層,非表單內容頁的下一層(表單名在頁內標題呈現)
-        [{ label: '表單管理', onClick: () => openForm(null) }, { label: '送審清單' }]
-      : [{ label: '表單管理', onClick: () => openForm(null) }, { label: selectedForm.name }]
+    : [{ label: '表單管理', onClick: () => openForm(null) }, { label: selectedForm.name }]
   const formsHeaderRight: ReactNode =
     section !== 'forms'
       ? null
