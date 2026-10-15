@@ -8,6 +8,7 @@ import {
   SidebarTrigger,
   SidebarHeader,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarMenu,
@@ -318,7 +319,17 @@ function PageHeader({
 
 // 主導覽改走左側 sidebar(待簽核/已簽核/已申請/轉寄給我),對齊整合平台的統一框架。
 // active 狀態由 SidebarProvider controlled(activeId=tab);待辦類(待簽核/轉寄給我)顯示筆數 badge。
-function ApprovalSidebar({ records }: { records: ApprovalRecord[] }) {
+function ApprovalSidebar({
+  records,
+  hasFormAccess,
+  onFormAccessChange,
+}: {
+  records: ApprovalRecord[]
+  /** 平台層存取控管(demo)— 獨立於表單管理模組內的 owner/admin/viewer 角色矩陣:
+      這個開關管「看不看得到表單管理入口」,角色矩陣管「進去後能做什麼」,兩個維度分開。 */
+  hasFormAccess: boolean
+  onFormAccessChange: (v: boolean) => void
+}) {
   const badgeFor = (t: TabId): number | null => {
     const n = getTabRecords(t, records, CURRENT_USER).length
     return n > 0 ? n : null
@@ -352,19 +363,36 @@ function ApprovalSidebar({ records }: { records: ApprovalRecord[] }) {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        {/* 表單管理模組(C)— 獨立 group;prototype 先對所有人顯示(存取控管 demo 待增量) */}
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton id="forms" startIcon={FileCog} tooltip="表單管理">
-                  表單管理
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {/* 表單管理模組(C)— 獨立 group;平台存取 demo 開關關閉時整個不渲染(無權限 = 看不到入口) */}
+        {hasFormAccess && (
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton id="forms" startIcon={FileCog} tooltip="表單管理">
+                    表單管理
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
+      {/* 平台存取(demo)— 跟表單管理模組內的角色切換器是不同維度,刻意放在模組外,
+          切成「無權限」後仍摸得到這顆開關可以切回來。 */}
+      <SidebarFooter>
+        <div className="flex flex-col gap-1.5 px-2 py-1.5 group-data-[collapsible=icon]:hidden">
+          <span className="text-caption text-fg-muted">平台存取(demo)</span>
+          <SegmentedControl
+            value={hasFormAccess ? 'granted' : 'denied'}
+            onValueChange={(v: string | undefined) => v && onFormAccessChange(v === 'granted')}
+            size="sm"
+          >
+            <SegmentedControlItem value="granted">有權限</SegmentedControlItem>
+            <SegmentedControlItem value="denied">無權限</SegmentedControlItem>
+          </SegmentedControl>
+        </div>
+      </SidebarFooter>
     </Sidebar>
   )
 }
@@ -672,6 +700,19 @@ function ApprovalPage() {
   // 表單管理模組(C):section 切換(簽核 vs 表單管理)+ prototype 檢視身分(角色切換器)
   const [section, setSection] = useState<'approvals' | 'forms'>('approvals')
   const [formRole, setFormRole] = useState<FormRole>('owner')
+  // 平台層存取控管(demo)— 獨立於 formRole,管「看不看得到表單管理入口」
+  const [hasFormAccess, setHasFormAccess] = useState(true)
+
+  // 示範中途被收回表單管理存取權時,若正站在表單管理 section 內要退回簽核中心,
+  // 不留在一個已經看不到入口的頁面上。
+  useEffect(() => {
+    if (!hasFormAccess && section === 'forms') {
+      setSection('approvals')
+      setSelectedFormId(null)
+      setFormEditing(false)
+      setFormView('content')
+    }
+  }, [hasFormAccess, section])
 
   const tabRecords = getTabRecords(tab, records, CURRENT_USER)
   const searchFiltered = tabRecords
@@ -853,7 +894,13 @@ function ApprovalPage() {
             />
           )
       }
-      sidebar={<ApprovalSidebar records={records} />}
+      sidebar={
+        <ApprovalSidebar
+          records={records}
+          hasFormAccess={hasFormAccess}
+          onFormAccessChange={setHasFormAccess}
+        />
+      }
       asideOpen={section === 'approvals' && panelOpen && !!selectedRecord}
       onAsideOpenChange={setPanelOpen}
     >
