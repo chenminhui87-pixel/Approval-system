@@ -100,7 +100,8 @@ export function FormManagementView({
     },
     {
       id: 'actions',
-      header: () => <span className="block text-right w-full">操作</span>,
+      // 對齊 FormSubmissionsView 的 actions 欄寫法:表頭不顯文字,sr-only 保留給輔助技術
+      header: () => <span className="sr-only">操作</span>,
       meta: { width: 300 },
       // 只留查看所有簽核單 + 編輯表單兩個 inline 動作(都帶 prefix icon),不再用 ⋯ overflow。
       // 停用改到表單內容頁 header(進去看過內容才停用,避免清單列一鍵誤觸);
