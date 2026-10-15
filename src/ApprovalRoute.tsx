@@ -151,7 +151,7 @@ function StepNode({ step, isLast, defaultOpen }: StepNodeProps) {
     <li
       className={
         'relative flex gap-3 rounded-md' +
-        (sectionOpen ? ' -mx-3 px-3 bg-muted' : '')
+        (sectionOpen ? ' -mx-2 px-2 bg-muted' : '')
       }
     >
       {/* Left rail:箭頭回到原本位置(dot 左側)+ dot + connector。
@@ -176,7 +176,7 @@ function StepNode({ step, isLast, defaultOpen }: StepNodeProps) {
           <StepDot state={step.status} />
           {!isLast && (
             <div
-              className="w-px flex-1 mt-1"
+              className="w-px flex-1 mt-1 mb-2"
               style={{
                 background:
                   step.status === 'completed'
