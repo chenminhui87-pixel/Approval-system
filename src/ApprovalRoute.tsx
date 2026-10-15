@@ -142,13 +142,19 @@ function StepNode({ step, isLast, defaultOpen }: StepNodeProps) {
 
   const HeaderChevron = open ? ChevronDown : ChevronRight
 
-  // 灰底收折區段:multi + 展開時,箭頭 + header + body 一起包進同一個灰底方塊
-  // (不是只有 body 內容單獨上色,箭頭按鈕本身也要在底色範圍內)。
+  // 灰底收折區段:multi + 展開時,整列(圓點/連接線 + 箭頭 + header + body)都要在
+  // 灰底範圍內,不是只有右側內容。灰底掛在 <li> 本身;用 -mx-3/px-3 抵銷橫向位移,
+  // 讓 dot 的 x 座標不因為展不展開而跑動(跟上下 collapsed 節點的連接線才會對齊)。
   const sectionOpen = isMulti && open
 
   return (
-    <li className="relative flex gap-3">
-      {/* Left rail:只剩 dot + connector(箭頭移進右側區段,不再跟 dot 搶同一欄寬)。 */}
+    <li
+      className={
+        'relative flex gap-3 rounded-md' +
+        (sectionOpen ? ' -mx-3 px-3 bg-muted' : '')
+      }
+    >
+      {/* Left rail:dot + connector(箭頭移進右側區段,不再跟 dot 搶同一欄寬)。 */}
       <div className="flex flex-col items-center shrink-0 pt-1">
         <StepDot state={step.status} />
         {!isLast && (
@@ -164,13 +170,8 @@ function StepNode({ step, isLast, defaultOpen }: StepNodeProps) {
         )}
       </div>
 
-      {/* Right side: 箭頭 + header + body,灰底(sectionOpen 時)包住整個區段 */}
-      <div
-        className={
-          'flex-1 min-w-0 pb-6 rounded-md' +
-          (sectionOpen ? ' bg-muted' : '')
-        }
-      >
+      {/* Right side: 箭頭 + header + body */}
+      <div className="flex-1 min-w-0 pb-6">
         {/* Header row */}
         <button
           type="button"
@@ -178,7 +179,7 @@ function StepNode({ step, isLast, defaultOpen }: StepNodeProps) {
           className={
             'flex items-center gap-1.5 w-full text-left' +
             (isMulti ? ' cursor-pointer' : ' cursor-default') +
-            (sectionOpen ? ' px-3 pt-2' : '')
+            (sectionOpen ? ' pt-2' : '')
           }
         >
           {isMulti && (
@@ -201,7 +202,7 @@ function StepNode({ step, isLast, defaultOpen }: StepNodeProps) {
 
         {/* Body */}
         {(!isMulti || open) && (
-          <div className={isMulti ? 'px-3 pt-1 pb-3' : 'mt-2'}>
+          <div className={isMulti ? 'pt-1 pb-3' : 'mt-2'}>
             {mode === 'parallel-any' && (
               <div className="flex items-center gap-1.5 mb-2 text-caption text-fg-link">
                 <Info size={14} />
