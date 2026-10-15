@@ -79,6 +79,22 @@ print(sorted(colors.items(), key=lambda kv: -kv[1])[:5])
 
 一次性驗證腳本放 scratchpad(`/tmp/claude-0/.../scratchpad/`),**驗證完、commit 前刪掉**(scratch script + 截圖),不要留在 repo 或 scratchpad 裡越積越多。`scripts/playwright-launch.mjs` 是跟其他 `scripts/*.mjs` 一樣的 repo 固定資產,不算 scratch,不要刪。
 
+### 6. 改 stacking / z-index / position 相關的東西,一定要連點擊互動一起測
+
+只驗截圖 + computed style 不夠——`position: absolute` 元素即使拿掉 `z-index`、
+視覺上因為透明度低看不出差異,仍可能疊在 static sibling 之上把點擊事件整層
+擋掉(2026-10-15 真實案例:ApprovalRoute 灰底層拿掉 `-z-10` 後忘了補
+`pointer-events-none`,展開後點收合按鈕沒反應,只看螢幕截圖完全看不出來)。
+任何動到 `position` / `z-index` / 疊層結構的 fix,驗證清單要加一條:
+
+```js
+// 改之前先記 DOM 狀態,改完後實際點擊,確認互動還活著,不要只看畫面
+await button.click()
+await page.waitForTimeout(300)
+// 用 DOM 結構斷言(元素存不存在/屬性值),不要只用 getByText(...).count()
+// ——同一段文字常常在 hover-card portal / 別處重複出現,count 變化方向可能誤導。
+```
+
 ## Non-goals
 
 - 不是 CI gate / mechanical audit script(那是 DS canonical `visual-audit` skill 的範疇,本 repo 是 fork,沒有那層機械工具,見該 skill 的 fork 註記)
