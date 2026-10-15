@@ -152,21 +152,19 @@ function StepNode({ step, isLast, defaultOpen }: StepNodeProps) {
       {/* 灰底用絕對定位背景層,不直接掛在 <li> 本身 —— li 的完整高度含連接線
           要延伸的尾段留白(給下一站點),若背景跟著 li 全高走,留白會被灰底蓋滿,
           看起來灰底貼到下一站。bottom-4 讓灰底提早收尾,尾段露出真正的留白。 */}
-      {/* token 選用:bg-muted(neutral-2,4%)語意是「不可操作 / placeholder」
-          (DS semantic.css 判斷準則),但這裡的收折區塊內人員列表完全可操作,
-          只是視覺退後分組 —— 對應語意是 bg-secondary(neutral-3,6%),不是
-          muted。PC 在純白 Dialog 底下用錯 token 幾乎看不見,就是這裡選錯。
-          另外不可用負 z-index(-z-10)—— 這個 <li> 巢在 DS Dialog 的
-          `fixed` + `z-50` + 動畫 ancestor 裡,改用 DOM 順序定勝負:灰底放
-          最前面 + 其餘 sibling 都設 relative(z-index:auto)。 */}
+      {/* token 選用:DS Static Subtle 只有 muted(neutral-2,4%)/ secondary
+          (neutral-3,6%)兩階,中間沒有第三階。語意上 secondary 才對(這裡的
+          人員列表可操作,不是 muted 定義的「不可操作/placeholder」),但這塊
+          面積大,6% 視覺份量感偏重,user 實測比較後選 muted(4%)———明知語意
+          略寬鬆,視覺優先,保留在此記錄取捨,不要之後又改回 secondary。 */}
       {sectionOpen && (
-        <div className="absolute -left-2 -right-2 top-0 bottom-4 rounded-md bg-secondary" aria-hidden="true" />
+        <div className="absolute -left-2 -right-2 top-0 bottom-4 rounded-md bg-muted" aria-hidden="true" />
       )}
       {/* Left rail:箭頭回到原本位置(dot 左側)+ dot + connector。
           pt 要跟右側 header 的 pt 同步,不然灰底頂邊貼著 dot(dot 自己的 pt-1
           比 header 淺,灰底框頂邊幾乎撞到 dot)。dot 比 header 多 pt-1(4px)是
           刻意的 —— dot/文字兩者視覺中心本來就有這個差,不能設一樣的 pt。 */}
-      <div className="relative flex gap-1 shrink-0">
+      <div className="flex gap-1 shrink-0">
         {/* Chevron slot — 固定 14px 寬 reservation,單人 step 留白 padding */}
         <div className={'w-[14px] shrink-0 flex items-start' + (sectionOpen ? ' pt-3' : ' pt-1')}>
           {isMulti && (
@@ -198,7 +196,7 @@ function StepNode({ step, isLast, defaultOpen }: StepNodeProps) {
       </div>
 
       {/* Right side: header + body */}
-      <div className="relative flex-1 min-w-0 pb-6">
+      <div className="flex-1 min-w-0 pb-6">
         {/* Header row */}
         <button
           type="button"
