@@ -40,7 +40,7 @@ rm -f /tmp/preview.pid /tmp/preview.log
 ### 2. Playwright 啟動 + 量測(直接 import helper,不要重寫 boilerplate)
 
 ```js
-import { launch, measure } from '/home/user/Approval-system/.claude/skills/playwright-verify/helpers/launch.mjs'
+import { launch, measure } from '/home/user/Approval-system/scripts/playwright-launch.mjs'
 
 const { browser, page } = await launch({ viewport: { width: 1440, height: 900 } })
 await page.goto('http://localhost:4188')
@@ -48,7 +48,7 @@ await page.goto('http://localhost:4188')
 await browser.close()
 ```
 
-`launch.mjs` 原始碼見 [helpers/launch.mjs](helpers/launch.mjs)——已驗證可用的 import 寫法(`/opt/node-tools/node_modules/playwright/index.js` 的 default export + `executablePath: '/opt/pw-browsers/chromium'`),不要再憑記憶重試別的路徑或 import 語法。
+原始碼見 [`scripts/playwright-launch.mjs`](../../../scripts/playwright-launch.mjs)(跟 repo 既有的 `scripts/*.mjs` 機械工具放一起,不是 skill 專屬資產)——已驗證可用的 import 寫法(`/opt/node-tools/node_modules/playwright/index.js` 的 default export + `executablePath: '/opt/pw-browsers/chromium'`),不要再憑記憶重試別的路徑或 import 語法。
 
 ### 3. 先查 cheat sheet 再下 selector
 
@@ -77,7 +77,7 @@ print(sorted(colors.items(), key=lambda kv: -kv[1])[:5])
 
 ### 5. 驗證完清乾淨
 
-一次性驗證腳本放 scratchpad(`/tmp/claude-0/.../scratchpad/`),**驗證完、commit 前刪掉**(scratch script + 截圖),不要留在 repo 或 scratchpad 裡越積越多。`helpers/launch.mjs` 是本 skill 的固定資產,不算 scratch,不要刪。
+一次性驗證腳本放 scratchpad(`/tmp/claude-0/.../scratchpad/`),**驗證完、commit 前刪掉**(scratch script + 截圖),不要留在 repo 或 scratchpad 裡越積越多。`scripts/playwright-launch.mjs` 是跟其他 `scripts/*.mjs` 一樣的 repo 固定資產,不算 scratch,不要刪。
 
 ## Non-goals
 

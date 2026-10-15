@@ -1,8 +1,8 @@
 // 可直接 import 的 Playwright 啟動 helper — 本 session 已驗證成功的寫法,
 // 不要重新試 import 語法(directory import / CommonJS named export 都會炸)。
 //
-// 用法(scratchpad 一次性驗證腳本):
-//   import { launch, measure } from '/home/user/Approval-system/.claude/skills/playwright-verify/helpers/launch.mjs'
+// 用法(scratchpad 一次性驗證腳本,見 .claude/skills/playwright-verify/SKILL.md):
+//   import { launch, measure } from '/home/user/Approval-system/scripts/playwright-launch.mjs'
 //   const { browser, page } = await launch()
 //   await page.goto('http://localhost:4188')
 //   ...
