@@ -25,14 +25,15 @@ export const FORM_ROLE_DESC: Record<FormRole, string> = {
 export type FormAction =
   | 'viewForm' // 檢視表單內容 / 欄位
   | 'editForm' // 編輯表單內容 / 欄位
-  | 'disableForm' // 停用 / 刪除表單
+  | 'disableForm' // 停用表單(published → disabled,不可逆,申請者將無法再用此表單送審)
+  | 'deleteForm' // 刪除表單(永久移除;只開放給還沒 / 不再對外的表單,見 ManagedForm 使用處註解)
   | 'viewSubmissions' // 檢視送審清單 + 狀態
   | 'operateSubmission' // 對送審單操作 = 代理 applicant/approver 的全套動作
   //                      (轉寄 / 移交簽核者 / 退回 / 作廢 / 催辦 / 撤回…,同現有簽核 prototype)
   | 'createForm' // 建立新表單
 
 const ROLE_CAN: Record<FormRole, FormAction[]> = {
-  owner: ['viewForm', 'editForm', 'disableForm', 'viewSubmissions', 'operateSubmission', 'createForm'],
+  owner: ['viewForm', 'editForm', 'disableForm', 'deleteForm', 'viewSubmissions', 'operateSubmission', 'createForm'],
   admin: ['viewForm', 'editForm', 'viewSubmissions', 'operateSubmission', 'createForm'],
   viewer: ['viewForm', 'viewSubmissions'],
 }
