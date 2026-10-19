@@ -29,5 +29,11 @@
 
 ## 常見踩坑
 
+- **巢狀 Dialog 驗證不要用 `getByRole('dialog').count()`**:Radix 對巢狀 modal 的
+  a11y 行為是把非最上層的 dialog 標 `aria-hidden`,Playwright 的 `getByRole`
+  走 accessibility tree,只會算到最上層那個,即使 DOM 裡其實還有第二個。要驗證
+  「開了幾個 / 關掉後剩幾個」用 `page.evaluate(() => document.querySelectorAll('[role="dialog"]').length)`
+  (raw DOM),不要被 getByRole 的數字誤導成「沒關掉」。
+
 - DS `DataTable` 不一定是語意化 `<table><tr>`,**不要**假設 `table tbody tr` 選得到列,改用文字內容模糊比對(`page.getByText(...)`)或先 `page.evaluate` dump DOM 確認結構再下 selector。
 - 連續猜 2 次 selector 都 timeout → 停下來先截圖或 `page.content()` 看實際 DOM,不要繼續盲猜第 3 次。
