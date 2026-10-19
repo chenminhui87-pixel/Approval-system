@@ -226,15 +226,19 @@ function StepNode({ step, isLast, defaultOpen }: StepNodeProps) {
           )}
         </button>
 
+        {/* parallel-any 的「任一人簽核即通過」說明:收合時也要能看到規則本身是什麼
+            (不是只有展開看人員列表才知道),所以放在收折開關之外、header 下方固定顯示,
+            不跟著 body 一起收合。 */}
+        {mode === 'parallel-any' && (
+          <div className={'flex items-center gap-1.5 text-caption text-fg-link' + (sectionOpen ? ' mt-1' : ' mt-0.5')}>
+            <Info size={14} />
+            <span>任一人簽核即通過</span>
+          </div>
+        )}
+
         {/* Body */}
         {(!isMulti || open) && (
           <div className={isMulti ? 'pt-3 pb-4' : 'mt-2'}>
-            {mode === 'parallel-any' && (
-              <div className="flex items-center gap-1.5 mb-2 text-caption text-fg-link">
-                <Info size={14} />
-                <span>任一人簽核即通過</span>
-              </div>
-            )}
             <div>
               {people.length === 0 ? (
                 <p className="text-body text-fg-placeholder py-1">未指派</p>
