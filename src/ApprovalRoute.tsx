@@ -8,6 +8,16 @@
 import { useState } from 'react'
 import { PersonAvatar } from './PersonAvatar'
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogBody,
+  DialogFooter,
+  DialogClose,
+  Button,
+} from '@qijenchen/design-system'
+import {
   Check,
   Clock,
   ChevronDown,
@@ -16,8 +26,10 @@ import {
   User,
   Info,
   X,
+  Forward,
+  UserPlus,
 } from 'lucide-react'
-import type { ApprovalStep, ApprovalPerson } from './data'
+import type { ApprovalStep, ApprovalPerson, PersonHistoryEntry, PersonHistoryAction } from './data'
 
 interface ApprovalRouteProps {
   steps: ApprovalStep[]
@@ -31,12 +43,55 @@ const PERSON_STATUS_TAG = {
   rejected: { color: 'red' as const, label: '退件', icon: X },
 }
 
+const HISTORY_ACTION_META: Record<PersonHistoryAction, { label: string; icon: typeof Forward }> = {
+  forward: { label: '轉寄', icon: Forward },
+  addApprover: { label: '加簽', icon: UserPlus },
+}
+
+// ── 轉寄 / 加簽歷程 timeline ─────────────────────────────────────────────────
+// 跟 ApprovalRoute 主視覺一致的 dot + connector 樣式,但歷程項目沒有 StepDot 的
+// 多狀態(completed/current/upcoming)語意 —— 每筆都是已發生的事件,所以用單一
+// 實心點,不重用 StepDot(那個元件的狀態機跟這裡的語意不同,硬套會混淆)。
+function HistoryTimeline({ entries }: { entries: PersonHistoryEntry[] }) {
+  return (
+    <ol className="list-none m-0 p-0">
+      {entries.map((entry, idx) => {
+        const isLast = idx === entries.length - 1
+        const { label, icon: ActionIcon } = HISTORY_ACTION_META[entry.action]
+        return (
+          <li key={idx} className="relative flex gap-3">
+            <div className="flex flex-col items-center pt-1.5 shrink-0">
+              <div className="w-2 h-2 rounded-full shrink-0" style={{ background: 'var(--color-neutral-6)' }} />
+              {!isLast && (
+                <div className="w-px flex-1 mt-1 mb-1" style={{ background: 'var(--color-neutral-4)' }} />
+              )}
+            </div>
+            <div className="flex-1 min-w-0 pb-3">
+              <div className="flex items-center gap-1.5 text-body font-medium">
+                <ActionIcon size={14} className="text-fg-secondary shrink-0" />
+                <span>{label}</span>
+              </div>
+              <p className="text-caption text-fg-secondary mt-0.5">
+                {entry.by} → {entry.target} · {entry.at}
+              </p>
+              {entry.comment && (
+                <p className="text-body text-fg-secondary mt-1">{entry.comment}</p>
+              )}
+            </div>
+          </li>
+        )
+      })}
+    </ol>
+  )
+}
+
 // ── Person row ───────────────────────────────────────────────────────────────
 function PersonRow({ person }: { person: ApprovalPerson }) {
-  const [expanded, setExpanded] = useState(false)
+  const [modalOpen, setModalOpen] = useState(false)
   const meta = PERSON_STATUS_TAG[person.status]
   const StatusIcon = meta.icon
   const hasComment = !!person.comment
+  const hasHistory = !!person.history?.length
 
   return (
     <div className="flex flex-col gap-1 py-2">
@@ -63,25 +118,50 @@ function PersonRow({ person }: { person: ApprovalPerson }) {
         )}
       </div>
       {hasComment && (
-        <>
-          <p
-            className={
-              'text-body text-fg-secondary' +
-              (expanded ? '' : ' line-clamp-2')
-            }
-          >
-            {person.comment}
-          </p>
-          <button
-            type="button"
-            onClick={() => setExpanded((v) => !v)}
-            className="text-caption hover:underline self-start text-left"
-            style={{ color: 'var(--color-neutral-7)' }}
-          >
-            {expanded ? '收合' : '查看全部'}
-          </button>
-        </>
+        <p className="text-body text-fg-secondary line-clamp-2">{person.comment}</p>
       )}
+      {/* 「查看全部」改開 modal(不再原地展開截斷文字)—— modal 裡除了完整意見,
+          還要能看到這個人在本站的轉寄/加簽歷程,原地展開放不下這段內容。
+          沒有 comment 但有歷程時仍要給入口,文案改「查看歷程」。 */}
+      {(hasComment || hasHistory) && (
+        <button
+          type="button"
+          onClick={() => setModalOpen(true)}
+          className="text-caption hover:underline self-start text-left"
+          style={{ color: 'var(--color-neutral-7)' }}
+        >
+          {hasComment ? '查看全部' : '查看歷程'}
+        </button>
+      )}
+
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent height="hug" maxWidth={480}>
+          <DialogHeader>
+            <DialogTitle>{person.name}</DialogTitle>
+          </DialogHeader>
+          <DialogBody>
+            <div className="flex flex-col gap-4">
+              {hasComment && (
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-caption text-fg-placeholder">簽核意見</span>
+                  <p className="text-body text-fg-secondary whitespace-pre-wrap">{person.comment}</p>
+                </div>
+              )}
+              {hasHistory && (
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-caption text-fg-placeholder">轉寄 / 加簽歷程</span>
+                  <HistoryTimeline entries={person.history!} />
+                </div>
+              )}
+            </div>
+          </DialogBody>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="tertiary">關閉</Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

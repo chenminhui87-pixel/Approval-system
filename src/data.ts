@@ -16,12 +16,27 @@ export type AvatarColor =
 
 export type PersonStatus = 'signed' | 'pending' | 'rejected'
 
+/** 這個人在本站做過的轉寄 / 加簽動作(不是簽核意見,是「把這站轉交/拉人進來」的歷程)*/
+export type PersonHistoryAction = 'forward' | 'addApprover'
+
+export interface PersonHistoryEntry {
+  action: PersonHistoryAction
+  /** 執行轉寄/加簽的人(通常是本站原本的 approver) */
+  by: string
+  /** 轉寄對象 / 被加進來的 approver */
+  target: string
+  at: string
+  comment?: string
+}
+
 export interface ApprovalPerson {
   name: string
   avatarColor?: AvatarColor
   status: PersonStatus
   signedAt?: string
   comment?: string
+  /** 這個人在本站的轉寄 / 加簽歷程,選填 —— 有資料才在「查看全部」modal 顯示歷程區塊 */
+  history?: PersonHistoryEntry[]
 }
 
 /** single = 單簽 / parallel-any = 平簽（任一人即過）/ parallel-all = 並簽（全員必簽）*/
@@ -124,6 +139,22 @@ export const MOCK_RECORDS: ApprovalRecord[] = [
             status: 'signed',
             signedAt: '05-29 09:12',
             comment: '內容方向 OK，但第三段 KPI 數字請對齊財務上週公告的版本，避免不一致。',
+            history: [
+              {
+                action: 'addApprover',
+                by: '王大明',
+                target: '李副理',
+                at: '05-29 08:50',
+                comment: '內容涉及行銷預算，請一併確認數字口徑。',
+              },
+              {
+                action: 'forward',
+                by: '李副理',
+                target: '王大明',
+                at: '05-29 09:05',
+                comment: '預算數字沒問題，轉回給你簽。',
+              },
+            ],
           },
           {
             name: '陳美惠',
