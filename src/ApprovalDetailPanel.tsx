@@ -102,14 +102,9 @@ export function ApprovalDetailPanel({
         <div className="flex-1 min-h-0 overflow-y-auto">
         {/* 申請內容 */}
         <TabsContent value="content" className="flex flex-col gap-5 px-4 py-4">
-          {/* Meta 列 — 面板標題只有單據名,狀態/緊急在此補回 */}
-          <div className="flex flex-wrap items-center gap-2">
-            <Tag size="sm" color={STATUS_COLOR[record.status]} solid={record.status === 'approved'}>
-              {STATUS_LABEL[record.status]}
-            </Tag>
-            {record.urgency === 'high' && (
-              <Tag size="sm" color={URGENCY_COLOR[record.urgency]}>{URGENCY_LABEL[record.urgency]}</Tag>
-            )}
+          {/* Meta 列 — 面板標題只有單據名,申請人快速識別在此補回。狀態/緊急程度
+              2026-10-27 user 拍板移到下方「基本資訊」用 Tag 標示,不留在這裡。 */}
+          <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1 text-caption text-fg-secondary ml-auto">
               <Avatar alt={record.applicant} size={16} color="blue" />
               {record.applicant}
@@ -119,9 +114,22 @@ export function ApprovalDetailPanel({
           <section>
             <p className="text-h5 font-medium mb-3">基本資訊</p>
             <DescriptionList orientation="vertical">
-              {record.fixedFields.map((f) => (
-                <DescriptionItem key={f.label} label={f.label}>{f.value}</DescriptionItem>
-              ))}
+              <DescriptionItem label="狀態">
+                <Tag size="sm" color={STATUS_COLOR[record.status]} solid={record.status === 'approved'}>
+                  {STATUS_LABEL[record.status]}
+                </Tag>
+              </DescriptionItem>
+              {record.fixedFields.map((f) =>
+                f.label === '緊急程度' ? (
+                  <DescriptionItem key={f.label} label={f.label}>
+                    <Tag size="sm" color={URGENCY_COLOR[record.urgency]}>
+                      {URGENCY_LABEL[record.urgency]}
+                    </Tag>
+                  </DescriptionItem>
+                ) : (
+                  <DescriptionItem key={f.label} label={f.label}>{f.value}</DescriptionItem>
+                )
+              )}
             </DescriptionList>
           </section>
 

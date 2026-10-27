@@ -110,14 +110,6 @@ export function ApprovalModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <span className="truncate">{record.title}</span>
-            <Tag size="sm" color={STATUS_COLOR[record.status]} solid={record.status === 'approved'}>
-              {STATUS_LABEL[record.status]}
-            </Tag>
-            {record.urgency === 'high' && (
-              <Tag size="sm" color={URGENCY_COLOR[record.urgency]}>
-                {URGENCY_LABEL[record.urgency]}
-              </Tag>
-            )}
           </DialogTitle>
         </DialogHeader>
 
@@ -125,15 +117,31 @@ export function ApprovalModal({
         <div data-dialog-body className="flex-1 min-h-0 flex flex-row gap-0">
           {/* Left — form details */}
           <div className="flex-[3] min-w-0 flex flex-col gap-5 px-6 py-5 overflow-y-auto">
-            {/* Fixed fields */}
+            {/* Fixed fields — 狀態 / 緊急程度改放這裡用 Tag 標示(2026-10-27 user 拍板從
+                標題旁移下來),不再掛在 DialogTitle 後面。狀態是 fixedFields 本來沒有的
+                欄位,補一條在最前面;緊急程度 fixedFields 本來就有(文字值),改成
+                Tag-render 覆蓋掉純文字顯示。 */}
             <section>
               <p className="text-h4 font-medium mb-3">基本資訊</p>
               <DescriptionList orientation="vertical">
-                {record.fixedFields.map((f) => (
-                  <DescriptionItem key={f.label} label={f.label}>
-                    {f.value}
-                  </DescriptionItem>
-                ))}
+                <DescriptionItem label="狀態">
+                  <Tag size="sm" color={STATUS_COLOR[record.status]} solid={record.status === 'approved'}>
+                    {STATUS_LABEL[record.status]}
+                  </Tag>
+                </DescriptionItem>
+                {record.fixedFields.map((f) =>
+                  f.label === '緊急程度' ? (
+                    <DescriptionItem key={f.label} label={f.label}>
+                      <Tag size="sm" color={URGENCY_COLOR[record.urgency]}>
+                        {URGENCY_LABEL[record.urgency]}
+                      </Tag>
+                    </DescriptionItem>
+                  ) : (
+                    <DescriptionItem key={f.label} label={f.label}>
+                      {f.value}
+                    </DescriptionItem>
+                  )
+                )}
               </DescriptionList>
             </section>
 
