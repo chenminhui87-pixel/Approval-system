@@ -88,6 +88,9 @@ export interface ManagedForm {
   /** 最後編輯這張表單的人(不一定是 owner,admin 也能編輯內容) */
   updatedBy: string
   updatedAt: string
+  /** 全域設定:是否開放用手機簽核這張表單送出的單(2026-10-27 新增 —— 客製欄位
+   * builder 先隱藏,編輯表單改走全域設定,這是第一個,之後有其他全域設定比照加) */
+  mobileEnabled: boolean
   fields: FormField[]
 }
 
@@ -120,6 +123,7 @@ export const MOCK_FORMS: ManagedForm[] = [
     owner: '陳美惠',
     updatedBy: '陳美惠',
     updatedAt: '2026-09-28',
+    mobileEnabled: true,
     fields: [
       { label: '費用類別', type: 'select', required: true, options: ['差旅', '餐費', '辦公用品', '其他'] },
       { label: '金額', type: 'currency', required: true },
@@ -135,6 +139,7 @@ export const MOCK_FORMS: ManagedForm[] = [
     owner: '周總監',
     updatedBy: '周總監',
     updatedAt: '2026-09-15',
+    mobileEnabled: true,
     fields: [
       { label: '出差地點', type: 'string', required: true },
       { label: '起訖日期', type: 'date', required: true },
@@ -150,6 +155,7 @@ export const MOCK_FORMS: ManagedForm[] = [
     owner: '人資專員',
     updatedBy: '人資助理',
     updatedAt: '2026-08-30',
+    mobileEnabled: true,
     fields: [
       { label: '假別', type: 'select', required: true, options: ['特休', '病假', '事假', '婚假', '喪假'] },
       { label: '起訖時間', type: 'date', required: true },
@@ -165,6 +171,7 @@ export const MOCK_FORMS: ManagedForm[] = [
     owner: '林志明',
     updatedBy: '王大明',
     updatedAt: '2026-09-20',
+    mobileEnabled: false,
     fields: [
       { label: '設備規格', type: 'string', required: true },
       { label: '數量', type: 'number', required: true },
@@ -180,6 +187,7 @@ export const MOCK_FORMS: ManagedForm[] = [
     owner: '人資助理',
     updatedBy: '人資助理',
     updatedAt: '2026-10-05',
+    mobileEnabled: true,
     fields: [
       { label: '課程名稱', type: 'string', required: true },
       { label: '上課日期', type: 'date', required: true },
@@ -194,6 +202,7 @@ export const MOCK_FORMS: ManagedForm[] = [
     owner: '黃建偉',
     updatedBy: '黃建偉',
     updatedAt: '2026-06-10',
+    mobileEnabled: false,
     fields: [
       { label: '標題', type: 'string', required: true },
       { label: '發布平台', type: 'select', required: true, options: ['官網', 'Medium', 'LinkedIn'] },

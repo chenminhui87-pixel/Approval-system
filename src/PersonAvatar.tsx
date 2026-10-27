@@ -56,6 +56,24 @@ export function PersonAvatar({ name, size = 22 }: { name: string; size?: number 
   )
 }
 
+// 頭像 + 名字,名字下方補組織課名代碼／ID／電話(caption 灰字)—— 申請人欄共用寫法
+// (App.tsx 主清單、FormSubmissionsView.tsx 送審清單都消費同一份,2026-10-27 user
+// 拍板兩處申請人顯示要一致,不只有名字)。分隔符號跟下面 PersonListCard 一致。
+export function PersonAvatarLabel({ name }: { name: string }) {
+  const p = getPerson(name)
+  return (
+    <span className="inline-flex items-start gap-1.5 min-w-0">
+      <PersonAvatar name={name} />
+      <span className="flex flex-col min-w-0">
+        <span className="truncate">{name}</span>
+        <span className="text-caption text-fg-secondary truncate">
+          {p.deptCode} ｜ {p.id} ｜ {p.phone}
+        </span>
+      </span>
+    </span>
+  )
+}
+
 // 多人清單卡(代理人 / 當前簽核者等多人欄共用)— 每人:組織課名代碼 ｜ ID ｜ 工號
 function PersonListCard({ names }: { names: string[] }) {
   return (

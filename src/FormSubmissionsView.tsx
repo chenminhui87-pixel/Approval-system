@@ -10,7 +10,7 @@ import { currentApprovers } from './data'
 import { can, formSubmissions, type FormRole, type ManagedForm } from './formsData'
 import { ApprovalDetailPanel } from './ApprovalDetailPanel'
 import { ApprovalModal } from './ApprovalModal'
-import { PersonAvatarStack } from './PersonAvatar'
+import { PersonAvatarLabel, PersonAvatarStack } from './PersonAvatar'
 
 const STATUS: Record<ApprovalStatus, { label: string; color: 'blue' | 'green' | 'red' }> = {
   pending: { label: '簽核中', color: 'blue' },
@@ -69,8 +69,10 @@ export function FormSubmissionsView({
     {
       id: 'applicant',
       header: '申請人',
-      meta: { width: 110 },
-      cell: ({ row }) => <span className="text-body text-fg-secondary whitespace-nowrap">{row.original.applicant}</span>,
+      meta: { width: 180 },
+      // 跟 App.tsx 主清單同一套 PersonAvatarLabel(2026-10-27 user 拍板:申請人顯示
+      // 要跟待簽核一致,不是只有名字)。
+      cell: ({ row }) => <PersonAvatarLabel name={row.original.applicant} />,
     },
     {
       id: 'currentApprover',

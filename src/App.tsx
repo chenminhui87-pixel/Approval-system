@@ -71,12 +71,11 @@ import {
   getTabRecords,
   approveRecord,
   rejectRecord,
-  getPerson,
   currentApprovers,
   type ApprovalRecord,
   type CategoryId,
 } from './data'
-import { PersonAvatar, PersonAvatarStack } from './PersonAvatar'
+import { PersonAvatarLabel, PersonAvatarStack } from './PersonAvatar'
 import { ApprovalDetailPanel } from './ApprovalDetailPanel'
 import { ApprovalModal } from './ApprovalModal'
 import { DetailAside } from './DetailAside'
@@ -139,23 +138,6 @@ const FILTERABLE_IDS = new Set((FILTER_COLUMNS ?? []).map((c) => (c as { id: str
 
 const STATUS_COLOR = { pending: 'blue', approved: 'green', rejected: 'red' } as const
 const STATUS_LABEL = { pending: '簽核中', approved: '已核准', rejected: '已退件' } as const
-
-// 申請人 — 頭像 + 名字,名字下方補組織課名代碼／ID／電話(caption 灰字)。
-// 分隔符號跟 PersonAvatar.tsx 的 PersonListCard「組織課名代碼 ｜ ID ｜ 工號」一致,統一寫法。
-function Applicant({ name }: { name: string }) {
-  const p = getPerson(name)
-  return (
-    <span className="inline-flex items-start gap-1.5 min-w-0">
-      <PersonAvatar name={name} />
-      <span className="flex flex-col min-w-0">
-        <span className="truncate">{name}</span>
-        <span className="text-caption text-fg-secondary truncate">
-          {p.deptCode} ｜ {p.id} ｜ {p.phone}
-        </span>
-      </span>
-    </span>
-  )
-}
 
 function RowCheckbox({ checked, indeterminate, onChange }: {
   checked: boolean
@@ -385,7 +367,7 @@ function RecordList({
       id: 'applicant',
       header: '申請人',
       meta: { width: 180 },
-      cell: ({ row }) => <Applicant name={row.original.applicant} />,
+      cell: ({ row }) => <PersonAvatarLabel name={row.original.applicant} />,
     },
     {
       id: 'currentApprover',
@@ -707,6 +689,7 @@ function ApprovalPage() {
       owner: CURRENT_USER,
       updatedBy: CURRENT_USER,
       updatedAt: new Date().toISOString().slice(0, 10),
+      mobileEnabled: true,
       fields: [],
     }
     setForms((prev) => [blank, ...prev])

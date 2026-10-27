@@ -1,56 +1,23 @@
-// 表單管理模組(C)— 表單詳情 =「表單內容」單頁(完整表單 view,非欄位清單)。
+// 表單管理模組(C)— 表單詳情 =「表單內容」單頁。
 //   - 檢視模式:像一張真實表單公版(標題 + 各欄位 label + 對應 input,read-only 預覽)
-//   - 編輯模式(header「編輯表單」進入):每欄可改標題 / 型別 / 必填,最下方「新增欄位」
+//   - 編輯模式(header「編輯表單」進入):只有全域設定(例:手機簽核開關),不含客製
+//     欄位 builder(2026-10-27 user 拍板暫時隱藏 —— 產品現階段重點是瀏覽/總覽已建立
+//     的表單,不是表單建構工具;欄位資料仍在 form.fields,檢視模式照常預覽,只是
+//     不開放在這裡改)。
 // 送審清單不在本頁 — 由清單列的「查看送審單」進獨立子頁(見 FormManagementView)。
 // 註:人員層「owner」是下游指派的「負責窗口」,非系統最高權限。
-import { useEffect, useState } from 'react'
 import {
   Input,
   Textarea,
   Select,
-  Checkbox,
-  Button,
+  Switch,
   Field,
   FieldLabel,
   ChipGroup,
   Chip,
 } from '@qijenchen/design-system'
-import { Plus, Trash2 } from 'lucide-react'
-import {
-  FIELD_TYPE_LABEL,
-  categoryLabel,
-  type ManagedForm,
-  type FormField,
-  type FormFieldType,
-} from './formsData'
+import { categoryLabel, type ManagedForm, type FormField } from './formsData'
 import { CATEGORIES, type CategoryId } from './data'
-
-const TYPE_OPTIONS = (Object.keys(FIELD_TYPE_LABEL) as FormFieldType[]).map((t) => ({
-  value: t,
-  label: FIELD_TYPE_LABEL[t],
-}))
-
-// prototype persist:per-viewer localStorage,不做共享後端(對齊 BACKLOG 既有定調)。
-// key 以 form.id 區分,讀寫失敗(無痕模式 / storage 關閉)時 fallback 回表單原始欄位,不中斷編輯。
-const fieldsStorageKey = (formId: string) => `approval-system:form-fields:${formId}`
-
-function loadFields(formId: string, fallback: FormField[]): FormField[] {
-  try {
-    const raw = localStorage.getItem(fieldsStorageKey(formId))
-    if (!raw) return fallback
-    return JSON.parse(raw) as FormField[]
-  } catch {
-    return fallback
-  }
-}
-
-function saveFields(formId: string, fields: FormField[]) {
-  try {
-    localStorage.setItem(fieldsStorageKey(formId), JSON.stringify(fields))
-  } catch {
-    // storage 不可用(無痕模式 / 容量滿)— prototype 範疇內靜默放棄 persist,不中斷編輯體驗
-  }
-}
 
 // 檢視模式:依型別渲染 read-only 的 input 預覽(簡單版)
 function FieldPreview({ field }: { field: FormField }) {
@@ -76,22 +43,10 @@ export function FormDetailView({
 }: {
   form: ManagedForm
   editing: boolean
-  /** 標題 / 說明 / 分類即時寫回(與 fields 的 localStorage 草稿不同層次 — 見呼叫端註解) */
+  /** 標題 / 說明 / 分類 / 全域設定即時寫回 forms state */
   onUpdateForm: (patch: Partial<ManagedForm>) => void
 }) {
-  // prototype persist:初始值優先讀 localStorage 草稿(若有),否則用表單原始欄位；
-  // 每次變動即寫回 localStorage,離開頁面 / 重新整理後仍保留(component 以 form.id 為 key 掛載,
-  // 切表單會重新初始化,各表單草稿互不影響)。
-  const [fields, setFields] = useState<FormField[]>(() => loadFields(form.id, form.fields))
-
-  useEffect(() => {
-    saveFields(form.id, fields)
-  }, [form.id, fields])
-
-  const updateField = (i: number, patch: Partial<FormField>) =>
-    setFields((prev) => prev.map((f, idx) => (idx === i ? { ...f, ...patch } : f)))
-  const removeField = (i: number) => setFields((prev) => prev.filter((_, idx) => idx !== i))
-  const addField = () => setFields((prev) => [...prev, { label: '新欄位', type: 'string', required: false }])
+  const fields: FormField[] = form.fields
 
   return (
     <div className="flex-1 min-h-0 overflow-y-auto px-[var(--layout-space-loose)] py-5">
@@ -143,43 +98,18 @@ export function FormDetailView({
           )}
 
           {editing ? (
-            // ── 編輯模式(builder)──
+            // ── 編輯模式(全域設定)—— 客製欄位 builder 暫時隱藏,見檔案頂部註解 ──
+            // Switch 不包進 <Field>:Switch 在 Field context 內會忽略自己的 label/
+            // description(改由 FieldLabel 接管,避免雙層 label),這裡要讓 Switch
+            // 自己的 label/description 正常顯示,所以不用 Field 包。
             <div className="flex flex-col gap-3">
-              {fields.map((f, i) => (
-                <div key={i} className="rounded-lg border border-divider bg-canvas p-3 flex flex-col gap-2.5">
-                  <div className="flex items-center gap-2">
-                    <Input
-                      value={f.label}
-                      onChange={(e) => updateField(i, { label: e.target.value })}
-                      placeholder="欄位標題"
-                      className="flex-1"
-                    />
-                    <Select
-                      value={f.type}
-                      onChange={(v) => updateField(i, { type: v as FormFieldType })}
-                      options={TYPE_OPTIONS}
-                      width="hug"
-                    />
-                    <Button
-                      variant="text"
-                      size="sm"
-                      iconOnly
-                      danger
-                      startIcon={Trash2}
-                      aria-label="移除欄位"
-                      onClick={() => removeField(i)}
-                    />
-                  </div>
-                  <Checkbox
-                    checked={f.required}
-                    onCheckedChange={(c) => updateField(i, { required: c === true })}
-                    label="必填"
-                  />
-                </div>
-              ))}
-              <Button variant="tertiary" startIcon={Plus} onClick={addField} className="w-full">
-                新增欄位
-              </Button>
+              <p className="text-body font-medium">全域設定</p>
+              <Switch
+                checked={form.mobileEnabled}
+                onCheckedChange={(c) => onUpdateForm({ mobileEnabled: c === true })}
+                label="支援手機簽核"
+                description="開放後,使用者可用手機瀏覽器對此表單送出的單據進行簽核"
+              />
             </div>
           ) : (
             // ── 檢視模式(表單公版預覽)──
