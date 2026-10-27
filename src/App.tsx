@@ -59,10 +59,6 @@ import {
   Filter,
   Pencil,
   Contact,
-  Ban,
-  Save,
-  Send,
-  Trash2,
 } from 'lucide-react'
 import {
   MOCK_RECORDS,
@@ -526,14 +522,10 @@ function ApprovalPage() {
   // 表單管理模組(C):section 切換(簽核 vs 表單管理)+ prototype 檢視身分(角色切換器)
   const [section, setSection] = useState<'approvals' | 'forms'>('approvals')
   const [formRole, setFormRole] = useState<FormRole>('owner')
-  // 表單清單提升為 state(建立 / 停用需要真的改資料,不能只讀 MOCK_FORMS 常數)
+  // 表單清單提升為 state(全域設定即時寫回,不能只讀 MOCK_FORMS 常數)
   const [forms, setForms] = useState<ManagedForm[]>(MOCK_FORMS)
   // 平台層存取控管(demo)— 獨立於 formRole,管「看不看得到表單管理入口」
   const [hasFormAccess, setHasFormAccess] = useState(true)
-  // 停用 / 刪除表單都是破壞性動作,比照既有批次核准/退件走「確認 = Dialog」,
-  // 不能點了按鈕就直接執行(2026-10-19 user 回報停用缺確認、刪除功能忘了做)。
-  const [disableFormConfirmOpen, setDisableFormConfirmOpen] = useState(false)
-  const [deleteFormConfirmOpen, setDeleteFormConfirmOpen] = useState(false)
 
   // 示範中途被收回表單管理存取權時,若正站在表單管理 section 內要退回簽核中心,
   // 不留在一個已經看不到入口的頁面上。
@@ -676,57 +668,8 @@ function ApprovalPage() {
     setFormEditing(!!opts?.edit && id !== null)
     setFormView(opts?.view ?? 'content')
   }
-  // 建立表單:新增一張空白表單(草稿)並直接進編輯模式 —— 跟既有表單「先看後編」不同,
-  // 新表單還沒有內容可看,建立完直接編輯合理。
-  function handleCreateForm() {
-    const id = `FORM-NEW-${Date.now()}`
-    const blank: ManagedForm = {
-      id,
-      name: '未命名表單',
-      description: '',
-      category: CATEGORIES[0].id,
-      status: 'draft',
-      owner: CURRENT_USER,
-      updatedBy: CURRENT_USER,
-      updatedAt: new Date().toISOString().slice(0, 10),
-      mobileEnabled: true,
-      fields: [],
-    }
-    setForms((prev) => [blank, ...prev])
-    openForm(id, { edit: true })
-  }
-  // 停用:published → disabled;prototype 範疇內不做 reactivate(對齊現行清單只有「停用」一個方向)。
-  // 破壞性動作,由 disableFormConfirmOpen 的 Dialog 確認後才呼叫,按鈕本身不直接執行。
-  function handleDisableForm(id: string) {
-    setForms((prev) => prev.map((f) => (f.id === id ? { ...f, status: 'disabled' } : f)))
-    setFormEditing(false)
-    setDisableFormConfirmOpen(false)
-    showToast('已停用')
-  }
-  // 刪除:永久從清單移除,導回表單清單(選取的表單已經不存在了)。只開放 draft / disabled
-  // 狀態(見 formsHeaderRight 按鈕顯示條件)—— published 表單還在被使用,要求先停用再刪除,
-  // 避免跳過停用直接刪掉一個申請者仍可能在用的表單。
-  function handleDeleteForm(id: string) {
-    setForms((prev) => prev.filter((f) => f.id !== id))
-    setDeleteFormConfirmOpen(false)
-    openForm(null)
-    showToast('已刪除表單')
-  }
-  // 發佈:退出編輯模式 + 把表單狀態轉為 published(草稿 → 正式可用;已發布的單純視為重新儲存)。
-  function handlePublishForm(id: string) {
-    setForms((prev) => prev.map((f) => (f.id === id ? { ...f, status: 'published' } : f)))
-    setFormEditing(false)
-    showToast('已發佈')
-  }
-  // 保存草稿:退出編輯模式,但不動 status —— 跟「發佈」的差異只在要不要把狀態轉成
-  // published(標題/說明/分類/fields 本來就逐欄位即時寫回,這裡不是真的「現在才存」,
-  // 是給使用者一個不想順便發佈、只想先收起編輯面板的退出路徑)。
-  function handleSaveDraftForm() {
-    setFormEditing(false)
-    showToast('已儲存草稿')
-  }
-  // 編輯 builder 內(標題 / 說明 / 分類)即時寫回 forms state —— 不走「發佈」才存的 draft/commit
-  // 兩階段,跟既有 fields(localStorage 草稿)不同層次:這三個欄位 breadcrumb / 清單都要即時可見。
+  // 表單命名 / 分類 / 全域設定即時寫回 forms state(2026-10-27 user 拍板:表單管理只保留
+  // 設定功能 —— 建立表單、草稿/發佈、停用/刪除整組生命週期管理都隱藏,不留在這個介面)。
   function handleUpdateForm(id: string, patch: Partial<ManagedForm>) {
     setForms((prev) => prev.map((f) => (f.id === id ? { ...f, ...patch } : f)))
   }
@@ -746,36 +689,17 @@ function ApprovalPage() {
           ),
         },
       ]
+  // 表單管理只留「瀏覽 + 設定」:無建立表單、無草稿/發佈、無停用/刪除(2026-10-27 user 拍板,
+  // 這些都是表單生命週期管理,不在本產品現階段範疇)。編輯模式只有一個「完成」退出,
+  // 內容(名稱/分類/全域設定開關)本來就逐欄位即時寫回 forms state,不需要額外的存檔動作。
   const formsHeaderRight: ReactNode =
-    section !== 'forms'
+    section !== 'forms' || !selectedForm || formView === 'submissions'
       ? null
-      : !selectedForm
-        ? canForm(formRole, 'createForm')
-          ? <Button variant="tertiary" size="sm" startIcon={Plus} onClick={handleCreateForm}>建立表單</Button>
+      : formEditing
+        ? <Button variant="primary" size="sm" onClick={() => setFormEditing(false)}>完成</Button>
+        : canForm(formRole, 'editForm')
+          ? <Button variant="secondary" size="sm" startIcon={Pencil} onClick={() => setFormEditing(true)}>編輯表單</Button>
           : null
-        : formView === 'submissions'
-          ? null // 送審清單子頁的操作(批次 / 代理)於增量 2b 接上
-          : formEditing
-            ? (
-              <div className="flex items-center gap-2">
-                <Button variant="secondary" size="sm" startIcon={Save} onClick={handleSaveDraftForm}>保存草稿</Button>
-                <Button variant="primary" size="sm" startIcon={Send} onClick={() => handlePublishForm(selectedForm.id)}>發佈</Button>
-              </div>
-            )
-            : (
-              <div className="flex items-center gap-2">
-                {canForm(formRole, 'editForm') && (
-                  <Button variant="secondary" size="sm" startIcon={Pencil} onClick={() => setFormEditing(true)}>編輯表單</Button>
-                )}
-                {canForm(formRole, 'disableForm') && selectedForm.status === 'published' && (
-                  <Button variant="secondary" size="sm" danger startIcon={Ban} onClick={() => setDisableFormConfirmOpen(true)}>停用</Button>
-                )}
-                {/* 刪除只開放 draft / disabled —— published 要求先停用,見 handleDeleteForm 註解 */}
-                {canForm(formRole, 'deleteForm') && selectedForm.status !== 'published' && (
-                  <Button variant="secondary" size="sm" danger startIcon={Trash2} onClick={() => setDeleteFormConfirmOpen(true)}>刪除表單</Button>
-                )}
-              </div>
-            )
 
   return (
     <SidebarProvider activeId={section === 'forms' ? 'forms' : tab} onActiveChange={handleSidebarChange}>
@@ -1095,57 +1019,6 @@ function ApprovalPage() {
       </Dialog>
     </div>
 
-    {/* 停用表單確認(破壞性動作,比照批次核准/退件走「確認 = Dialog」,不能點按鈕就直接執行) */}
-    <Dialog open={disableFormConfirmOpen} onOpenChange={setDisableFormConfirmOpen}>
-      <DialogContent height="hug" maxWidth={440}>
-        <DialogHeader>
-          <DialogTitle>停用「{selectedForm?.name}」？</DialogTitle>
-        </DialogHeader>
-        <DialogBody>
-          <p className="text-body text-fg-secondary">
-            確認後，所有申請者將無法再使用此申請單送出新的審核。此動作目前無法復原。
-          </p>
-        </DialogBody>
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="tertiary">取消</Button>
-          </DialogClose>
-          <Button
-            variant="secondary"
-            danger
-            onClick={() => selectedForm && handleDisableForm(selectedForm.id)}
-          >
-            確認停用
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-
-    {/* 刪除表單確認 —— 永久移除,比停用更不可逆,confirm copy 要更明確 */}
-    <Dialog open={deleteFormConfirmOpen} onOpenChange={setDeleteFormConfirmOpen}>
-      <DialogContent height="hug" maxWidth={440}>
-        <DialogHeader>
-          <DialogTitle>刪除「{selectedForm?.name}」？</DialogTitle>
-        </DialogHeader>
-        <DialogBody>
-          <p className="text-body text-fg-secondary">
-            確認後，此表單將永久移除，無法復原。
-          </p>
-        </DialogBody>
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="tertiary">取消</Button>
-          </DialogClose>
-          <Button
-            variant="secondary"
-            danger
-            onClick={() => selectedForm && handleDeleteForm(selectedForm.id)}
-          >
-            確認刪除
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
     </AppShell>
     </SidebarProvider>
   )

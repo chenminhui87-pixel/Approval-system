@@ -1,9 +1,10 @@
 // 表單管理模組(C)— 表單詳情 =「表單內容」單頁。
 //   - 檢視模式:像一張真實表單公版(標題 + 各欄位 label + 對應 input,read-only 預覽)
-//   - 編輯模式(header「編輯表單」進入):只有全域設定(例:手機簽核開關),不含客製
-//     欄位 builder(2026-10-27 user 拍板暫時隱藏 —— 產品現階段重點是瀏覽/總覽已建立
-//     的表單,不是表單建構工具;欄位資料仍在 form.fields,檢視模式照常預覽,只是
-//     不開放在這裡改)。
+//   - 編輯模式(header「編輯表單」進入):只有「設定」—— 表單命名 / 分類 / 全域設定
+//     (例:手機簽核開關),逐欄位即時寫回 forms state。不含客製欄位 builder,也不含
+//     建立表單 / 草稿 / 發佈 / 停用 / 刪除這整套生命週期管理(2026-10-27 user 拍板:
+//     產品現階段重點只在瀏覽/總覽已建立的表單,不是表單建構或生命週期管理工具;
+//     欄位資料仍在 form.fields,檢視模式照常預覽)。
 // 送審清單不在本頁 — 由清單列的「查看送審單」進獨立子頁(見 FormManagementView)。
 // 註:人員層「owner」是下游指派的「負責窗口」,非系統最高權限。
 import {
@@ -13,8 +14,6 @@ import {
   Switch,
   Field,
   FieldLabel,
-  ChipGroup,
-  Chip,
 } from '@qijenchen/design-system'
 import { categoryLabel, type ManagedForm, type FormField } from './formsData'
 import { CATEGORIES, type CategoryId } from './data'
@@ -43,7 +42,7 @@ export function FormDetailView({
 }: {
   form: ManagedForm
   editing: boolean
-  /** 標題 / 說明 / 分類 / 全域設定即時寫回 forms state */
+  /** 名稱 / 分類 / 全域設定即時寫回 forms state */
   onUpdateForm: (patch: Partial<ManagedForm>) => void
 }) {
   const fields: FormField[] = form.fields
@@ -53,12 +52,12 @@ export function FormDetailView({
       <div className="mx-auto w-full max-w-xl">
         <div className="bg-surface border border-divider rounded-xl px-6 py-6">
           {/* 表單公版標題 — 狀態 tag 緊接標題,不放到頁面 header 右側(跟操作按鈕混一起)。
-              編輯模式:標題 / 說明 / 分類改真的可編輯,即時寫回 forms state(即時反映到
-              breadcrumb 與清單,不等「發佈」才同步)。 */}
+              編輯模式:名稱 / 分類改真的可編輯,即時寫回 forms state(即時反映到
+              breadcrumb 與清單)。 */}
           {editing ? (
             <div className="pb-5 mb-5 border-b border-divider flex flex-col gap-3">
               <Field>
-                <FieldLabel>表單標題</FieldLabel>
+                <FieldLabel>表單名稱</FieldLabel>
                 <Input
                   value={form.name}
                   onChange={(e) => onUpdateForm({ name: e.target.value })}
@@ -66,24 +65,12 @@ export function FormDetailView({
                 />
               </Field>
               <Field>
-                <FieldLabel>新增說明</FieldLabel>
-                <Input
-                  value={form.description ?? ''}
-                  onChange={(e) => onUpdateForm({ description: e.target.value })}
-                  placeholder="新增這張表單的用途"
-                />
-              </Field>
-              <Field>
                 <FieldLabel>分類</FieldLabel>
-                <ChipGroup
-                  type="single"
+                <Select
                   value={form.category}
-                  onValueChange={(v: string | undefined) => v && onUpdateForm({ category: v as CategoryId })}
-                >
-                  {CATEGORIES.map((c) => (
-                    <Chip key={c.id} value={c.id}>{c.label}</Chip>
-                  ))}
-                </ChipGroup>
+                  onChange={(v) => onUpdateForm({ category: v as CategoryId })}
+                  options={CATEGORIES.map((c) => ({ value: c.id, label: c.label }))}
+                />
               </Field>
             </div>
           ) : (
@@ -98,7 +85,7 @@ export function FormDetailView({
           )}
 
           {editing ? (
-            // ── 編輯模式(全域設定)—— 客製欄位 builder 暫時隱藏,見檔案頂部註解 ──
+            // ── 編輯模式(全域設定)—— 客製欄位 builder / 生命週期管理不在此頁,見檔案頂部註解 ──
             // Switch 不包進 <Field>:Switch 在 Field context 內會忽略自己的 label/
             // description(改由 FieldLabel 接管,避免雙層 label),這裡要讓 Switch
             // 自己的 label/description 正常顯示,所以不用 Field 包。

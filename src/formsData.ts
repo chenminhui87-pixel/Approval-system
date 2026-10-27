@@ -22,19 +22,18 @@ export const FORM_ROLE_DESC: Record<FormRole, string> = {
 
 // ── 權限矩陣(C 核心)──────────────────────────────────────────────────────────
 // 已移除「管理協作者 / 轉移發起人」(由下游系統指派,不在本介面)。
+// 2026-10-27 user 拍板:表單管理只保留「瀏覽 + 設定」,建立表單 / 停用 / 刪除這整套
+// 生命週期管理動作移出範疇,FormAction 同步砍掉(避免留著 dead permission 誤導)。
 export type FormAction =
   | 'viewForm' // 檢視表單內容 / 欄位
-  | 'editForm' // 編輯表單內容 / 欄位
-  | 'disableForm' // 停用表單(published → disabled,不可逆,申請者將無法再用此表單送審)
-  | 'deleteForm' // 刪除表單(永久移除;只開放給還沒 / 不再對外的表單,見 ManagedForm 使用處註解)
+  | 'editForm' // 編輯表單全域設定(名稱 / 分類 / 手機簽核開關)
   | 'viewSubmissions' // 檢視送審清單 + 狀態
   | 'operateSubmission' // 對送審單操作 = 代理 applicant/approver 的全套動作
   //                      (轉寄 / 移交簽核者 / 退回 / 作廢 / 催辦 / 撤回…,同現有簽核 prototype)
-  | 'createForm' // 建立新表單
 
 const ROLE_CAN: Record<FormRole, FormAction[]> = {
-  owner: ['viewForm', 'editForm', 'disableForm', 'deleteForm', 'viewSubmissions', 'operateSubmission', 'createForm'],
-  admin: ['viewForm', 'editForm', 'viewSubmissions', 'operateSubmission', 'createForm'],
+  owner: ['viewForm', 'editForm', 'viewSubmissions', 'operateSubmission'],
+  admin: ['viewForm', 'editForm', 'viewSubmissions', 'operateSubmission'],
   viewer: ['viewForm', 'viewSubmissions'],
 }
 
