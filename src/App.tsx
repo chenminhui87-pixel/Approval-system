@@ -138,11 +138,12 @@ const COMMON_FILTER_COLUMNS: DataTableProps<ApprovalRecord>['columns'] = [
   { id: 'dueDate', header: '到期時間', meta: { type: 'date' } },
 ]
 
-// 分類專屬篩選欄:只在對應 category 選中時併入共同欄位。目前只有 todo 一組,
-// 之後其他分類要加專屬篩選欄,照同樣的 key 補進這個 map 即可。
-const CATEGORY_FILTER_COLUMNS: Partial<Record<CategoryId, DataTableProps<ApprovalRecord>['columns']>> = {
-  todo: [{ id: 'description', header: '描述', meta: { type: 'string' } }],
-}
+// 分類專屬篩選欄:只在對應 category 選中時併入共同欄位。目前無任何分類有專屬
+// 篩選欄 —— todo 的「描述」只存在於詳情面板(customFields),沒攤出去外層表格
+// 當欄位,不該讓它可篩選(user 2026-10-27 拍板:篩選欄位要對應看得到的表格欄,
+// 不能篩一個清單上看不到的欄位)。之後其他分類若真把某欄攤出外層表格,照同樣
+// 的 key 補進這個 map 即可。
+const CATEGORY_FILTER_COLUMNS: Partial<Record<CategoryId, DataTableProps<ApprovalRecord>['columns']>> = {}
 
 function getFilterColumns(category: CategoryId | 'all'): DataTableProps<ApprovalRecord>['columns'] {
   const extra = category === 'all' ? [] : (CATEGORY_FILTER_COLUMNS[category] ?? [])
