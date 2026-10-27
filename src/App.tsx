@@ -79,6 +79,7 @@ import {
   approveRecord,
   rejectRecord,
   getPerson,
+  currentApprovers,
   type ApprovalRecord,
   type CategoryId,
 } from './data'
@@ -146,12 +147,19 @@ const FILTERABLE_IDS = new Set((FILTER_COLUMNS ?? []).map((c) => (c as { id: str
 const STATUS_COLOR = { pending: 'blue', approved: 'green', rejected: 'red' } as const
 const STATUS_LABEL = { pending: '簽核中', approved: '已核准', rejected: '已退件' } as const
 
-// 申請人 — 頭像 + 名字
+// 申請人 — 頭像 + 名字,名字下方補組織課名代碼／ID／電話(caption 灰字)。
+// 分隔符號跟既有 AgentListCard「組織課名代碼 ｜ ID ｜ 工號」一致,統一寫法。
 function Applicant({ name }: { name: string }) {
+  const p = getPerson(name)
   return (
-    <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+    <span className="inline-flex items-start gap-1.5 min-w-0">
       <PersonAvatar name={name} />
-      <span>{name}</span>
+      <span className="flex flex-col min-w-0">
+        <span className="truncate">{name}</span>
+        <span className="text-caption text-fg-secondary truncate">
+          {p.deptCode} ｜ {p.id} ｜ {p.phone}
+        </span>
+      </span>
     </span>
   )
 }
@@ -514,8 +522,17 @@ function RecordList({
     {
       id: 'applicant',
       header: '申請人',
-      meta: { width: 140 },
+      meta: { width: 180 },
       cell: ({ row }) => <Applicant name={row.original.applicant} />,
+    },
+    {
+      id: 'currentApprover',
+      header: '目前簽核者',
+      meta: { width: 120 },
+      // 重用「代理人」欄位同一套多頭像呈現(AgentAvatars),語意一致(都是「誰在
+      // 處理這張單」);currentApprovers 查無 current step 或查無人員時回傳 []、
+      // AgentAvatars 對空陣列顯示 "-"。
+      cell: ({ row }) => <AgentAvatars agents={currentApprovers(row.original)} />,
     },
     {
       id: 'agents',

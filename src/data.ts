@@ -1488,6 +1488,19 @@ export function getTabRecords(
   )
 }
 
+// 目前簽核者:current step 裡還沒簽過的人。多數記錄只有 legacy approvers/
+// approvedBy 字串陣列(無 people),只有少數(如 ApprovalRoute 展示用的富節點)
+// 才有 people —— 兩種資料都要撐,people 存在時用它的 status(較準確,legacy
+// 的 approvedBy 有時不同步),否則退回 approvers - approvedBy 的差集。
+export function currentApprovers(record: ApprovalRecord): string[] {
+  const step = record.steps.find((s) => s.status === 'current')
+  if (!step) return []
+  if (step.people) {
+    return step.people.filter((p) => p.status === 'pending').map((p) => p.name)
+  }
+  return step.approvers.filter((name) => !step.approvedBy?.includes(name))
+}
+
 // ── Action helpers — update record after approve/reject ─────────────────────
 const now = () => {
   const d = new Date()
