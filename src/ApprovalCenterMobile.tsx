@@ -51,6 +51,7 @@ import {
   Calendar,
   Users,
   GraduationCap,
+  ListTodo,
 } from 'lucide-react'
 import {
   MOCK_RECORDS,
@@ -85,6 +86,7 @@ const CATEGORY_META: Record<CategoryId, { Icon: React.ElementType; iconBg: strin
   vacation: { Icon: Calendar,      iconBg: ICON_BG, iconColor: ICON_COLOR },
   recruit:  { Icon: Users,         iconBg: ICON_BG, iconColor: ICON_COLOR },
   training: { Icon: GraduationCap, iconBg: ICON_BG, iconColor: ICON_COLOR },
+  todo:     { Icon: ListTodo,      iconBg: ICON_BG, iconColor: ICON_COLOR },
 }
 
 const AVATAR_COLORS = ['blue', 'violet', 'emerald', 'amber', 'rose', 'cyan', 'orange'] as const

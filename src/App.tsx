@@ -97,8 +97,11 @@ import {
 } from './formsData'
 
 // ── 外層 filter(A / PM 2026-10-13)──────────────────────────────────────────────
-// 只放「簽核系統固定/共同欄位」:狀態 / 緊急程度 / 申請人 / 到期區間。
-// 這些欄位每個類別都有 → 切類別不需清除 filter(避免類別專屬欄位的 stale-filter 問題)。
+// 共同欄位:狀態 / 緊急程度 / 申請人 / 到期區間 —— 每個分類都有,切類別不用清。
+// 分類專屬欄位放 CATEGORY_FILTER_COLUMNS(2026-10-27 新增)—— 例如 todo 分類的
+// 「描述」只有它自己有,其他分類不該看到這個篩選欄。可用欄位依目前選的 category
+// 動態組(見 getFilterColumns),搭配切換分類時自動剔除不適用 condition(見下方
+// useEffect),不是整個清空重來。
 // 篩選邏輯走 DS 統一入口 DataTableFilterPanel(data-table.spec.md L278),不做表頭 inline filter;
 // 表頭只提供「依此欄篩選…」捷徑(onColumnFilterTrigger)跳進此面板並預填。
 const APPLICANT_OPTIONS = Array.from(new Set(MOCK_RECORDS.map((r) => r.applicant))).map((name) => ({
@@ -106,7 +109,7 @@ const APPLICANT_OPTIONS = Array.from(new Set(MOCK_RECORDS.map((r) => r.applicant
   label: name,
 }))
 
-const FILTER_COLUMNS: DataTableProps<ApprovalRecord>['columns'] = [
+const COMMON_FILTER_COLUMNS: DataTableProps<ApprovalRecord>['columns'] = [
   {
     id: 'status',
     header: '狀態',
@@ -135,7 +138,16 @@ const FILTER_COLUMNS: DataTableProps<ApprovalRecord>['columns'] = [
   { id: 'dueDate', header: '到期時間', meta: { type: 'date' } },
 ]
 
-const FILTERABLE_IDS = new Set((FILTER_COLUMNS ?? []).map((c) => (c as { id: string }).id))
+// 分類專屬篩選欄:只在對應 category 選中時併入共同欄位。目前只有 todo 一組,
+// 之後其他分類要加專屬篩選欄,照同樣的 key 補進這個 map 即可。
+const CATEGORY_FILTER_COLUMNS: Partial<Record<CategoryId, DataTableProps<ApprovalRecord>['columns']>> = {
+  todo: [{ id: 'description', header: '描述', meta: { type: 'string' } }],
+}
+
+function getFilterColumns(category: CategoryId | 'all'): DataTableProps<ApprovalRecord>['columns'] {
+  const extra = category === 'all' ? [] : (CATEGORY_FILTER_COLUMNS[category] ?? [])
+  return [...COMMON_FILTER_COLUMNS, ...extra]
+}
 
 
 const STATUS_COLOR = { pending: 'blue', approved: 'green', rejected: 'red' } as const
@@ -681,6 +693,22 @@ function ApprovalPage() {
     }
   }, [hasFormAccess, section])
 
+  // 外層 filter(A):依目前 category 動態附加分類專屬欄位(見 getFilterColumns)。
+  const filterColumns = getFilterColumns(category)
+  const filterableIds = new Set(filterColumns.map((c) => (c as { id: string }).id))
+
+  // 切換分類時,把 filterTree 裡「新分類不支援」的 condition 剔除(只清不適用的,
+  // 保留其餘仍適用的共同欄位 condition)—— 這正是 user 回報「每切換一次都要手動
+  // 清掉」的根因:以前分類專屬欄位不存在,現在有了就要避免 stale condition 殘留。
+  useEffect(() => {
+    setFilterTree((prev) => {
+      if (prev.mode !== 'flat') return prev
+      const ids = new Set(getFilterColumns(category).map((c) => (c as { id: string }).id))
+      const kept = prev.children.filter((c) => ids.has(c.field))
+      return kept.length === prev.children.length ? prev : { ...prev, children: kept }
+    })
+  }, [category])
+
   const tabRecords = getTabRecords(tab, records, CURRENT_USER)
   const searchFiltered = tabRecords
     .filter((r) => !search || r.title.includes(search) || r.applicant.includes(search) || r.id.includes(search))
@@ -1028,7 +1056,7 @@ function ApprovalPage() {
             </PopoverTrigger>
             <PopoverContent align="end" className="w-auto p-0">
               <DataTableFilterPanel
-                columns={FILTER_COLUMNS}
+                columns={filterColumns}
                 value={filterTree}
                 onChange={setFilterTree}
                 prefilledColumnId={filterPrefilledId}
@@ -1089,7 +1117,7 @@ function ApprovalPage() {
             activeId={panelOpen ? selectedId : null}
             showSelectAll={category !== 'all'}
             onColumnFilterTrigger={(columnId) => {
-              const prefill = FILTERABLE_IDS.has(columnId) ? columnId : undefined
+              const prefill = filterableIds.has(columnId) ? columnId : undefined
               // 延一 tick 開 popover:等表頭 ⌄ DropdownMenu 關閉完成,
               // 否則 Radix 會把剛開的 filter popover 當成「外點」立刻關掉(跨浮層 gotcha)。
               setFilterPrefilledId(prefill)

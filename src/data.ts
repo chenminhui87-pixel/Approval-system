@@ -6,6 +6,7 @@ export type CategoryId =
   | 'vacation'
   | 'recruit'
   | 'training'
+  | 'todo'
 
 export type UrgencyLevel = 'low' | 'medium' | 'high'
 
@@ -83,6 +84,9 @@ export interface ApprovalRecord {
   agents?: string[]
   /** 副本給我:被加為副本（CC）知會的人,非簽核者、非申請者 */
   copiedTo?: string[]
+  /** To-do 系統(待 sunset,欄位客製不明)的描述欄 —— 其他分類維持 undefined,
+   * 不強求所有分類共用這個欄位。 */
+  description?: string
 }
 
 export const CATEGORIES: { id: CategoryId; label: string }[] = [
@@ -93,6 +97,9 @@ export const CATEGORIES: { id: CategoryId; label: string }[] = [
   { id: 'training', label: '教育訓練' },
   { id: 'computer', label: '電腦採購申請' },
   { id: 'travel', label: '出差申請' },
+  // PM 已告知要 sunset 的外部系統,欄位客製不明 —— 只接現有欄位對得上的
+  // 標題/申請人/送出時間,新增的只有 description(詳 ApprovalRecord 註解)。
+  { id: 'todo', label: 'To-do' },
 ]
 
 export const MOCK_RECORDS: ApprovalRecord[] = [
@@ -1373,6 +1380,24 @@ export const MOCK_RECORDS: ApprovalRecord[] = [
   { id: 'REQ-2026-0122', category: 'vacation', title: '陪產假申請（初產）', applicant: '周總監', submittedAt: '2026-06-16 11:30', urgency: 'low', status: 'pending', currentStep: 0, steps: [{ id: 's1', label: '直屬主管', approvers: ['陳美惠'], status: 'current' }], fixedFields: [{ label: '單號', value: 'REQ-2026-0122' }, { label: '申請時間', value: '2026-06-16 11:30' }, { label: '緊急程度', value: '低' }, { label: '申請者', value: '周總監' }], customFields: [{ label: '假別', value: '陪產假' }, { label: '請假期間', value: '2026-08-10 ~ 2026-08-12' }, { label: '天數', value: '3 天' }], attachments: [] },
   { id: 'REQ-2026-0123', category: 'vacation', title: '病假申請（過敏氣喘發作）', applicant: '林志明', submittedAt: '2026-06-16 13:45', urgency: 'medium', status: 'pending', currentStep: 0, steps: [{ id: 's1', label: '直屬主管', approvers: ['陳美惠'], status: 'current' }], fixedFields: [{ label: '單號', value: 'REQ-2026-0123' }, { label: '申請時間', value: '2026-06-16 13:45' }, { label: '緊急程度', value: '一般' }, { label: '申請者', value: '林志明' }], customFields: [{ label: '假別', value: '病假' }, { label: '請假期間', value: '2026-06-17 ~ 2026-06-18' }, { label: '天數', value: '2 天' }], attachments: [] },
   { id: 'REQ-2026-0124', category: 'vacation', title: '特休假申請 8/24-8/28（5天）', applicant: '王大明', submittedAt: '2026-06-17 09:00', urgency: 'low', status: 'pending', currentStep: 0, steps: [{ id: 's1', label: '直屬主管', approvers: ['陳美惠'], status: 'current' }], fixedFields: [{ label: '單號', value: 'REQ-2026-0124' }, { label: '申請時間', value: '2026-06-17 09:00' }, { label: '緊急程度', value: '低' }, { label: '申請者', value: '王大明' }], customFields: [{ label: '假別', value: '特休假' }, { label: '請假期間', value: '2026-08-24 ~ 2026-08-28' }, { label: '天數', value: '5 天' }], attachments: [] },
+
+  // ── todo(To-do 系統,待 sunset,欄位客製不明)×3 ─────────────────────────────
+  // 只有標題/申請人/送出時間對得上既有欄位,description 是這分類獨有的新欄位。
+  { id: 'REQ-2026-0125', category: 'todo', title: '確認 Q3 季度 OKR 草稿', applicant: '黃建偉', submittedAt: '2026-06-18 09:00', urgency: 'medium', status: 'pending', currentStep: 0,
+    description: '需要在週會前確認產品團隊 Q3 OKR 草稿內容,並給出修改意見。',
+    steps: [{ id: 's1', label: '直屬主管', approvers: ['陳美惠'], status: 'current' }],
+    fixedFields: [{ label: '單號', value: 'REQ-2026-0125' }, { label: '申請時間', value: '2026-06-18 09:00' }, { label: '緊急程度', value: '一般' }, { label: '申請者', value: '黃建偉' }],
+    customFields: [{ label: '描述', value: '需要在週會前確認產品團隊 Q3 OKR 草稿內容,並給出修改意見。' }], attachments: [] },
+  { id: 'REQ-2026-0126', category: 'todo', title: '更新客戶名單聯絡資訊', applicant: '王大明', submittedAt: '2026-06-18 10:30', urgency: 'low', status: 'pending', currentStep: 0,
+    description: '部分客戶聯絡窗口異動,需要更新 CRM 內的聯絡人資料。',
+    steps: [{ id: 's1', label: '直屬主管', approvers: ['陳美惠'], status: 'current' }],
+    fixedFields: [{ label: '單號', value: 'REQ-2026-0126' }, { label: '申請時間', value: '2026-06-18 10:30' }, { label: '緊急程度', value: '低' }, { label: '申請者', value: '王大明' }],
+    customFields: [{ label: '描述', value: '部分客戶聯絡窗口異動,需要更新 CRM 內的聯絡人資料。' }], attachments: [] },
+  { id: 'REQ-2026-0127', category: 'todo', title: '彙整上月客訴案件報告', applicant: '林志明', submittedAt: '2026-06-18 14:00', urgency: 'high', status: 'pending', currentStep: 0,
+    description: '需彙整上月所有客訴案件的處理狀況與結案率,供管理層會議使用。',
+    steps: [{ id: 's1', label: '直屬主管', approvers: ['陳美惠'], status: 'current' }],
+    fixedFields: [{ label: '單號', value: 'REQ-2026-0127' }, { label: '申請時間', value: '2026-06-18 14:00' }, { label: '緊急程度', value: '緊急' }, { label: '申請者', value: '林志明' }],
+    customFields: [{ label: '描述', value: '需彙整上月所有客訴案件的處理狀況與結案率,供管理層會議使用。' }], attachments: [] },
 ]
 
 export const CURRENT_USER = '陳美惠'
