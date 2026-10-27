@@ -2,7 +2,6 @@ import { useState, useRef, useEffect, type ReactNode } from 'react'
 import {
   TooltipProvider,
   AppShell,
-  Avatar,
   Sidebar,
   SidebarProvider,
   SidebarTrigger,
@@ -47,10 +46,6 @@ import {
   DialogFooter,
   DialogClose,
 } from '@qijenchen/design-system'
-// HoverCard 非 root front-door(DS 標 internal)。但 align=center 鎖死在 Avatar.hoverCard,
-// 代理人清單卡需靠左對齊 → 走 DS 官方 subpath export(非 /src、非 /dist 深層路徑,
-// 符合 lint-ds-internal-imports 允許清單 + DS「internal 元件 subpath 包裝後可用」規範)。
-import { HoverCard, HoverCardTrigger, HoverCardContent } from '@qijenchen/design-system/components/HoverCard'
 import {
   AlertCircle,
   Search,
@@ -81,7 +76,7 @@ import {
   type ApprovalRecord,
   type CategoryId,
 } from './data'
-import { PersonAvatar, personAvatarSrc } from './PersonAvatar'
+import { PersonAvatar, PersonAvatarStack } from './PersonAvatar'
 import { ApprovalDetailPanel } from './ApprovalDetailPanel'
 import { ApprovalModal } from './ApprovalModal'
 import { DetailAside } from './DetailAside'
@@ -146,7 +141,7 @@ const STATUS_COLOR = { pending: 'blue', approved: 'green', rejected: 'red' } as 
 const STATUS_LABEL = { pending: '簽核中', approved: '已核准', rejected: '已退件' } as const
 
 // 申請人 — 頭像 + 名字,名字下方補組織課名代碼／ID／電話(caption 灰字)。
-// 分隔符號跟既有 AgentListCard「組織課名代碼 ｜ ID ｜ 工號」一致,統一寫法。
+// 分隔符號跟 PersonAvatar.tsx 的 PersonListCard「組織課名代碼 ｜ ID ｜ 工號」一致,統一寫法。
 function Applicant({ name }: { name: string }) {
   const p = getPerson(name)
   return (
@@ -159,73 +154,6 @@ function Applicant({ name }: { name: string }) {
         </span>
       </span>
     </span>
-  )
-}
-
-// 代理人 — 多頭像 overlap stack(可能多位),各自 hover ProfileCard
-// 代理人 hover 的自刻清單卡 — 每人:組織課名代碼 ｜ ID ｜ 工號
-function AgentListCard({ agents }: { agents: string[] }) {
-  return (
-    <div className="w-[320px] bg-surface-raised rounded-lg border border-border overflow-hidden">
-      <div className="divide-y divide-divider max-h-[320px] overflow-auto">
-        {agents.map((name) => {
-          const p = getPerson(name)
-          return (
-            <div key={name} className="px-4 py-3 flex items-start gap-2.5">
-              <Avatar alt={name} size={28} src={personAvatarSrc(name)} />
-              <div className="min-w-0 flex-1">
-                <div className="text-body font-medium mb-1 truncate">{name}</div>
-                <div className="text-caption text-fg-secondary">
-                  {p.deptCode} ｜ {p.id} ｜ {p.employeeNumber}
-                </div>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-// 代理人 — 多頭像 overlap stack;hover 整組顯示「代理人清單卡」
-// 走 DS HoverCard primitives(非 Avatar.hoverCard,後者鎖死 align=center)→
-// 可用 align="start" 讓卡片靠頭像組左緣對齊。
-function AgentAvatars({ agents }: { agents?: string[] }) {
-  if (!agents || agents.length === 0) return <span className="text-fg-placeholder">-</span>
-  // 走 DS Avatar `stacked`(遮罩挖空,非寫死 ring-surface → 不會框線外溢);
-  // 疊放量用 --avatar-stack-overlap。超過 MAX 顯示「+N」溢出圈。
-  const MAX = 4
-  const overflow = agents.length > MAX
-  const visible = overflow ? agents.slice(0, MAX - 1) : agents
-  const hiddenCount = agents.length - visible.length
-  return (
-    <HoverCard>
-      <HoverCardTrigger asChild>
-        <span className="inline-flex items-center cursor-default">
-          {visible.map((a, i) => (
-            <span
-              key={a + i}
-              className="relative inline-flex -ml-[var(--avatar-stack-overlap)] first:ml-0"
-              style={{ zIndex: agents.length - i }}
-            >
-              <Avatar alt={a} size={22} src={personAvatarSrc(a)} stacked />
-            </span>
-          ))}
-          {overflow && (
-            <span
-              className="relative inline-flex items-center justify-center -ml-[var(--avatar-stack-overlap)] rounded-full bg-muted text-fg-secondary text-caption font-medium"
-              style={{ width: 22, height: 22, zIndex: 0 }}
-              aria-label={`另外 ${hiddenCount} 人`}
-            >
-              +{hiddenCount}
-            </span>
-          )}
-        </span>
-      </HoverCardTrigger>
-      <HoverCardContent align="start" className="p-0 w-auto border-0 bg-transparent shadow-none">
-        <AgentListCard agents={agents} />
-      </HoverCardContent>
-    </HoverCard>
   )
 }
 
@@ -463,16 +391,17 @@ function RecordList({
       id: 'currentApprover',
       header: '目前簽核者',
       meta: { width: 120 },
-      // 重用「代理人」欄位同一套多頭像呈現(AgentAvatars),語意一致(都是「誰在
-      // 處理這張單」);currentApprovers 查無 current step 或查無人員時回傳 []、
-      // AgentAvatars 對空陣列顯示 "-"。
-      cell: ({ row }) => <AgentAvatars agents={currentApprovers(row.original)} />,
+      // 重用「代理人」欄位同一套多頭像呈現(PersonAvatarStack,PersonAvatar.tsx 共用
+      // 元件,FormSubmissionsView.tsx 也消費同一份),語意一致(都是「誰在處理這張
+      // 單」);currentApprovers 查無 current step 或查無人員時回傳 []、
+      // PersonAvatarStack 對空陣列顯示 "-"。
+      cell: ({ row }) => <PersonAvatarStack names={currentApprovers(row.original)} />,
     },
     {
       id: 'agents',
       header: '代理人',
       meta: { width: 120 },
-      cell: ({ row }) => <AgentAvatars agents={row.original.agents} />,
+      cell: ({ row }) => <PersonAvatarStack names={row.original.agents} />,
     },
     {
       id: 'submittedAt',
@@ -776,6 +705,7 @@ function ApprovalPage() {
       category: CATEGORIES[0].id,
       status: 'draft',
       owner: CURRENT_USER,
+      updatedBy: CURRENT_USER,
       updatedAt: new Date().toISOString().slice(0, 10),
       fields: [],
     }

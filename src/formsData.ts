@@ -85,6 +85,8 @@ export interface ManagedForm {
   status: FormStatus
   /** 下游系統指派的 owner（顯示用） */
   owner: string
+  /** 最後編輯這張表單的人(不一定是 owner,admin 也能編輯內容) */
+  updatedBy: string
   updatedAt: string
   fields: FormField[]
 }
@@ -116,6 +118,7 @@ export const MOCK_FORMS: ManagedForm[] = [
     category: 'expense',
     status: 'published',
     owner: '陳美惠',
+    updatedBy: '陳美惠',
     updatedAt: '2026-09-28',
     fields: [
       { label: '費用類別', type: 'select', required: true, options: ['差旅', '餐費', '辦公用品', '其他'] },
@@ -130,6 +133,7 @@ export const MOCK_FORMS: ManagedForm[] = [
     category: 'travel',
     status: 'published',
     owner: '周總監',
+    updatedBy: '周總監',
     updatedAt: '2026-09-15',
     fields: [
       { label: '出差地點', type: 'string', required: true },
@@ -144,6 +148,7 @@ export const MOCK_FORMS: ManagedForm[] = [
     category: 'vacation',
     status: 'published',
     owner: '人資專員',
+    updatedBy: '人資助理',
     updatedAt: '2026-08-30',
     fields: [
       { label: '假別', type: 'select', required: true, options: ['特休', '病假', '事假', '婚假', '喪假'] },
@@ -158,6 +163,7 @@ export const MOCK_FORMS: ManagedForm[] = [
     category: 'computer',
     status: 'published',
     owner: '林志明',
+    updatedBy: '王大明',
     updatedAt: '2026-09-20',
     fields: [
       { label: '設備規格', type: 'string', required: true },
@@ -172,6 +178,7 @@ export const MOCK_FORMS: ManagedForm[] = [
     category: 'training',
     status: 'draft',
     owner: '人資助理',
+    updatedBy: '人資助理',
     updatedAt: '2026-10-05',
     fields: [
       { label: '課程名稱', type: 'string', required: true },
@@ -185,6 +192,7 @@ export const MOCK_FORMS: ManagedForm[] = [
     category: 'article',
     status: 'disabled',
     owner: '黃建偉',
+    updatedBy: '黃建偉',
     updatedAt: '2026-06-10',
     fields: [
       { label: '標題', type: 'string', required: true },

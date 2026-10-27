@@ -113,6 +113,24 @@ export function FormManagementView({
       ),
     },
     {
+      id: 'updatedBy',
+      header: '更新者',
+      meta: { width: 100 },
+      cell: ({ row }) => (
+        <span className="text-body text-fg-secondary whitespace-nowrap">{row.original.updatedBy}</span>
+      ),
+    },
+    {
+      id: 'updatedAt',
+      header: '更新時間',
+      meta: { width: 100 },
+      cell: ({ row }) => (
+        <span className="text-body text-fg-secondary tabular-nums whitespace-nowrap">
+          {row.original.updatedAt.replace(/-/g, '/')}
+        </span>
+      ),
+    },
+    {
       id: 'actions',
       // 對齊 FormSubmissionsView 的 actions 欄寫法:表頭不顯文字,sr-only 保留給輔助技術
       header: () => <span className="sr-only">操作</span>,

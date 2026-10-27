@@ -6,9 +6,11 @@ import { useState } from 'react'
 import { DataTable, type DataTableProps, Tag, Button } from '@qijenchen/design-system'
 import { Info, X, Maximize2 } from 'lucide-react'
 import type { ApprovalRecord, ApprovalStatus } from './data'
+import { currentApprovers } from './data'
 import { can, formSubmissions, type FormRole, type ManagedForm } from './formsData'
 import { ApprovalDetailPanel } from './ApprovalDetailPanel'
 import { ApprovalModal } from './ApprovalModal'
+import { PersonAvatarStack } from './PersonAvatar'
 
 const STATUS: Record<ApprovalStatus, { label: string; color: 'blue' | 'green' | 'red' }> = {
   pending: { label: '簽核中', color: 'blue' },
@@ -69,6 +71,14 @@ export function FormSubmissionsView({
       header: '申請人',
       meta: { width: 110 },
       cell: ({ row }) => <span className="text-body text-fg-secondary whitespace-nowrap">{row.original.applicant}</span>,
+    },
+    {
+      id: 'currentApprover',
+      header: '當前簽核者',
+      meta: { width: 100 },
+      // 跟簽核清單主表格(App.tsx)同一套 currentApprovers + PersonAvatarStack,
+      // 查無 current step 或查無人員時顯示 "-"。
+      cell: ({ row }) => <PersonAvatarStack names={currentApprovers(row.original)} />,
     },
     {
       id: 'status',
