@@ -4,18 +4,15 @@
 import {
   SegmentedControl,
   SegmentedControlItem,
-  Tag,
   Button,
   DataTable,
   type DataTableProps,
 } from '@qijenchen/design-system'
-import { Pencil, Eye } from 'lucide-react'
+import { Eye } from 'lucide-react'
 import {
   FORM_ROLES,
   FORM_ROLE_LABEL,
   FORM_ROLE_DESC,
-  FORM_STATUS_LABEL,
-  FORM_STATUS_COLOR,
   can,
   categoryLabel,
   formSubmissionCounts,
@@ -33,9 +30,7 @@ export function FormManagementView({
   onRoleChange,
   selectedForm,
   view,
-  editing,
   onSelectForm,
-  onEditForm,
   onViewSubmissions,
   onUpdateForm,
   stub,
@@ -46,13 +41,12 @@ export function FormManagementView({
   onRoleChange: (r: FormRole) => void
   selectedForm: ManagedForm | null
   view: 'content' | 'submissions'
-  editing: boolean
   onSelectForm: (f: ManagedForm | null) => void
-  onEditForm: (f: ManagedForm) => void
   onViewSubmissions: (f: ManagedForm) => void
   onUpdateForm: (id: string, patch: Partial<ManagedForm>) => void
   stub: (label: string) => void
 }) {
+  const canEdit = can(role, 'editForm')
   const columns: DataTableProps<ManagedForm>['columns'] = [
     {
       id: 'name',
@@ -77,16 +71,6 @@ export function FormManagementView({
       meta: { width: 120 },
       cell: ({ row }) => (
         <span className="text-body text-fg-secondary whitespace-nowrap">{categoryLabel(row.original.category)}</span>
-      ),
-    },
-    {
-      id: 'status',
-      header: '狀態',
-      meta: { width: 96 },
-      cell: ({ row }) => (
-        <Tag size="sm" color={FORM_STATUS_COLOR[row.original.status]}>
-          {FORM_STATUS_LABEL[row.original.status]}
-        </Tag>
       ),
     },
     {
@@ -134,27 +118,16 @@ export function FormManagementView({
       id: 'actions',
       // 對齊 FormSubmissionsView 的 actions 欄寫法:表頭不顯文字,sr-only 保留給輔助技術
       header: () => <span className="sr-only">操作</span>,
-      // viewer 沒有編輯表單按鈕,欄寬跟著 hug(不留編輯按鈕的空白)——role 是整張表共用的
-      // global 狀態,不是逐列不同,直接在欄定義算一次即可,不用每個 cell 各自判斷。
-      meta: { width: can(role, 'editForm') ? 300 : 170 },
-      // 只留查看所有簽核單 + 編輯表單兩個 inline 動作(都帶 prefix icon),不再用 ⋯ overflow。
-      // 停用改到表單內容頁 header(進去看過內容才停用,避免清單列一鍵誤觸);
-      // 檢視表單 = 點表單名開啟。viewer 無編輯權限 → 不顯示編輯表單。
-      cell: ({ row }) => {
-        const canEdit = can(role, 'editForm')
-        return (
-          <div className="flex items-center gap-1 justify-end" onClick={(e) => e.stopPropagation()}>
-            <Button variant="text" size="sm" startIcon={Eye} onClick={() => onViewSubmissions(row.original)}>
-              查看所有簽核單
-            </Button>
-            {canEdit && (
-              <Button variant="text" size="sm" startIcon={Pencil} onClick={() => onEditForm(row.original)}>
-                編輯表單
-              </Button>
-            )}
-          </div>
-        )
-      },
+      meta: { width: 170 },
+      // 只留查看所有簽核單一個 inline 動作 —— 表單名稱點擊即進設定頁(name 欄),
+      // 不需要另一個「編輯表單」按鈕通往同一個目的地。
+      cell: ({ row }) => (
+        <div className="flex items-center gap-1 justify-end" onClick={(e) => e.stopPropagation()}>
+          <Button variant="text" size="sm" startIcon={Eye} onClick={() => onViewSubmissions(row.original)}>
+            查看所有簽核單
+          </Button>
+        </div>
+      ),
     },
   ]
 
@@ -169,7 +142,7 @@ export function FormManagementView({
             <FormDetailView
               key={selectedForm.id}
               form={selectedForm}
-              editing={editing}
+              canEdit={canEdit}
               onUpdateForm={(patch) => onUpdateForm(selectedForm.id, patch)}
             />
           )

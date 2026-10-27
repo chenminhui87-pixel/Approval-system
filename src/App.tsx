@@ -57,7 +57,6 @@ import {
   ClipboardCopy,
   Info,
   Filter,
-  Pencil,
   Contact,
 } from 'lucide-react'
 import {
@@ -78,8 +77,6 @@ import { DetailAside } from './DetailAside'
 import { FormManagementView } from './FormManagementView'
 import {
   MOCK_FORMS,
-  FORM_STATUS_LABEL,
-  FORM_STATUS_COLOR,
   can as canForm,
   type FormRole,
   type ManagedForm,
@@ -507,7 +504,6 @@ function ApprovalPage() {
   const [panelOpen, setPanelOpen] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [selectedFormId, setSelectedFormId] = useState<string | null>(null)
-  const [formEditing, setFormEditing] = useState(false)
   const [formView, setFormView] = useState<'content' | 'submissions'>('content')
   const [records, setRecords] = useState<ApprovalRecord[]>(MOCK_RECORDS)
   const [rejectComment, setRejectComment] = useState('')
@@ -533,7 +529,6 @@ function ApprovalPage() {
     if (!hasFormAccess && section === 'forms') {
       setSection('approvals')
       setSelectedFormId(null)
-      setFormEditing(false)
       setFormView('content')
     }
   }, [hasFormAccess, section])
@@ -598,7 +593,6 @@ function ApprovalPage() {
     if (id === 'forms') {
       setSection('forms')
       setSelectedFormId(null) // 點 sidebar「表單管理」一律回清單
-      setFormEditing(false)
       setFormView('content')
       return
     }
@@ -660,12 +654,11 @@ function ApprovalPage() {
     showToast(`${label} — 功能開發中`)
   }
 
-  // ── 表單管理(C)header 計算:麵包屑 + 情境操作(建立 / 編輯 / 停用),集中在最上方 header ──
+  // ── 表單管理(C)header 計算:麵包屑 + 情境操作,集中在最上方 header ──
   const selectedForm = selectedFormId ? forms.find((f) => f.id === selectedFormId) ?? null : null
   const formStub = (label: string) => showToast(`${label}(施工中)`)
-  function openForm(id: string | null, opts?: { edit?: boolean; view?: 'content' | 'submissions' }) {
+  function openForm(id: string | null, opts?: { view?: 'content' | 'submissions' }) {
     setSelectedFormId(id)
-    setFormEditing(!!opts?.edit && id !== null)
     setFormView(opts?.view ?? 'content')
   }
   // 表單命名 / 分類 / 全域設定即時寫回 forms state(2026-10-27 user 拍板:表單管理只保留
@@ -673,33 +666,20 @@ function ApprovalPage() {
   function handleUpdateForm(id: string, patch: Partial<ManagedForm>) {
     setForms((prev) => prev.map((f) => (f.id === id ? { ...f, ...patch } : f)))
   }
+  // 表單名稱不再帶狀態 tag(2026-10-27 user 拍板:草稿/已發布/已停用整組狀態隱藏 ——
+  // 這個狀態已經沒有任何介面能改變它,留著顯示沒有意義,見 formsData.ts 的 ManagedForm 註解)。
   const formsBreadcrumb = !selectedForm
     ? undefined
-    : [
-        { label: '表單管理', onClick: () => openForm(null) },
-        {
-          label: selectedForm.name,
-          // 狀態 tag 緊接表單標題,無論檢視 / 編輯模式都在(編輯模式內容區標題換成
-          // input,麵包屑是唯一兩種模式都存在的位置)。subtle(不加 solid)—— DS Tag
-          // spec:「被動分類/屬性標示」預設 subtle,solid 留給少數單一重點場景。
-          tag: (
-            <Tag size="sm" color={FORM_STATUS_COLOR[selectedForm.status]}>
-              {FORM_STATUS_LABEL[selectedForm.status]}
-            </Tag>
-          ),
-        },
-      ]
-  // 表單管理只留「瀏覽 + 設定」:無建立表單、無草稿/發佈、無停用/刪除(2026-10-27 user 拍板,
-  // 這些都是表單生命週期管理,不在本產品現階段範疇)。編輯模式只有一個「完成」退出,
-  // 內容(名稱/分類/全域設定開關)本來就逐欄位即時寫回 forms state,不需要額外的存檔動作。
+    : [{ label: '表單管理', onClick: () => openForm(null) }, { label: selectedForm.name }]
+  // 表單詳情頁一進去就是設定(FormDetailView 不再分檢視/編輯兩態),所以 header 只留一個
+  // 「保存」—— 點了直接回表單清單(欄位本來就逐欄位即時寫回 forms state,不需要額外的
+  // 存檔動作,這顆鈕純粹是「我改完了,回清單」的退出路徑)。viewer 無編輯權限時不顯示。
   const formsHeaderRight: ReactNode =
     section !== 'forms' || !selectedForm || formView === 'submissions'
       ? null
-      : formEditing
-        ? <Button variant="primary" size="sm" onClick={() => setFormEditing(false)}>完成</Button>
-        : canForm(formRole, 'editForm')
-          ? <Button variant="secondary" size="sm" startIcon={Pencil} onClick={() => setFormEditing(true)}>編輯表單</Button>
-          : null
+      : canForm(formRole, 'editForm')
+        ? <Button variant="primary" size="sm" onClick={() => openForm(null)}>保存</Button>
+        : null
 
   return (
     <SidebarProvider activeId={section === 'forms' ? 'forms' : tab} onActiveChange={handleSidebarChange}>
@@ -743,9 +723,7 @@ function ApprovalPage() {
         onRoleChange={setFormRole}
         selectedForm={selectedForm}
         view={formView}
-        editing={formEditing}
         onSelectForm={(f) => openForm(f ? f.id : null)}
-        onEditForm={(f) => openForm(f.id)}
         onViewSubmissions={(f) => openForm(f.id, { view: 'submissions' })}
         onUpdateForm={handleUpdateForm}
         stub={formStub}

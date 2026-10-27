@@ -43,19 +43,9 @@ export function can(role: FormRole, action: FormAction): boolean {
 }
 
 // ── 表單 ─────────────────────────────────────────────────────────────────────
-export type FormStatus = 'draft' | 'published' | 'disabled'
-
-export const FORM_STATUS_LABEL: Record<FormStatus, string> = {
-  draft: '草稿',
-  published: '已發布',
-  disabled: '已停用',
-}
-// Tag color（對齊 DS Tag color 語彙）
-export const FORM_STATUS_COLOR: Record<FormStatus, 'green' | 'neutral' | 'red'> = {
-  published: 'green',
-  draft: 'neutral',
-  disabled: 'red',
-}
+// 2026-10-27 user 拍板:草稿/已發布/已停用這組狀態全面隱藏 —— 既然建立/發佈/停用
+// 這些會改變狀態的動作都已經移出介面(見上方 FormAction 註解),留著一個誰都改不了
+// 的狀態顯示沒有意義,status 欄位整個砍掉,不再是 ManagedForm 的一部分。
 
 export type FormFieldType = 'string' | 'number' | 'currency' | 'date' | 'select' | 'textarea'
 
@@ -81,7 +71,6 @@ export interface ManagedForm {
   /** 這張表單的用途說明(consumer 自填,非必填) */
   description?: string
   category: CategoryId
-  status: FormStatus
   /** 下游系統指派的 owner（顯示用） */
   owner: string
   /** 最後編輯這張表單的人(不一定是 owner,admin 也能編輯內容) */
@@ -118,7 +107,6 @@ export const MOCK_FORMS: ManagedForm[] = [
     id: 'FORM-EXP-01',
     name: '一般費用報銷單',
     category: 'expense',
-    status: 'published',
     owner: '陳美惠',
     updatedBy: '陳美惠',
     updatedAt: '2026-09-28',
@@ -134,7 +122,6 @@ export const MOCK_FORMS: ManagedForm[] = [
     id: 'FORM-TRV-01',
     name: '國內出差申請單',
     category: 'travel',
-    status: 'published',
     owner: '周總監',
     updatedBy: '周總監',
     updatedAt: '2026-09-15',
@@ -150,7 +137,6 @@ export const MOCK_FORMS: ManagedForm[] = [
     id: 'FORM-VAC-01',
     name: '請假申請單',
     category: 'vacation',
-    status: 'published',
     owner: '人資專員',
     updatedBy: '人資助理',
     updatedAt: '2026-08-30',
@@ -166,7 +152,6 @@ export const MOCK_FORMS: ManagedForm[] = [
     id: 'FORM-CPU-01',
     name: '電腦設備採購申請單',
     category: 'computer',
-    status: 'published',
     owner: '林志明',
     updatedBy: '王大明',
     updatedAt: '2026-09-20',
@@ -182,7 +167,6 @@ export const MOCK_FORMS: ManagedForm[] = [
     id: 'FORM-TRN-01',
     name: '教育訓練報名單',
     category: 'training',
-    status: 'draft',
     owner: '人資助理',
     updatedBy: '人資助理',
     updatedAt: '2026-10-05',
@@ -197,7 +181,6 @@ export const MOCK_FORMS: ManagedForm[] = [
     id: 'FORM-ART-01',
     name: '文章發布審核單（舊版）',
     category: 'article',
-    status: 'disabled',
     owner: '黃建偉',
     updatedBy: '黃建偉',
     updatedAt: '2026-06-10',
