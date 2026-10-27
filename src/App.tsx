@@ -1174,12 +1174,14 @@ function ApprovalPage() {
             actions={
               <>
                 {/* BulkActionBar actions 左對齊:主要動作(核准)最左,danger(退件)排其後遠離焦點
-                    (action-bar.spec.md L121/L122) */}
+                    (action-bar.spec.md L121/L122)。文案強調「一併」(2026-10-27 user 拍板)——
+                    點擊前就要讓使用者清楚這是對所有勾選項目一次執行,不是單張動作,避免誤以為
+                    只動到目前瀏覽中的那一張。 */}
                 <Button variant="secondary" onClick={() => { setApproveComment(''); setApproveConfirmOpen(true) }}>
-                  核准
+                  一併核准
                 </Button>
                 <Button variant="secondary" danger onClick={() => { setRejectComment(''); setRejectConfirmOpen(true) }}>
-                  退件
+                  一併退件
                 </Button>
               </>
             }
