@@ -1037,12 +1037,14 @@ function ApprovalPage() {
       </div>{/* /左側清單欄 */}
 
       {/* 右側詳情面板 — 置於內容 header 下方(DetailAside 讀 AppShell context 自決 inline/Sheet)。
-          批次模式:仍可瀏覽單張 detail,但走唯讀(隱藏面板單張操作列);expand 大視圖在批次中關閉,
-          避免從 modal 繞回單張操作。 */}
+          批次模式:面板本身仍是唯讀預覽(隱藏單張操作列,作用域交給底部批次列)。放大鈕
+          不再因批次模式關閉(2026-10-27 user 拍板:除了關閉鈕,所有功能都該支援放大檢視)
+          —— 展開的 Modal 改靠 mode 本身帶 !isSelecting 退回 view,批次中只給轉寄/作廢這類
+          單項 utility 動作,核准/退件仍只能走底部批次列,不會因為放大鈕而繞過批次限制。 */}
       {selectedRecord && (
         <DetailAside
           title={selectedRecord.title}
-          onExpand={isSelecting ? undefined : () => setModalOpen(true)}
+          onExpand={() => setModalOpen(true)}
         >
           <ApprovalDetailPanel
             key={selectedRecord.id}
@@ -1094,7 +1096,7 @@ function ApprovalPage() {
         record={selectedRecord}
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        mode={tab === 'pending-me' ? 'approve' : 'view'}
+        mode={tab === 'pending-me' && !isSelecting ? 'approve' : 'view'}
         onApprove={handleApprove}
         onReject={handleReject}
         onMoreAction={handleStub}
