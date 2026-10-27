@@ -97,11 +97,13 @@ import {
 } from './formsData'
 
 // ── 外層 filter(A / PM 2026-10-13)──────────────────────────────────────────────
-// 共同欄位:狀態 / 緊急程度 / 申請人 / 到期區間 —— 每個分類都有,切類別不用清。
-// 分類專屬欄位放 CATEGORY_FILTER_COLUMNS(2026-10-27 新增)—— 例如 todo 分類的
-// 「描述」只有它自己有,其他分類不該看到這個篩選欄。可用欄位依目前選的 category
-// 動態組(見 getFilterColumns),搭配切換分類時自動剔除不適用 condition(見下方
-// useEffect),不是整個清空重來。
+// 只放「簽核系統固定/共同欄位」:狀態 / 緊急程度 / 申請人 / 到期區間。
+// 篩選欄位對每個分類都一樣(2026-10-27 user 拍板:篩選欄位要對應看得到的表格欄,
+// 不攤出去外層表格的欄位就不該可篩選 —— 之前做過「依分類動態組欄位 + 切換自動
+// 剔除不適用 condition」,但沒有任何分類真的需要專屬篩選欄,整套機制沒在做事,
+// 已拿掉,改回單一共用清單,不要留沒用到的複雜度)。
+// 切分類一律清空 filterTree(見 ChipGroup onValueChange)—— 不依賴「欄位目前剛好
+// 相同」這個前提,future-proof 之後萬一哪個分類又要開放客製欄位/排序。
 // 篩選邏輯走 DS 統一入口 DataTableFilterPanel(data-table.spec.md L278),不做表頭 inline filter;
 // 表頭只提供「依此欄篩選…」捷徑(onColumnFilterTrigger)跳進此面板並預填。
 const APPLICANT_OPTIONS = Array.from(new Set(MOCK_RECORDS.map((r) => r.applicant))).map((name) => ({
@@ -109,7 +111,7 @@ const APPLICANT_OPTIONS = Array.from(new Set(MOCK_RECORDS.map((r) => r.applicant
   label: name,
 }))
 
-const COMMON_FILTER_COLUMNS: DataTableProps<ApprovalRecord>['columns'] = [
+const FILTER_COLUMNS: DataTableProps<ApprovalRecord>['columns'] = [
   {
     id: 'status',
     header: '狀態',
@@ -138,17 +140,7 @@ const COMMON_FILTER_COLUMNS: DataTableProps<ApprovalRecord>['columns'] = [
   { id: 'dueDate', header: '到期時間', meta: { type: 'date' } },
 ]
 
-// 分類專屬篩選欄:只在對應 category 選中時併入共同欄位。目前無任何分類有專屬
-// 篩選欄 —— todo 的「描述」只存在於詳情面板(customFields),沒攤出去外層表格
-// 當欄位,不該讓它可篩選(user 2026-10-27 拍板:篩選欄位要對應看得到的表格欄,
-// 不能篩一個清單上看不到的欄位)。之後其他分類若真把某欄攤出外層表格,照同樣
-// 的 key 補進這個 map 即可。
-const CATEGORY_FILTER_COLUMNS: Partial<Record<CategoryId, DataTableProps<ApprovalRecord>['columns']>> = {}
-
-function getFilterColumns(category: CategoryId | 'all'): DataTableProps<ApprovalRecord>['columns'] {
-  const extra = category === 'all' ? [] : (CATEGORY_FILTER_COLUMNS[category] ?? [])
-  return [...COMMON_FILTER_COLUMNS, ...extra]
-}
+const FILTERABLE_IDS = new Set((FILTER_COLUMNS ?? []).map((c) => (c as { id: string }).id))
 
 
 const STATUS_COLOR = { pending: 'blue', approved: 'green', rejected: 'red' } as const
@@ -694,22 +686,6 @@ function ApprovalPage() {
     }
   }, [hasFormAccess, section])
 
-  // 外層 filter(A):依目前 category 動態附加分類專屬欄位(見 getFilterColumns)。
-  const filterColumns = getFilterColumns(category)
-  const filterableIds = new Set(filterColumns.map((c) => (c as { id: string }).id))
-
-  // 切換分類時,把 filterTree 裡「新分類不支援」的 condition 剔除(只清不適用的,
-  // 保留其餘仍適用的共同欄位 condition)—— 這正是 user 回報「每切換一次都要手動
-  // 清掉」的根因:以前分類專屬欄位不存在,現在有了就要避免 stale condition 殘留。
-  useEffect(() => {
-    setFilterTree((prev) => {
-      if (prev.mode !== 'flat') return prev
-      const ids = new Set(getFilterColumns(category).map((c) => (c as { id: string }).id))
-      const kept = prev.children.filter((c) => ids.has(c.field))
-      return kept.length === prev.children.length ? prev : { ...prev, children: kept }
-    })
-  }, [category])
-
   const tabRecords = getTabRecords(tab, records, CURRENT_USER)
   const searchFiltered = tabRecords
     .filter((r) => !search || r.title.includes(search) || r.applicant.includes(search) || r.id.includes(search))
@@ -1016,7 +992,15 @@ function ApprovalPage() {
             <ChipGroup
               type="single"
               value={category}
-              onValueChange={(v: string) => { setCategory((v ?? 'all') as CategoryId | 'all'); clearSelection() }}
+              onValueChange={(v: string) => {
+                setCategory((v ?? 'all') as CategoryId | 'all')
+                clearSelection()
+                // 切分類一律清空 filter(2026-10-27 user 拍板)—— 目前篩選欄位剛好每個分類
+                // 都一樣,不清也不會 stale,但這是會隨時間失效的假設:之後一旦哪個分類開放
+                // 客製欄位/排序,欄位又會依分類不同,屆時若忘了同步處理清除邏輯就會重踩
+                // stale-filter 的坑。切分類直接清空更簡單、更不依賴「欄位剛好相同」這個前提。
+                setFilterTree(createEmptyFilterTree('flat'))
+              }}
               layout="menu"
             >
               <Chip value="all">
@@ -1057,7 +1041,7 @@ function ApprovalPage() {
             </PopoverTrigger>
             <PopoverContent align="end" className="w-auto p-0">
               <DataTableFilterPanel
-                columns={filterColumns}
+                columns={FILTER_COLUMNS}
                 value={filterTree}
                 onChange={setFilterTree}
                 prefilledColumnId={filterPrefilledId}
@@ -1118,7 +1102,7 @@ function ApprovalPage() {
             activeId={panelOpen ? selectedId : null}
             showSelectAll={category !== 'all'}
             onColumnFilterTrigger={(columnId) => {
-              const prefill = filterableIds.has(columnId) ? columnId : undefined
+              const prefill = FILTERABLE_IDS.has(columnId) ? columnId : undefined
               // 延一 tick 開 popover:等表頭 ⌄ DropdownMenu 關閉完成,
               // 否則 Radix 會把剛開的 filter popover 當成「外點」立刻關掉(跨浮層 gotcha)。
               setFilterPrefilledId(prefill)
