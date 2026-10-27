@@ -1000,6 +1000,11 @@ function ApprovalPage() {
                 // 客製欄位/排序,欄位又會依分類不同,屆時若忘了同步處理清除邏輯就會重踩
                 // stale-filter 的坑。切分類直接清空更簡單、更不依賴「欄位剛好相同」這個前提。
                 setFilterTree(createEmptyFilterTree('flat'))
+                // search 一併清空(2026-10-27 user 拍板)—— filter 清空、search 不清空的話,
+                // 使用者會從「search 切了還在」類推以為 filter 也還在套用,實際上已經被清空,
+                // 誤以為清單還受著某個篩選條件限制。兩者都是「縮小清單範圍」的機制,清空行為
+                // 要一致,避免這種誤導。
+                setSearch('')
               }}
               layout="menu"
             >
