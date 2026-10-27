@@ -52,8 +52,6 @@ import {
 // 符合 lint-ds-internal-imports 允許清單 + DS「internal 元件 subpath 包裝後可用」規範)。
 import { HoverCard, HoverCardTrigger, HoverCardContent } from '@qijenchen/design-system/components/HoverCard'
 import {
-  LayoutGrid,
-  List,
   AlertCircle,
   Search,
   X,
@@ -83,7 +81,7 @@ import {
   type ApprovalRecord,
   type CategoryId,
 } from './data'
-import { PersonAvatar, personAvatarSrc, nameToAvatarColor } from './PersonAvatar'
+import { PersonAvatar, personAvatarSrc } from './PersonAvatar'
 import { ApprovalDetailPanel } from './ApprovalDetailPanel'
 import { ApprovalModal } from './ApprovalModal'
 import { DetailAside } from './DetailAside'
@@ -371,70 +369,6 @@ function ApprovalSidebar({
   )
 }
 
-function RecordCard({
-  record,
-  selected,
-  onToggleSelect,
-  onClick,
-}: {
-  record: ApprovalRecord
-  selected: boolean
-  onToggleSelect: () => void
-  onClick: () => void
-}) {
-  const submittedDate = record.submittedAt.slice(0, 10).replace(/-/g, '/')
-  const { text: dlText, urgent: dlUrgent } = deadlineDisplay(record.dueDate)
-
-  return (
-    <div
-      className={`rounded-lg border bg-surface transition-colors flex items-stretch ${
-        selected ? 'border-primary bg-primary/5' : 'border-divider hover:bg-surface-hover'
-      }`}
-    >
-      {/* Checkbox area */}
-      <div
-        className="flex items-start justify-center w-12 pt-3.5 shrink-0"
-        onClick={(e) => { e.stopPropagation(); onToggleSelect() }}
-      >
-        <RowCheckbox checked={selected} onChange={onToggleSelect} />
-      </div>
-
-      {/* Content */}
-      <button onClick={onClick} className="flex-1 min-w-0 py-3 pr-4 text-left flex flex-col gap-1.5">
-        {/* Row 1: title */}
-        <span className="text-body font-medium line-clamp-2">{record.title}</span>
-
-        {/* Row 2: 申請人 */}
-        <div className="flex items-center gap-1 text-caption text-fg-secondary">
-          <span className="text-fg-muted shrink-0">申請人：</span>
-          <Avatar
-            alt={record.applicant}
-            size={14}
-            color={nameToAvatarColor(record.applicant) as Parameters<typeof Avatar>[0]['color']}
-          />
-          <span>{record.applicant}</span>
-        </div>
-
-        {/* Row 3: 代理人 */}
-        <div className="flex items-center gap-1 text-caption text-fg-secondary min-w-0">
-          <span className="text-fg-muted shrink-0">代理人：</span>
-          <span className="truncate">{record.agents && record.agents.length > 0 ? record.agents.join('、') : '-'}</span>
-        </div>
-
-        {/* Row 4: date + overdue */}
-        <div className="flex items-center justify-between gap-2 text-caption">
-          <span className="text-fg-muted">{submittedDate}</span>
-          {dlText !== '-' && (
-            <span className={`shrink-0 ${dlUrgent ? 'text-error-text' : 'text-fg-secondary'}`}>
-              {dlText}
-            </span>
-          )}
-        </div>
-      </button>
-    </div>
-  )
-}
-
 function RecordList({
   records,
   selectedIds,
@@ -639,7 +573,6 @@ function EmptyState({ message }: { message: string }) {
 }
 
 type TabId = 'pending-me' | 'submitted' | 'signed' | 'cc'
-type ViewMode = 'card' | 'list'
 
 const TAB_LABELS: Record<TabId, string> = {
   'pending-me': '待簽核',
@@ -661,7 +594,6 @@ const TAB_ORDER: TabId[] = ['pending-me', 'signed', 'submitted', 'cc']
 function ApprovalPage() {
   const [tab, setTab] = useState<TabId>('pending-me')
   const [category, setCategory] = useState<CategoryId | 'all'>('all')
-  const [view, setView] = useState<ViewMode>('list')
   const [search, setSearch] = useState('')
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -1072,45 +1004,13 @@ function ApprovalPage() {
               />
             </PopoverContent>
           </Popover>
-
-          <SegmentedControl
-            value={view}
-            onValueChange={(v: string | undefined) => v && setView(v as ViewMode)}
-            size="sm"
-            iconOnly
-          >
-            <SegmentedControlItem
-              value="card"
-              startIcon={LayoutGrid}
-              aria-label="卡片模式"
-              className="aria-checked:text-primary-hover aria-checked:border-primary-hover aria-checked:relative aria-checked:z-10"
-            />
-            <SegmentedControlItem
-              value="list"
-              startIcon={List}
-              aria-label="列表模式"
-              className="aria-checked:text-primary-hover aria-checked:border-primary-hover aria-checked:relative aria-checked:z-10"
-            />
-          </SegmentedControl>
         </div>
       </div>
 
-      {/* Content */}
-      <div className={`flex-1 min-h-0 ${view === 'list' ? 'flex flex-col px-[var(--layout-space-loose)] pb-4' : 'overflow-y-auto px-[var(--layout-space-loose)] py-4'}`}>
+      {/* Content — 只保留 table 檢視(2026-10-27 user 拍板移除卡片檢視,連帶拿掉切換鈕)*/}
+      <div className="flex-1 min-h-0 flex flex-col px-[var(--layout-space-loose)] pb-4">
         {filtered.length === 0 ? (
           <EmptyState message="目前沒有相關單據" />
-        ) : view === 'card' ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filtered.map((r) => (
-              <RecordCard
-                key={r.id}
-                record={r}
-                selected={selectedIds.has(r.id)}
-                onToggleSelect={() => toggleSelect(r.id)}
-                onClick={() => openRecord(r)}
-              />
-            ))}
-          </div>
         ) : (
           <RecordList
             records={filtered}

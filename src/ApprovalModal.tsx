@@ -26,6 +26,7 @@ import {
   DropdownMenuSeparator,
 } from '@qijenchen/design-system'
 import type { ApprovalRecord } from './data'
+import { CURRENT_USER } from './data'
 import { ApprovalRoute } from './ApprovalRoute'
 
 interface ApprovalModalProps {
@@ -236,6 +237,23 @@ export function ApprovalModal({
             <Button variant="secondary" onClick={() => openConfirm('approve')}>
               核准
             </Button>
+          </DialogFooter>
+        )}
+
+        {/* 非代簽核視角(已申請 / 轉寄給我等 view mode)原本完全沒有操作按鈕,只能乾看
+            (2026-10-27 user 回報)。這類視角不該有核准/退件/移交/退回(那些是簽核者的
+            動作),但轉寄(分享給別人看)誰都該能做;作廢只有「這張單是自己送的」才開放
+            (比照一般系統「申請人可以撤銷/作廢自己送出的單」的慣例)。 */}
+        {mode === 'view' && record.status === 'pending' && (
+          <DialogFooter>
+            <Button variant="secondary" startIcon={Share2} onClick={() => onMoreAction?.('轉寄')}>
+              轉寄
+            </Button>
+            {record.applicant === CURRENT_USER && (
+              <Button variant="secondary" danger startIcon={Ban} onClick={() => onMoreAction?.('作廢')}>
+                作廢
+              </Button>
+            )}
           </DialogFooter>
         )}
       </DialogContent>

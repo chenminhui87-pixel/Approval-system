@@ -26,6 +26,7 @@ import {
 } from '@qijenchen/design-system'
 import { Paperclip, Share2, UserCheck, Undo2, Ban, ChevronLeft, MoreHorizontal } from 'lucide-react'
 import type { ApprovalRecord } from './data'
+import { CURRENT_USER } from './data'
 import { ApprovalRoute } from './ApprovalRoute'
 
 interface ApprovalDetailPanelProps {
@@ -62,6 +63,11 @@ export function ApprovalDetailPanel({
 
   // 批次模式:面板為唯讀預覽,不顯示單張操作列(作用域交給底部批次列)
   const showActions = mode === 'approve' && record.status === 'pending' && !batchMode
+  // 非代簽核視角(已申請 / 轉寄給我等 view mode)原本完全沒有操作按鈕(2026-10-27 user
+  // 回報)。核准/退件/移交/退回是簽核者的動作不該出現,但轉寄誰都該能做;作廢只有
+  // 「這張單是自己送的」才開放(比照一般系統申請人可撤銷/作廢自己送出的單)。
+  const showViewActions = mode === 'view' && record.status === 'pending' && !batchMode
+  const canVoid = record.applicant === CURRENT_USER
   const submitDisabled = confirmAction === 'reject' && comment.trim().length === 0
 
   function openConfirm(action: 'approve' | 'reject') {
@@ -234,6 +240,17 @@ export function ApprovalDetailPanel({
               />
             </div>
           )}
+        </div>
+      )}
+
+      {showViewActions && (
+        <div className="shrink-0 bg-surface border-t border-divider px-4 py-3">
+          <div className="flex items-center justify-end gap-2">
+            <Button variant="secondary" startIcon={Share2} onClick={() => onMoreAction('轉寄')}>轉寄</Button>
+            {canVoid && (
+              <Button variant="secondary" danger startIcon={Ban} onClick={() => onMoreAction('作廢')}>作廢</Button>
+            )}
+          </div>
         </div>
       )}
     </div>
