@@ -1488,6 +1488,13 @@ export function getTabRecords(
   )
 }
 
+// 取 fixedFields 裡指定 label 的值(單號 / 申請時間等)——ApprovalModal /
+// ApprovalDetailPanel「基本資訊」要照主清單表格欄位順序重排顯示,不能再靠
+// fixedFields 原始陣列順序 map,改用 label 明確取值(2026-10-28 user 拍板)。
+export function fixedFieldValue(record: ApprovalRecord, label: string): string {
+  return record.fixedFields.find((f) => f.label === label)?.value ?? ''
+}
+
 // 目前簽核者:current step 裡還沒簽過的人。多數記錄只有 legacy approvers/
 // approvedBy 字串陣列(無 people),只有少數(如 ApprovalRoute 展示用的富節點)
 // 才有 people —— 兩種資料都要撐,people 存在時用它的 status(較準確,legacy

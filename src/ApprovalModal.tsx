@@ -26,7 +26,7 @@ import {
   DropdownMenuSeparator,
 } from '@qijenchen/design-system'
 import type { ApprovalRecord } from './data'
-import { CURRENT_USER } from './data'
+import { CURRENT_USER, fixedFieldValue } from './data'
 import { ApprovalRoute } from './ApprovalRoute'
 import { PersonAvatar } from './PersonAvatar'
 
@@ -120,11 +120,23 @@ export function ApprovalModal({
           <div className="flex-[3] min-w-0 flex flex-col gap-5 px-6 py-5 overflow-y-auto">
             {/* Fixed fields — 狀態 / 緊急程度改放這裡用 Tag 標示(2026-10-27 user 拍板從
                 標題旁移下來),不再掛在 DialogTitle 後面。狀態是 fixedFields 本來沒有的
-                欄位,補一條在最前面;緊急程度 fixedFields 本來就有(文字值),改成
-                Tag-render 覆蓋掉純文字顯示。 */}
+                欄位;緊急程度 fixedFields 本來就有(文字值),改成 Tag-render 覆蓋掉純
+                文字顯示。順序跟主清單表格欄位順序對齊(單號 → 申請人 → 申請時間 →
+                狀態 → 緊急程度;單號 table 沒有,放最前面當識別欄,2026-10-28 user
+                拍板)。 */}
             <section>
               <p className="text-h4 font-medium mb-3">基本資訊</p>
               <DescriptionList orientation="vertical">
+                <DescriptionItem label="單號">{fixedFieldValue(record, '單號')}</DescriptionItem>
+                {/* 頭像 + hover 觸發完整 ProfileCard(PersonAvatar 自帶),跟右側面板
+                    「基本資訊」同一套寫法一致(2026-10-28 user 拍板)。 */}
+                <DescriptionItem label="申請者">
+                  <span className="inline-flex items-center gap-1.5">
+                    <PersonAvatar name={record.applicant} size={20} />
+                    <span>{record.applicant}</span>
+                  </span>
+                </DescriptionItem>
+                <DescriptionItem label="申請時間">{fixedFieldValue(record, '申請時間')}</DescriptionItem>
                 <DescriptionItem label="狀態">
                   {/* subtle(不加 solid)——之前對已核准狀態加 solid 是誤用,狀態標籤屬於
                       被動分類資訊,不是 tag.spec.md 定義的「高訊號單一重點」場景,改回
@@ -133,28 +145,11 @@ export function ApprovalModal({
                     {STATUS_LABEL[record.status]}
                   </Tag>
                 </DescriptionItem>
-                {record.fixedFields.map((f) =>
-                  f.label === '緊急程度' ? (
-                    <DescriptionItem key={f.label} label={f.label}>
-                      <Tag size="sm" color={URGENCY_COLOR[record.urgency]}>
-                        {URGENCY_LABEL[record.urgency]}
-                      </Tag>
-                    </DescriptionItem>
-                  ) : f.label === '申請者' ? (
-                    // 頭像 + hover 觸發完整 ProfileCard(PersonAvatar 自帶),跟右側面板
-                    // 「基本資訊」同一套寫法一致(2026-10-28 user 拍板)。
-                    <DescriptionItem key={f.label} label={f.label}>
-                      <span className="inline-flex items-center gap-1.5">
-                        <PersonAvatar name={f.value} size={20} />
-                        <span>{f.value}</span>
-                      </span>
-                    </DescriptionItem>
-                  ) : (
-                    <DescriptionItem key={f.label} label={f.label}>
-                      {f.value}
-                    </DescriptionItem>
-                  )
-                )}
+                <DescriptionItem label="緊急程度">
+                  <Tag size="sm" color={URGENCY_COLOR[record.urgency]}>
+                    {URGENCY_LABEL[record.urgency]}
+                  </Tag>
+                </DescriptionItem>
               </DescriptionList>
             </section>
 

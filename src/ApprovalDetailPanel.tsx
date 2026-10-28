@@ -25,7 +25,7 @@ import {
 } from '@qijenchen/design-system'
 import { Paperclip, Share2, UserCheck, Undo2, Ban, ChevronLeft, MoreHorizontal } from 'lucide-react'
 import type { ApprovalRecord } from './data'
-import { CURRENT_USER } from './data'
+import { CURRENT_USER, fixedFieldValue } from './data'
 import { ApprovalRoute } from './ApprovalRoute'
 import { PersonAvatar } from './PersonAvatar'
 
@@ -102,9 +102,21 @@ export function ApprovalDetailPanel({
         <div className="flex-1 min-h-0 overflow-y-auto">
         {/* 申請內容 */}
         <TabsContent value="content" className="flex flex-col gap-5 px-4 py-4">
+          {/* 順序跟主清單表格欄位順序對齊(單號 → 申請人 → 申請時間 → 狀態 →
+              緊急程度;單號 table 沒有,放最前面當識別欄,2026-10-28 user 拍板)。 */}
           <section>
             <p className="text-h5 font-medium mb-3">基本資訊</p>
             <DescriptionList orientation="vertical">
+              <DescriptionItem label="單號">{fixedFieldValue(record, '單號')}</DescriptionItem>
+              {/* 申請人快速識別不再靠面板頂部獨立一條(2026-10-28 user 拍板移除),改
+                  強化在這裡:頭像 + hover 觸發完整 ProfileCard(PersonAvatar 自帶)。 */}
+              <DescriptionItem label="申請者">
+                <span className="inline-flex items-center gap-1.5">
+                  <PersonAvatar name={record.applicant} size={20} />
+                  <span>{record.applicant}</span>
+                </span>
+              </DescriptionItem>
+              <DescriptionItem label="申請時間">{fixedFieldValue(record, '申請時間')}</DescriptionItem>
               <DescriptionItem label="狀態">
                 {/* subtle(不加 solid)——之前對已核准狀態加 solid 是誤用,狀態標籤屬於
                     被動分類資訊,改回預設 subtle(2026-10-28 user 糾正,跟 ApprovalModal
@@ -113,26 +125,11 @@ export function ApprovalDetailPanel({
                   {STATUS_LABEL[record.status]}
                 </Tag>
               </DescriptionItem>
-              {record.fixedFields.map((f) =>
-                f.label === '緊急程度' ? (
-                  <DescriptionItem key={f.label} label={f.label}>
-                    <Tag size="sm" color={URGENCY_COLOR[record.urgency]}>
-                      {URGENCY_LABEL[record.urgency]}
-                    </Tag>
-                  </DescriptionItem>
-                ) : f.label === '申請者' ? (
-                  // 申請人快速識別不再靠面板頂部獨立一條(2026-10-28 user 拍板移除),
-                  // 改強化在這裡:頭像 + hover 觸發完整 ProfileCard(PersonAvatar 自帶)。
-                  <DescriptionItem key={f.label} label={f.label}>
-                    <span className="inline-flex items-center gap-1.5">
-                      <PersonAvatar name={f.value} size={20} />
-                      <span>{f.value}</span>
-                    </span>
-                  </DescriptionItem>
-                ) : (
-                  <DescriptionItem key={f.label} label={f.label}>{f.value}</DescriptionItem>
-                )
-              )}
+              <DescriptionItem label="緊急程度">
+                <Tag size="sm" color={URGENCY_COLOR[record.urgency]}>
+                  {URGENCY_LABEL[record.urgency]}
+                </Tag>
+              </DescriptionItem>
             </DescriptionList>
           </section>
 
