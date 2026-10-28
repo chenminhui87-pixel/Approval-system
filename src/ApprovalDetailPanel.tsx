@@ -17,7 +17,6 @@ import {
   Tag,
   Textarea,
   Separator,
-  Avatar,
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
@@ -28,6 +27,7 @@ import { Paperclip, Share2, UserCheck, Undo2, Ban, ChevronLeft, MoreHorizontal }
 import type { ApprovalRecord } from './data'
 import { CURRENT_USER } from './data'
 import { ApprovalRoute } from './ApprovalRoute'
+import { PersonAvatar } from './PersonAvatar'
 
 interface ApprovalDetailPanelProps {
   record: ApprovalRecord
@@ -102,15 +102,6 @@ export function ApprovalDetailPanel({
         <div className="flex-1 min-h-0 overflow-y-auto">
         {/* 申請內容 */}
         <TabsContent value="content" className="flex flex-col gap-5 px-4 py-4">
-          {/* Meta 列 — 面板標題只有單據名,申請人快速識別在此補回。狀態/緊急程度
-              2026-10-27 user 拍板移到下方「基本資訊」用 Tag 標示,不留在這裡。 */}
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1 text-caption text-fg-secondary ml-auto">
-              <Avatar alt={record.applicant} size={16} color="blue" />
-              {record.applicant}
-            </span>
-          </div>
-
           <section>
             <p className="text-h5 font-medium mb-3">基本資訊</p>
             <DescriptionList orientation="vertical">
@@ -125,6 +116,15 @@ export function ApprovalDetailPanel({
                     <Tag size="sm" color={URGENCY_COLOR[record.urgency]}>
                       {URGENCY_LABEL[record.urgency]}
                     </Tag>
+                  </DescriptionItem>
+                ) : f.label === '申請者' ? (
+                  // 申請人快速識別不再靠面板頂部獨立一條(2026-10-28 user 拍板移除),
+                  // 改強化在這裡:頭像 + hover 觸發完整 ProfileCard(PersonAvatar 自帶)。
+                  <DescriptionItem key={f.label} label={f.label}>
+                    <span className="inline-flex items-center gap-1.5">
+                      <PersonAvatar name={f.value} size={20} />
+                      <span>{f.value}</span>
+                    </span>
                   </DescriptionItem>
                 ) : (
                   <DescriptionItem key={f.label} label={f.label}>{f.value}</DescriptionItem>

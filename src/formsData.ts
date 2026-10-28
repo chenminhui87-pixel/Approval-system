@@ -1,22 +1,23 @@
 // 表單管理模組(C)資料模型 — prototype。
-// 角色(owner/admin/viewer)與欄位內容由「下游系統」透過介面指派/製作;簽核系統這邊
+// 角色(admin/viewer)與欄位內容由「下游系統」透過介面指派/製作;簽核系統這邊
 // 不提供管理角色的介面,只依「目前檢視身分」呈現對應角色能操作的功能(feature 完整度差異)。
 import type { CategoryId, ApprovalRecord } from './data'
 import { CATEGORIES } from './data'
 
 // ── 角色 ─────────────────────────────────────────────────────────────────────
-export type FormRole = 'owner' | 'admin' | 'viewer'
+// 2026-10-28 user 拍板:owner 角色移除 —— 現在只剩瀏覽+設定,admin/viewer 兩級已
+// 足夠區分「能不能改」,不需要再多一層「完整權限」的 owner(尤其建立/發佈/停用/
+// 刪除這些本來 owner 專屬的生命週期管理動作都已經不在介面裡了)。
+export type FormRole = 'admin' | 'viewer'
 
-export const FORM_ROLES: FormRole[] = ['owner', 'admin', 'viewer']
+export const FORM_ROLES: FormRole[] = ['admin', 'viewer']
 
 export const FORM_ROLE_LABEL: Record<FormRole, string> = {
-  owner: 'Owner',
   admin: 'Admin',
   viewer: 'Viewer',
 }
 export const FORM_ROLE_DESC: Record<FormRole, string> = {
-  owner: '擁有者 · 完整權限',
-  admin: '管理者 · 可編輯內容與操作送審,不可刪表單',
+  admin: '管理者 · 可編輯設定與操作送審',
   viewer: '檢視者 · 全唯讀',
 }
 
@@ -32,7 +33,6 @@ export type FormAction =
   //                      (轉寄 / 移交簽核者 / 退回 / 作廢 / 催辦 / 撤回…,同現有簽核 prototype)
 
 const ROLE_CAN: Record<FormRole, FormAction[]> = {
-  owner: ['viewForm', 'editForm', 'viewSubmissions', 'operateSubmission'],
   admin: ['viewForm', 'editForm', 'viewSubmissions', 'operateSubmission'],
   viewer: ['viewForm', 'viewSubmissions'],
 }

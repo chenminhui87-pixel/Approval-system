@@ -517,7 +517,7 @@ function ApprovalPage() {
   const [filterPrefilledId, setFilterPrefilledId] = useState<string | undefined>(undefined)
   // 表單管理模組(C):section 切換(簽核 vs 表單管理)+ prototype 檢視身分(角色切換器)
   const [section, setSection] = useState<'approvals' | 'forms'>('approvals')
-  const [formRole, setFormRole] = useState<FormRole>('owner')
+  const [formRole, setFormRole] = useState<FormRole>('admin')
   // 表單清單提升為 state(全域設定即時寫回,不能只讀 MOCK_FORMS 常數)
   const [forms, setForms] = useState<ManagedForm[]>(MOCK_FORMS)
   // 平台層存取控管(demo)— 獨立於 formRole,管「看不看得到表單管理入口」

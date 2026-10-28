@@ -28,6 +28,7 @@ import {
 import type { ApprovalRecord } from './data'
 import { CURRENT_USER } from './data'
 import { ApprovalRoute } from './ApprovalRoute'
+import { PersonAvatar } from './PersonAvatar'
 
 interface ApprovalModalProps {
   record: ApprovalRecord | null
@@ -135,6 +136,15 @@ export function ApprovalModal({
                       <Tag size="sm" color={URGENCY_COLOR[record.urgency]}>
                         {URGENCY_LABEL[record.urgency]}
                       </Tag>
+                    </DescriptionItem>
+                  ) : f.label === '申請者' ? (
+                    // 頭像 + hover 觸發完整 ProfileCard(PersonAvatar 自帶),跟右側面板
+                    // 「基本資訊」同一套寫法一致(2026-10-28 user 拍板)。
+                    <DescriptionItem key={f.label} label={f.label}>
+                      <span className="inline-flex items-center gap-1.5">
+                        <PersonAvatar name={f.value} size={20} />
+                        <span>{f.value}</span>
+                      </span>
                     </DescriptionItem>
                   ) : (
                     <DescriptionItem key={f.label} label={f.label}>
