@@ -106,7 +106,10 @@ export function ApprovalDetailPanel({
             <p className="text-h5 font-medium mb-3">基本資訊</p>
             <DescriptionList orientation="vertical">
               <DescriptionItem label="狀態">
-                <Tag size="sm" color={STATUS_COLOR[record.status]} solid={record.status === 'approved'}>
+                {/* subtle(不加 solid)——之前對已核准狀態加 solid 是誤用,狀態標籤屬於
+                    被動分類資訊,改回預設 subtle(2026-10-28 user 糾正,跟 ApprovalModal
+                    同步修正)。 */}
+                <Tag size="sm" color={STATUS_COLOR[record.status]}>
                   {STATUS_LABEL[record.status]}
                 </Tag>
               </DescriptionItem>

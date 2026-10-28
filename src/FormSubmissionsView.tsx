@@ -86,8 +86,10 @@ export function FormSubmissionsView({
       id: 'status',
       header: '狀態',
       meta: { width: 92 },
+      // subtle(不加 solid)——之前對已核准狀態加 solid 是誤用,跟主簽核清單(App.tsx)
+      // 的狀態欄保持一致,改回預設 subtle(2026-10-28 user 糾正)。
       cell: ({ row }) => (
-        <Tag size="sm" color={STATUS[row.original.status].color} solid={row.original.status === 'approved'}>
+        <Tag size="sm" color={STATUS[row.original.status].color}>
           {STATUS[row.original.status].label}
         </Tag>
       ),
