@@ -8,7 +8,7 @@ import {
   DataTable,
   type DataTableProps,
 } from '@qijenchen/design-system'
-import { Eye } from 'lucide-react'
+import { Eye, Settings } from 'lucide-react'
 import {
   FORM_ROLES,
   FORM_ROLE_LABEL,
@@ -52,15 +52,11 @@ export function FormManagementView({
       id: 'name',
       header: '表單名稱',
       meta: { width: 280 },
+      // 2026-10-28 user 拍板:移除點標題進設定頁的路徑,改統一走 actions 欄的
+      // 「表單設定」按鈕 —— 這欄純顯示,不再是互動進入點。
       cell: ({ row }) => (
         <div className="flex flex-col gap-0.5 py-1">
-          <button
-            type="button"
-            onClick={() => onSelectForm(row.original)}
-            className="text-left font-medium hover:text-primary hover:underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
-          >
-            {row.original.name}
-          </button>
+          <span className="font-medium">{row.original.name}</span>
           <span className="text-caption text-fg-placeholder">{row.original.id}</span>
         </div>
       ),
@@ -118,13 +114,16 @@ export function FormManagementView({
       id: 'actions',
       // 對齊 FormSubmissionsView 的 actions 欄寫法:表頭不顯文字,sr-only 保留給輔助技術
       header: () => <span className="sr-only">操作</span>,
-      meta: { width: 170 },
-      // 只留查看所有簽核單一個 inline 動作 —— 表單名稱點擊即進設定頁(name 欄),
-      // 不需要另一個「編輯表單」按鈕通往同一個目的地。
+      // 查看所有簽核單 + 表單設定(2026-10-28 user 拍板:移除點標題進入,改這顆按鈕
+      // 是唯一進設定頁的入口,viewer 也能點進去看,只是欄位 disabled,見 FormDetailView)。
+      meta: { width: 290 },
       cell: ({ row }) => (
         <div className="flex items-center gap-1 justify-end" onClick={(e) => e.stopPropagation()}>
           <Button variant="text" size="sm" startIcon={Eye} onClick={() => onViewSubmissions(row.original)}>
             查看所有簽核單
+          </Button>
+          <Button variant="text" size="sm" startIcon={Settings} onClick={() => onSelectForm(row.original)}>
+            表單設定
           </Button>
         </div>
       ),
