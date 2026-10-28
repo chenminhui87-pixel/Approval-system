@@ -776,7 +776,11 @@ function ApprovalPage() {
               type="single"
               value={effectiveCategory}
               onValueChange={(v: string) => {
-                setCategory((v ?? 'all') as CategoryId | 'all')
+                // ChipGroup 底層是 Radix ToggleGroup(type="single"):點已選中的 chip 第二下
+                // 會觸發 onValueChange('')(取消選取)。這裡直接忽略空值,讓 chip 維持單選、
+                // 不可取消(2026-10-28 user 拍板移除「點兩下取消選取」的互動)。
+                if (!v) return
+                setCategory(v as CategoryId | 'all')
                 clearSelection()
                 // 切分類一律清空 filter(2026-10-27 user 拍板)—— 目前篩選欄位剛好每個分類
                 // 都一樣,不清也不會 stale,但這是會隨時間失效的假設:之後一旦哪個分類開放
