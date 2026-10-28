@@ -507,7 +507,12 @@ const TAB_ORDER: TabId[] = ['pending-me', 'signed', 'submitted', 'cc']
 
 function ApprovalPage() {
   const [tab, setTab] = useState<TabId>('pending-me')
-  const [category, setCategory] = useState<CategoryId | 'all'>('all')
+  // null = 使用者明確把分類 chip 點第二下取消選取(只有待簽核沒有「全部類別」
+  // 可以退回,才會走到這個值;其餘 tab 的 deselect 直接頂替回 'all',不會是
+  // null,見 ChipGroup onValueChange)。跟初始/預設狀態的 'all' 分開表示,
+  // 才能區分「從沒選過」(自動挑第一個分類)和「選過又主動取消」(不自動幫他選,
+  // 顯示空狀態提示,2026-10-28 user 拍板)。
+  const [category, setCategory] = useState<CategoryId | 'all' | null>('all')
   const [search, setSearch] = useState('')
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -556,14 +561,17 @@ function ApprovalPage() {
     hasAlert: searchFiltered.some((r) => r.category === c.id && r.urgency === 'high'),
   })).filter((c) => c.count > 0 || category === c.id)
 
-  // 待簽核沒有「全部類別」chip(見下方 ChipGroup),category 停在 'all' 時用第一個
-  // 可選分類頂替,避免清單其實是「全部類別」卻找不到對應 chip 可以反白(2026-10-28
-  // user 拍板)。其餘 tab 保留「全部類別」,category 原樣使用。
-  const effectiveCategory: CategoryId | 'all' =
+  // 待簽核沒有「全部類別」chip(見下方 ChipGroup),category 還停在初始值 'all'
+  // 時(= 從沒手動選過)用第一個可選分類頂替,避免清單其實是「全部類別」卻找不到
+  // 對應 chip 可以反白(2026-10-28 user 拍板)。category 是 null(= 使用者點兩下
+  // 主動取消選取)時則不頂替,維持空狀態,見下方「請選擇一個分類查看簽核單」。
+  const effectiveCategory: CategoryId | 'all' | null =
     tab === 'pending-me' && category === 'all' ? categoryStats[0]?.id ?? 'all' : category
 
-  const categoryFiltered = searchFiltered
-    .filter((r) => effectiveCategory === 'all' || r.category === effectiveCategory)
+  const categoryFiltered =
+    effectiveCategory === null
+      ? []
+      : searchFiltered.filter((r) => effectiveCategory === 'all' || r.category === effectiveCategory)
   // 外層 filter(A):走 DS 匯出的 evaluateTree 在 data 層過濾。
   // (DS dist 自帶 bundled TanStack,consumer 的 getFilteredRowModel 是不同 module instance、
   //  無法驅動 DataTable 內部 globalFilter → 改在 data 層套用,等效且無跨 instance 問題。)
@@ -623,7 +631,12 @@ function ApprovalPage() {
     setTab(nextTab)
     setSelectedIds(new Set())
     setSearch('')
-    if (category !== 'all') {
+    // null(主動取消選取的空狀態)只在「待簽核」這次停留有意義,換 tab 就重置回
+    // 'all' —— 回到待簽核時會再走 effectiveCategory 自動挑第一個分類,不會卡在
+    // 空狀態跨 tab 殘留。
+    if (category === null) {
+      setCategory('all')
+    } else if (category !== 'all') {
       const has = getTabRecords(nextTab, records, CURRENT_USER).some((r) => r.category === category)
       if (!has) setCategory('all')
     }
@@ -774,13 +787,16 @@ function ApprovalPage() {
           <div className="flex-1 min-w-0 category-chips">
             <ChipGroup
               type="single"
-              value={effectiveCategory}
+              value={effectiveCategory ?? undefined}
               onValueChange={(v: string) => {
                 // ChipGroup 底層是 Radix ToggleGroup(type="single"):點已選中的 chip 第二下
-                // 會觸發 onValueChange('')(取消選取)。這裡直接忽略空值,讓 chip 維持單選、
-                // 不可取消(2026-10-28 user 拍板移除「點兩下取消選取」的互動)。
-                if (!v) return
-                setCategory(v as CategoryId | 'all')
+                // 會觸發 onValueChange('')(取消選取)——這是 DS chip.spec.md 記載的官方
+                // 機制(「再點一次 deselect」= 移除 filter 的唯一 affordance,故意不加
+                // dismiss X),不應該整個擋掉。空值時:有「全部類別」可退(其餘 tab)就
+                // 頂替回 'all',沒有(待簽核)就老實設成 null,顯示下面的空狀態提示,
+                // 而不是靜默幫使用者挑一個分類(2026-10-28 user 拍板,怕使用者沒注意到
+                // 其實已經換了分類)。
+                setCategory(v ? (v as CategoryId | 'all') : tab === 'pending-me' ? null : 'all')
                 clearSelection()
                 // 切分類一律清空 filter(2026-10-27 user 拍板)—— 目前篩選欄位剛好每個分類
                 // 都一樣,不清也不會 stale,但這是會隨時間失效的假設:之後一旦哪個分類開放
@@ -852,7 +868,12 @@ function ApprovalPage() {
 
       {/* Content — 只保留 table 檢視(2026-10-27 user 拍板移除卡片檢視,連帶拿掉切換鈕)*/}
       <div className="flex-1 min-h-0 flex flex-col px-[var(--layout-space-loose)] pb-4">
-        {filtered.length === 0 ? (
+        {effectiveCategory === null ? (
+          // 待簽核把分類 chip 點兩下取消選取後的空狀態(2026-10-28 user 拍板):不要
+          // 靜默幫使用者挑回一個分類,明確提示要重新選,使用者才不會沒注意到已經換了
+          // 篩選範圍。
+          <EmptyState message="請選擇一個分類查看簽核單" />
+        ) : filtered.length === 0 ? (
           <EmptyState message="目前沒有相關單據" />
         ) : (
           <RecordList
