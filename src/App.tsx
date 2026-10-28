@@ -274,6 +274,7 @@ function ApprovalSidebar({
 
 function RecordList({
   records,
+  selectable,
   selectedIds,
   allSelected,
   someSelected,
@@ -286,6 +287,9 @@ function RecordList({
   onColumnFilterTrigger,
 }: {
   records: ApprovalRecord[]
+  /** 只有待簽核開放批次勾選;其餘 tab 不渲染 select 欄(2026-10-28 user 拍板:
+      批次核准/退件只在待簽核有意義,其餘 tab 隱藏這整個操作面) */
+  selectable: boolean
   selectedIds: Set<string>
   allSelected: boolean
   someSelected: boolean
@@ -327,21 +331,27 @@ function RecordList({
   // 取代原手刻 sticky + z-index。height="100%" + 父層 flex 約束 → 少筆 hug、多筆內捲
   // (data-table.spec.md L78)。選取不另上 row 底色(L249:有 checkbox 就只用 checkbox)。
   const columns: DataTableProps<ApprovalRecord>['columns'] = [
-    {
-      id: 'select',
-      meta: { width: 48, resizable: false },
-      header: () =>
-        showSelectAll ? (
-          <div className="flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
-            <RowCheckbox checked={allSelected} indeterminate={someSelected} onChange={onToggleSelectAll} />
-          </div>
-        ) : null,
-      cell: ({ row }) => (
-        <div className="flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
-          <RowCheckbox checked={selectedIds.has(row.original.id)} onChange={() => onToggleSelect(row.original.id)} />
-        </div>
-      ),
-    },
+    // select 欄只在 selectable(= 待簽核)渲染 —— 其餘 tab 整欄不存在,不是停用/隱藏,
+    // 批次勾選操作面完全不出現(2026-10-28 user 拍板)。
+    ...(selectable
+      ? [
+          {
+            id: 'select',
+            meta: { width: 48, resizable: false },
+            header: () =>
+              showSelectAll ? (
+                <div className="flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+                  <RowCheckbox checked={allSelected} indeterminate={someSelected} onChange={onToggleSelectAll} />
+                </div>
+              ) : null,
+            cell: ({ row }: { row: { original: ApprovalRecord } }) => (
+              <div className="flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+                <RowCheckbox checked={selectedIds.has(row.original.id)} onChange={() => onToggleSelect(row.original.id)} />
+              </div>
+            ),
+          },
+        ]
+      : []),
     {
       id: 'title',
       header: '標題',
@@ -445,7 +455,7 @@ function RecordList({
         size="md"
         // 多行列(標題換行)時 cell 頂對齊,不垂直置中(DS row-mode:auto → items-start)
         autoRowHeight
-        pinnedLeftColumns={['select', 'title']}
+        pinnedLeftColumns={selectable ? ['select', 'title'] : ['title']}
         pinnedRightColumns={['info']}
         // 表頭「依此欄篩選…」捷徑 → 開外層面板並預填(僅可篩選欄顯示此 ⌄ 選單,見 globals.css)
         onColumnFilterTrigger={onColumnFilterTrigger}
@@ -536,14 +546,6 @@ function ApprovalPage() {
   const tabRecords = getTabRecords(tab, records, CURRENT_USER)
   const searchFiltered = tabRecords
     .filter((r) => !search || r.title.includes(search) || r.applicant.includes(search) || r.id.includes(search))
-  const categoryFiltered = searchFiltered
-    .filter((r) => category === 'all' || r.category === category)
-  // 外層 filter(A):走 DS 匯出的 evaluateTree 在 data 層過濾。
-  // (DS dist 自帶 bundled TanStack,consumer 的 getFilteredRowModel 是不同 module instance、
-  //  無法驅動 DataTable 內部 globalFilter → 改在 data 層套用,等效且無跨 instance 問題。)
-  const filtered = isFilterTreeActive(filterTree)
-    ? categoryFiltered.filter((r) => evaluateTree(filterTree, r))
-    : categoryFiltered
 
   // 分類統計(給 chips + 下拉選單共用):只留該 tab(+搜尋)有單據的類別,
   // 目前選取中的類別一律保留(避免 chip / 選項消失)
@@ -554,8 +556,25 @@ function ApprovalPage() {
     hasAlert: searchFiltered.some((r) => r.category === c.id && r.urgency === 'high'),
   })).filter((c) => c.count > 0 || category === c.id)
 
+  // 待簽核沒有「全部類別」chip(見下方 ChipGroup),category 停在 'all' 時用第一個
+  // 可選分類頂替,避免清單其實是「全部類別」卻找不到對應 chip 可以反白(2026-10-28
+  // user 拍板)。其餘 tab 保留「全部類別」,category 原樣使用。
+  const effectiveCategory: CategoryId | 'all' =
+    tab === 'pending-me' && category === 'all' ? categoryStats[0]?.id ?? 'all' : category
+
+  const categoryFiltered = searchFiltered
+    .filter((r) => effectiveCategory === 'all' || r.category === effectiveCategory)
+  // 外層 filter(A):走 DS 匯出的 evaluateTree 在 data 層過濾。
+  // (DS dist 自帶 bundled TanStack,consumer 的 getFilteredRowModel 是不同 module instance、
+  //  無法驅動 DataTable 內部 globalFilter → 改在 data 層套用,等效且無跨 instance 問題。)
+  const filtered = isFilterTreeActive(filterTree)
+    ? categoryFiltered.filter((r) => evaluateTree(filterTree, r))
+    : categoryFiltered
+
   const selectedRecord = selectedId ? records.find((r) => r.id === selectedId) ?? null : null
-  const isSelecting = selectedIds.size > 0
+  // 批次勾選只在待簽核開放(2026-10-28 user 拍板:其餘 tab 隱藏批次勾選操作,
+  // 連帶 select 欄本身都不渲染,見 RecordList 的 selectable prop)。
+  const isSelecting = tab === 'pending-me' && selectedIds.size > 0
   const allVisibleSelected = filtered.length > 0 && filtered.every((r) => selectedIds.has(r.id))
   const someSelected = selectedIds.size > 0 && !allVisibleSelected
   // 同分類內搜尋保留選取;已選但被目前搜尋隱藏的筆數(對齊 mobile submitBatch 的提示)
@@ -755,7 +774,7 @@ function ApprovalPage() {
           <div className="flex-1 min-w-0 category-chips">
             <ChipGroup
               type="single"
-              value={category}
+              value={effectiveCategory}
               onValueChange={(v: string) => {
                 setCategory((v ?? 'all') as CategoryId | 'all')
                 clearSelection()
@@ -772,17 +791,22 @@ function ApprovalPage() {
               }}
               layout="menu"
             >
-              <Chip value="all">
-                <span className="flex items-center gap-1">
-                  全部類別
-                  {(search ? true : searchFiltered.length > 0) && (
-                    <Badge
-                      variant={searchFiltered.some((r) => r.urgency === 'high') ? 'critical' : 'low'}
-                      count={searchFiltered.length}
-                    />
-                  )}
-                </span>
-              </Chip>
+              {/* 待簽核沒有「全部類別」(2026-10-28 user 拍板):批次核准/退件跨分類一次
+                  全選風險最高的就是這個 tab,拿掉「全部」逼使用者一定先選定分類。其餘
+                  tab(已簽核/已申請/轉寄給我)保留。 */}
+              {tab !== 'pending-me' && (
+                <Chip value="all">
+                  <span className="flex items-center gap-1">
+                    全部類別
+                    {(search ? true : searchFiltered.length > 0) && (
+                      <Badge
+                        variant={searchFiltered.some((r) => r.urgency === 'high') ? 'critical' : 'low'}
+                        count={searchFiltered.length}
+                      />
+                    )}
+                  </span>
+                </Chip>
+              )}
               {categoryStats.map((c) => (
                 <Chip key={c.id} value={c.id}>
                   <span className="flex items-center gap-1">
@@ -829,6 +853,7 @@ function ApprovalPage() {
         ) : (
           <RecordList
             records={filtered}
+            selectable={tab === 'pending-me'}
             selectedIds={selectedIds}
             allSelected={allVisibleSelected}
             someSelected={someSelected}
@@ -837,7 +862,7 @@ function ApprovalPage() {
             onClick={openRecord}
             onOpenModal={openModalFor}
             activeId={panelOpen ? selectedId : null}
-            showSelectAll={category !== 'all'}
+            showSelectAll={effectiveCategory !== 'all'}
             onColumnFilterTrigger={(columnId) => {
               const prefill = FILTERABLE_IDS.has(columnId) ? columnId : undefined
               // 延一 tick 開 popover:等表頭 ⌄ DropdownMenu 關閉完成,
