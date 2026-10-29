@@ -768,74 +768,77 @@ function ApprovalPage() {
       {/* 主導覽改左側 sidebar(見 ApprovalSidebar);此處只剩搜尋 + 篩選 toolbar。
           Search + filter bar — 內部 gap-3;pt-6(24px)頂距、pb-3(12px)chip↔table */}
       <div className="flex flex-col gap-3 px-[var(--layout-space-loose)] pt-6 pb-3">
-        {/* Search row */}
-        <Input
-          startIcon={Search}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="搜尋單號、標題、申請者…"
-          endAction={search ? { icon: X, label: '清除搜尋', onClick: () => setSearch('') } : undefined}
-          className="!bg-muted"
-        />
+        {/* 分類列移到搜尋/篩選之上(2026-10-29 user 拍板):切分類會清空搜尋跟 filter,
+            上下層級順序要反映這個從屬關係 —— 分類是上層範圍選擇,搜尋/篩選是在該範圍
+            內的動作,放在分類下面。走 DS ChipGroup layout="menu"(溢出才收合成 ▼ 導覽
+            選單;選單 item 直接渲染 chip children → 自帶 Badge)。 */}
+        <div className="category-chips">
+          <ChipGroup
+            type="single"
+            value={effectiveCategory ?? undefined}
+            onValueChange={(v: string) => {
+              // ChipGroup 底層是 Radix ToggleGroup(type="single"):點已選中的 chip 第二下
+              // 會觸發 onValueChange('')(取消選取)——這是 DS chip.spec.md 記載的官方
+              // 機制(「再點一次 deselect」= 移除 filter 的唯一 affordance,故意不加
+              // dismiss X),不應該整個擋掉。空值時一律設成 null,顯示下面的空狀態提示
+              // ——所有 tab 行為一致(2026-10-28 user 拍板:其餘 tab 不要因為有「全部
+              // 類別」可退就自動頂替回去,跟待簽核一樣老實顯示「沒有選分類」,不要
+              // 靜默幫使用者挑一個分類)。
+              setCategory(v ? (v as CategoryId | 'all') : null)
+              clearSelection()
+              // 切分類一律清空 filter(2026-10-27 user 拍板)—— 目前篩選欄位剛好每個分類
+              // 都一樣,不清也不會 stale,但這是會隨時間失效的假設:之後一旦哪個分類開放
+              // 客製欄位/排序,欄位又會依分類不同,屆時若忘了同步處理清除邏輯就會重踩
+              // stale-filter 的坑。切分類直接清空更簡單、更不依賴「欄位剛好相同」這個前提。
+              setFilterTree(createEmptyFilterTree('flat'))
+              // search 一併清空(2026-10-27 user 拍板)—— filter 清空、search 不清空的話,
+              // 使用者會從「search 切了還在」類推以為 filter 也還在套用,實際上已經被清空,
+              // 誤以為清單還受著某個篩選條件限制。兩者都是「縮小清單範圍」的機制,清空行為
+              // 要一致,避免這種誤導。
+              setSearch('')
+            }}
+            layout="menu"
+          >
+            {/* 待簽核沒有「全部類別」(2026-10-28 user 拍板):批次核准/退件跨分類一次
+                全選風險最高的就是這個 tab,拿掉「全部」逼使用者一定先選定分類。其餘
+                tab(已簽核/已申請/轉寄給我)保留。 */}
+            {tab !== 'pending-me' && (
+              <Chip value="all">
+                <span className="flex items-center gap-1">
+                  全部類別
+                  {(search ? true : searchFiltered.length > 0) && (
+                    <Badge
+                      variant={searchFiltered.some((r) => r.urgency === 'high') ? 'critical' : 'low'}
+                      count={searchFiltered.length}
+                    />
+                  )}
+                </span>
+              </Chip>
+            )}
+            {categoryStats.map((c) => (
+              <Chip key={c.id} value={c.id}>
+                <span className="flex items-center gap-1">
+                  {c.label}
+                  <Badge variant={c.hasAlert ? 'critical' : 'low'} count={c.count} />
+                </span>
+              </Chip>
+            ))}
+          </ChipGroup>
+        </div>
 
-        {/* Chips + view toggle row */}
-        <div className="flex items-center justify-between gap-4">
-          {/* 分類列:走 DS ChipGroup layout="menu"(溢出才收合成 ▼ 導覽選單;
-              選單 item 直接渲染 chip children → 自帶 Badge)。category-chips class 供
-              globals.css 微調。flex-1 min-w-0 讓 menu 內層 overflow-x-auto 能收縮捲動。 */}
-          <div className="flex-1 min-w-0 category-chips">
-            <ChipGroup
-              type="single"
-              value={effectiveCategory ?? undefined}
-              onValueChange={(v: string) => {
-                // ChipGroup 底層是 Radix ToggleGroup(type="single"):點已選中的 chip 第二下
-                // 會觸發 onValueChange('')(取消選取)——這是 DS chip.spec.md 記載的官方
-                // 機制(「再點一次 deselect」= 移除 filter 的唯一 affordance,故意不加
-                // dismiss X),不應該整個擋掉。空值時一律設成 null,顯示下面的空狀態提示
-                // ——所有 tab 行為一致(2026-10-28 user 拍板:其餘 tab 不要因為有「全部
-                // 類別」可退就自動頂替回去,跟待簽核一樣老實顯示「沒有選分類」,不要
-                // 靜默幫使用者挑一個分類)。
-                setCategory(v ? (v as CategoryId | 'all') : null)
-                clearSelection()
-                // 切分類一律清空 filter(2026-10-27 user 拍板)—— 目前篩選欄位剛好每個分類
-                // 都一樣,不清也不會 stale,但這是會隨時間失效的假設:之後一旦哪個分類開放
-                // 客製欄位/排序,欄位又會依分類不同,屆時若忘了同步處理清除邏輯就會重踩
-                // stale-filter 的坑。切分類直接清空更簡單、更不依賴「欄位剛好相同」這個前提。
-                setFilterTree(createEmptyFilterTree('flat'))
-                // search 一併清空(2026-10-27 user 拍板)—— filter 清空、search 不清空的話,
-                // 使用者會從「search 切了還在」類推以為 filter 也還在套用,實際上已經被清空,
-                // 誤以為清單還受著某個篩選條件限制。兩者都是「縮小清單範圍」的機制,清空行為
-                // 要一致,避免這種誤導。
-                setSearch('')
-              }}
-              layout="menu"
-            >
-              {/* 待簽核沒有「全部類別」(2026-10-28 user 拍板):批次核准/退件跨分類一次
-                  全選風險最高的就是這個 tab,拿掉「全部」逼使用者一定先選定分類。其餘
-                  tab(已簽核/已申請/轉寄給我)保留。 */}
-              {tab !== 'pending-me' && (
-                <Chip value="all">
-                  <span className="flex items-center gap-1">
-                    全部類別
-                    {(search ? true : searchFiltered.length > 0) && (
-                      <Badge
-                        variant={searchFiltered.some((r) => r.urgency === 'high') ? 'critical' : 'low'}
-                        count={searchFiltered.length}
-                      />
-                    )}
-                  </span>
-                </Chip>
-              )}
-              {categoryStats.map((c) => (
-                <Chip key={c.id} value={c.id}>
-                  <span className="flex items-center gap-1">
-                    {c.label}
-                    <Badge variant={c.hasAlert ? 'critical' : 'low'} count={c.count} />
-                  </span>
-                </Chip>
-              ))}
-            </ChipGroup>
-          </div>
+        {/* 搜尋 + 篩選列(原本在分類列上面,現在移到下面)。搜尋框改定寬置左(原本
+            撐滿整排),篩選鈕緊接在右側(2026-10-29 user 拍板)。variant 改 tertiary
+            ——預設就有邊框(灰框灰字),不用等 pressed 才看得到框線,其餘互動(開
+            popover、pressed 套用條件後維持 active 視覺)不變。 */}
+        <div className="flex items-center gap-2">
+          <Input
+            startIcon={Search}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="搜尋單號、標題、申請者…"
+            endAction={search ? { icon: X, label: '清除搜尋', onClick: () => setSearch('') } : undefined}
+            className="!bg-muted w-[320px] shrink-0"
+          />
 
           {/* 外層 filter(A)— 統一入口(DS data-table.spec.md L278)。filter 套在 data 層,
               卡片 / 列表共用同一份篩完資料 → 兩種檢視都顯示此鈕(避免卡片模式 filter 隱形卻仍作用)。
@@ -843,7 +846,7 @@ function ApprovalPage() {
           <Popover open={filterOpen} onOpenChange={setFilterOpen}>
             <PopoverTrigger asChild>
               <Button
-                variant="text"
+                variant="tertiary"
                 size="sm"
                 iconOnly
                 startIcon={Filter}
