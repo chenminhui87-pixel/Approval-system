@@ -827,10 +827,11 @@ function ApprovalPage() {
         </div>
 
         {/* 搜尋 + 篩選列(原本在分類列上面,現在移到下面)。搜尋框改定寬置左(原本
-            撐滿整排),篩選鈕緊接在右側(2026-10-29 user 拍板)。variant 改 tertiary
-            ——預設就有邊框(灰框灰字),不用等 pressed 才看得到框線,其餘互動(開
-            popover、pressed 套用條件後維持 active 視覺)不變。 */}
-        <div className="flex items-center gap-2">
+            撐滿整排);篩選鈕貼右(justify-between,2026-10-29 user 拍板:跟表格最
+            右側切齊,不是緊貼在搜尋框右邊)。variant 改 tertiary——預設就有邊框
+            (灰框灰字),不用等 pressed 才看得到框線,其餘互動(開 popover、pressed
+            套用條件後維持 active 視覺)不變。 */}
+        <div className="flex items-center justify-between gap-2">
           <Input
             startIcon={Search}
             value={search}
