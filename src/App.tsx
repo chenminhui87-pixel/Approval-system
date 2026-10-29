@@ -766,8 +766,12 @@ function ApprovalPage() {
       {/* 左側:搜尋/篩選 toolbar + 清單 + 批次操作列 */}
       <div className="flex flex-col flex-1 min-w-0 min-h-0">
       {/* 主導覽改左側 sidebar(見 ApprovalSidebar);此處只剩搜尋 + 篩選 toolbar。
-          Search + filter bar — 內部 gap-3;pt-6(24px)頂距、pb-3(12px)chip↔table */}
-      <div className="flex flex-col gap-3 px-[var(--layout-space-loose)] pt-6 pb-3">
+          Search + filter bar — 內部 gap-3;pt 改跟 px 同一顆 --layout-space-loose token
+          (2026-10-29 user 回報頂距看起來跟左距不一樣)—— 原本 pt-6 是寫死 24px,只在
+          lg density 剛好跟 --layout-space-loose(24px)數值相同,md density 下
+          (--layout-space-loose = 16px)就會跟左右內距對不上,改用同一顆 token
+          才能保證任何 density 下頂距永遠等於左右內距。pb-3(12px)chip↔table 維持不變。 */}
+      <div className="flex flex-col gap-3 px-[var(--layout-space-loose)] pt-[var(--layout-space-loose)] pb-3">
         {/* 分類列移到搜尋/篩選之上(2026-10-29 user 拍板):切分類會清空搜尋跟 filter,
             上下層級順序要反映這個從屬關係 —— 分類是上層範圍選擇,搜尋/篩選是在該範圍
             內的動作,放在分類下面。走 DS ChipGroup layout="menu"(溢出才收合成 ▼ 導覽
