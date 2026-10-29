@@ -838,7 +838,7 @@ function ApprovalPage() {
             onChange={(e) => setSearch(e.target.value)}
             placeholder="搜尋單號、標題、申請者…"
             endAction={search ? { icon: X, label: '清除搜尋', onClick: () => setSearch('') } : undefined}
-            className="!bg-muted w-[320px] shrink-0"
+            className="w-[320px] shrink-0"
           />
 
           {/* 外層 filter(A)— 統一入口(DS data-table.spec.md L278)。filter 套在 data 層,
