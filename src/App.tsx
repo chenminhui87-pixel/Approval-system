@@ -131,6 +131,9 @@ const FILTERABLE_IDS = new Set((FILTER_COLUMNS ?? []).map((c) => (c as { id: str
 
 const STATUS_COLOR = { pending: 'blue', approved: 'green', rejected: 'red' } as const
 const STATUS_LABEL = { pending: '簽核中', approved: '已核准', rejected: '已退件' } as const
+// 表格「狀態」欄排序用 —— 依語意順序(簽核中 → 已核准 → 已退件),不是英文 enum key
+// 字母序(那樣會變 approved/pending/rejected,對使用者沒有意義)。
+const STATUS_SORT_RANK = { pending: 0, approved: 1, rejected: 2 } as const
 
 function RowCheckbox({ checked, indeterminate, onChange }: {
   checked: boolean
@@ -338,6 +341,7 @@ function RecordList({
           {
             id: 'select',
             meta: { width: 48, resizable: false },
+            enableSorting: false,
             header: () =>
               showSelectAll ? (
                 <div className="flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
@@ -356,6 +360,7 @@ function RecordList({
       id: 'title',
       header: '標題',
       meta: { width: 240 },
+      enableSorting: false,
       cell: ({ row }) => (
         <button
           type="button"
@@ -370,12 +375,14 @@ function RecordList({
       id: 'applicant',
       header: '申請人',
       meta: { width: 180 },
+      enableSorting: false,
       cell: ({ row }) => <PersonAvatarLabel name={row.original.applicant} />,
     },
     {
       id: 'currentApprover',
       header: '目前簽核者',
       meta: { width: 120 },
+      enableSorting: false,
       // 重用「代理人」欄位同一套多頭像呈現(PersonAvatarStack,PersonAvatar.tsx 共用
       // 元件,FormSubmissionsView.tsx 也消費同一份),語意一致(都是「誰在處理這張
       // 單」);currentApprovers 查無 current step 或查無人員時回傳 []、
@@ -386,12 +393,17 @@ function RecordList({
       id: 'agents',
       header: '代理人',
       meta: { width: 120 },
+      enableSorting: false,
       cell: ({ row }) => <PersonAvatarStack names={row.original.agents} />,
     },
     {
       id: 'submittedAt',
       header: '申請時間',
       meta: { width: 112 },
+      // 排序只開放申請時間/到期時間/狀態三欄(2026-10-30 user 拍板),其餘欄位
+      // enableSorting: false。accessorFn 給實際排序值 —— 這幾欄原本是 id+cell-only
+      // 定義(無 accessorKey),TanStack 排序需要明確的值來源才知道怎麼比較。
+      accessorFn: (row) => row.submittedAt,
       cell: ({ row }) => (
         <span className="text-caption text-fg-secondary whitespace-nowrap">
           {row.original.submittedAt.slice(0, 10).replace(/-/g, '/')}
@@ -402,6 +414,9 @@ function RecordList({
       id: 'status',
       header: '狀態',
       meta: { width: 92 },
+      // 依狀態語意排序(簽核中 → 已核准 → 已退件),不是英文 enum key 字母序
+      // (那樣會變 approved/pending/rejected,對使用者沒有意義)。
+      accessorFn: (row) => STATUS_SORT_RANK[row.status],
       cell: ({ row }) => (
         <Tag size="sm" color={STATUS_COLOR[row.original.status]}>{STATUS_LABEL[row.original.status]}</Tag>
       ),
@@ -410,6 +425,7 @@ function RecordList({
       id: 'urgency',
       header: '緊急程度',
       meta: { width: 96 },
+      enableSorting: false,
       cell: ({ row }) =>
         row.original.urgency === 'high'
           ? <Tag size="sm" color="red">緊急</Tag>
@@ -419,6 +435,9 @@ function RecordList({
       id: 'dueDate',
       header: '到期時間',
       meta: { width: 112 },
+      // dueDate 可能缺值(無到期日);TanStack 預設把 undefined 排在尾端,不分
+      // asc/desc,符合「沒有到期日」本來就不屬於排序範圍內的直覺。
+      accessorFn: (row) => row.dueDate,
       cell: ({ row }) => {
         const { text, urgent } = deadlineDisplay(row.original.dueDate)
         return <span className={`text-caption ${urgent ? 'text-error-text' : 'text-fg-secondary'}`}>{text}</span>
@@ -428,6 +447,7 @@ function RecordList({
       id: 'info',
       header: '',
       meta: { width: 48, resizable: false },
+      enableSorting: false,
       cell: ({ row }) => (
         <div className="flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
           <Button
@@ -459,9 +479,13 @@ function RecordList({
         pinnedRightColumns={['info']}
         // 表頭「依此欄篩選…」捷徑 → 開外層面板並預填(僅可篩選欄顯示此 ⌄ 選單,見 globals.css)
         onColumnFilterTrigger={onColumnFilterTrigger}
-        // 呈現型表格:關閉欄位排序 / 隱藏。filter 在 data 層以 evaluateTree 套用(見上層 `filtered`),
-        // 不走 DataTable 內部 globalFilter(DS dist 自帶 bundled TanStack,跨 instance 無法驅動)。
-        tableOptions={{ enableSorting: false, enableHiding: false }}
+        // 排序只開放申請時間/到期時間/狀態三欄(2026-10-30 user 拍板),其餘欄位在各自
+        // column def 加 enableSorting: false 關掉;單欄排序 → enableMultiSort=false
+        // (shift+click 疊加次要排序的功能關掉)。隱藏欄位仍關閉。filter 在 data 層以
+        // evaluateTree 套用(見上層 `filtered`),不走 DataTable 內部 globalFilter
+        // (DS dist 自帶 bundled TanStack,跨 instance 無法驅動)。
+        enableMultiSort={false}
+        tableOptions={{ enableSorting: true, enableHiding: false }}
       />
     </div>
   )
