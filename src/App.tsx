@@ -630,6 +630,14 @@ function ApprovalPage() {
     setTab(nextTab)
     setSelectedIds(new Set())
     setSearch('')
+    // 右側面板 / 放大 Modal 一併關閉(2026-10-30 user 回報):原本換 tab 不會關,
+    // 面板還開著同一張單的詳情,但清單內容已經換成別的 tab,使用者會搞不清楚
+    // 面板裡顯示的到底是哪一張 —— selectedId 跨 tab 繼續有效(records 是全域
+    // 資料,不分 tab),沒有任何提示讓人知道這張單屬於上一個 tab。換 tab 時機
+    // 本來就代表「我要換個情境」,詳情面板沒有理由跟著留在螢幕上。
+    setSelectedId(null)
+    setPanelOpen(false)
+    setModalOpen(false)
     // null(主動取消選取的空狀態)只在「待簽核」這次停留有意義,換 tab 就重置回
     // 'all' —— 回到待簽核時會再走 effectiveCategory 自動挑第一個分類,不會卡在
     // 空狀態跨 tab 殘留。
