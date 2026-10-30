@@ -638,6 +638,9 @@ function ApprovalPage() {
     setSelectedId(null)
     setPanelOpen(false)
     setModalOpen(false)
+    // filter 一併清空(2026-10-30 user 拍板)—— 跟切分類 chip 同一套邏輯:換 tab
+    // 也是「縮小清單範圍」的條件整個換掉,filter 沒有理由跨 tab 繼續套用。
+    setFilterTree(createEmptyFilterTree('flat'))
     // null(主動取消選取的空狀態)只在「待簽核」這次停留有意義,換 tab 就重置回
     // 'all' —— 回到待簽核時會再走 effectiveCategory 自動挑第一個分類,不會卡在
     // 空狀態跨 tab 殘留。
