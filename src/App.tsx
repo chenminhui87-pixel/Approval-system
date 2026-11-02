@@ -811,7 +811,20 @@ function ApprovalPage() {
             上下層級順序要反映這個從屬關係 —— 分類是上層範圍選擇,搜尋/篩選是在該範圍
             內的動作,放在分類下面。走 DS ChipGroup layout="menu"(溢出才收合成 ▼ 導覽
             選單;選單 item 直接渲染 chip children → 自帶 Badge)。 */}
-        <div className="category-chips">
+        <div
+          className="category-chips"
+          onClickCapture={(e) => {
+            // DS ChipGroup layout="menu" 的 scrollIntoView 只接在下拉選單的
+            // DropdownMenuCheckboxItem(chip.tsx toggleFromMenu),直接點可見區域
+            // 裡被捲動裁掉一部分的 chip 不會觸發——選取邏輯正常生效,但視覺上仍卡在
+            // 裁切位置(2026-11-02 user 實測發現)。DS 元件本身沒接這條路徑,
+            // 補在 consumer 端用事件委派對齊:直接點 chip 也補一次 scrollIntoView。
+            // inline 用 nearest(非 center)——已完整可見的 chip 點了不該額外捲動,
+            // 只在真的被裁掉時才捲到剛好完整露出,避免不必要的晃動。
+            const chip = (e.target as HTMLElement).closest('[role="radio"]')
+            chip?.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' })
+          }}
+        >
           <ChipGroup
             type="single"
             value={effectiveCategory ?? undefined}
