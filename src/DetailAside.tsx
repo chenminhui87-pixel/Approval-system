@@ -19,7 +19,10 @@ interface DetailAsideProps {
 }
 
 export function DetailAside({ title, onExpand, children }: DetailAsideProps) {
-  const { asideOpen, setAsideOpen, isMobile } = useAppShell()
+  // DS beta.148 破壞性變更:isMobile(768 斷點)退場,改讀 display.right
+  // ('side-by-side' | 'overlay' | 'hidden' | 'closed')——以實際可用寬度判斷,非固定斷點。
+  const { asideOpen, setAsideOpen, display } = useAppShell()
+  const isOverlay = display.right === 'overlay'
 
   const headerActions = (
     <>
@@ -44,7 +47,7 @@ export function DetailAside({ title, onExpand, children }: DetailAsideProps) {
     </>
   )
 
-  if (isMobile) {
+  if (isOverlay) {
     return (
       <Sheet open={asideOpen} onOpenChange={setAsideOpen}>
         <SheetContent side="right" className="w-[min(90vw,420px)] flex flex-col p-0 [&>button]:hidden">

@@ -751,6 +751,11 @@ function ApprovalPage() {
     <SidebarProvider activeId={section === 'forms' ? 'forms' : tab} onActiveChange={handleSidebarChange}>
     <AppShell
       layout="primary-sidebar"
+      // DS beta.148 破壞性變更:mainMinWidth 從可選變必填(「版面規則」§1)。DS 本身不挑預設,
+      // 由 consumer 依內容決定——600 是 DS 自己 anatomy / stories 範例值,本頁 main 是
+      // DataTable(表頭最窄也要容納單號/申請人/狀態等欄位),同一個數字夠用,之後若發現
+      // 表格被壓到需要水平捲軸再調大。
+      mainMinWidth={600}
       header={
         section === 'forms'
           ? <PageHeader title="表單管理" breadcrumb={formsBreadcrumb} rightSlot={formsHeaderRight} />
