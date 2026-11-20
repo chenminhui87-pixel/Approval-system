@@ -1,6 +1,7 @@
 // 表單管理模組(C)— 表單清單 / 表單內容詳情 / 送審清單子頁。
 // 清單走 DS DataTable;列操作依 DS row-action 規則:主要動作 inline + 其餘收進 ⋯ overflow。
 // 角色切換器弱化為底部固定 demo 列(不隨捲動)。
+import { useState } from 'react'
 import {
   SegmentedControl,
   SegmentedControlItem,
@@ -12,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogBody,
+  DialogFooter,
 } from '@qijenchen/design-system'
 import { Eye, Settings } from 'lucide-react'
 import {
@@ -27,6 +29,51 @@ import {
 import type { ApprovalRecord } from './data'
 import { FormDetailView } from './FormDetailView'
 import { FormSubmissionsView } from './FormSubmissionsView'
+
+/** 表單設定 Dialog 的 body + footer。本地 draft(不直接寫回 forms state)——
+ * 「儲存」才 commit,「取消」/ 關閉 X 都丟棄。靠外層 `key={form.id}` 保證每次開啟
+ * 都是全新 mount,draft 自然從當下的 form 重新初始化,不會殘留上一次開啟的草稿。
+ */
+function FormSettingsDialogBody({
+  form,
+  canEdit,
+  onCancel,
+  onSave,
+}: {
+  form: ManagedForm
+  canEdit: boolean
+  onCancel: () => void
+  onSave: (patch: Partial<ManagedForm>) => void
+}) {
+  const [draft, setDraft] = useState({
+    name: form.name,
+    category: form.category,
+    mobileEnabled: form.mobileEnabled,
+  })
+
+  return (
+    <>
+      <DialogBody className="flex flex-col">
+        <FormDetailView
+          form={{ ...form, ...draft }}
+          canEdit={canEdit}
+          onUpdateForm={(patch) => setDraft((d) => ({ ...d, ...patch }))}
+        />
+      </DialogBody>
+      <DialogFooter>
+        {canEdit ? (
+          <>
+            <Button variant="tertiary" size="sm" onClick={onCancel}>取消</Button>
+            <Button variant="primary" size="sm" onClick={() => onSave(draft)}>儲存</Button>
+          </>
+        ) : (
+          // viewer 唯讀,沒有可取消/儲存的變更,只留一個關閉退出
+          <Button variant="tertiary" size="sm" onClick={onCancel}>關閉</Button>
+        )}
+      </DialogFooter>
+    </>
+  )
+}
 
 export function FormManagementView({
   forms,
@@ -159,21 +206,27 @@ export function FormManagementView({
         )}
       </div>
 
+      {/* height="hug":內容(名稱/分類/一個 switch)開啟到關閉期間高度不會變,
+          屬於 dialog.spec.md 定義的「短表單」情境,不用預設的 viewport-bounded fill。
+          Footer 加回 取消/儲存(2026-11-20 user 拍板):改成本地 draft,點「儲存」才
+          真的寫回 forms state、「取消」或關閉 X 都直接丟棄 draft,不影響原資料。 */}
       <Dialog open={!!selectedForm && view === 'content'} onOpenChange={(o: boolean) => !o && onSelectForm(null)}>
-        <DialogContent maxWidth="480px">
+        <DialogContent maxWidth="480px" height="hug">
           <DialogHeader>
             <DialogTitle>{selectedForm?.name || '表單設定'}</DialogTitle>
           </DialogHeader>
-          <DialogBody className="flex flex-col">
-            {selectedForm && (
-              <FormDetailView
-                key={selectedForm.id}
-                form={selectedForm}
-                canEdit={canEdit}
-                onUpdateForm={(patch) => onUpdateForm(selectedForm.id, patch)}
-              />
-            )}
-          </DialogBody>
+          {selectedForm && (
+            <FormSettingsDialogBody
+              key={selectedForm.id}
+              form={selectedForm}
+              canEdit={canEdit}
+              onCancel={() => onSelectForm(null)}
+              onSave={(patch) => {
+                onUpdateForm(selectedForm.id, patch)
+                onSelectForm(null)
+              }}
+            />
+          )}
         </DialogContent>
       </Dialog>
 
