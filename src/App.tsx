@@ -77,7 +77,6 @@ import { DetailAside } from './DetailAside'
 import { FormManagementView } from './FormManagementView'
 import {
   MOCK_FORMS,
-  can as canForm,
   type FormRole,
   type ManagedForm,
 } from './formsData'
@@ -734,18 +733,14 @@ function ApprovalPage() {
   }
   // 表單名稱不再帶狀態 tag(2026-10-27 user 拍板:草稿/已發布/已停用整組狀態隱藏 ——
   // 這個狀態已經沒有任何介面能改變它,留著顯示沒有意義,見 formsData.ts 的 ManagedForm 註解)。
-  const formsBreadcrumb = !selectedForm
+  // 2026-11-20 user 拍板:「表單設定」改走 Modal,清單仍是目前頁面,麵包屑/header
+  // 不該跟著跳——只有「查看所有簽核單」(送審清單)還是真的子頁切換,才需要麵包屑
+  // 回表單清單、以及(之後若該頁需要)header 情境操作。設定 Modal 的「保存」已經
+  // 不需要,改成逐欄位即時寫回 + Dialog 本身的關閉 X 退出。
+  const formsBreadcrumb = !selectedForm || formView !== 'submissions'
     ? undefined
     : [{ label: '表單管理', onClick: () => openForm(null) }, { label: selectedForm.name }]
-  // 表單詳情頁一進去就是設定(FormDetailView 不再分檢視/編輯兩態),所以 header 只留一個
-  // 「保存」—— 點了直接回表單清單(欄位本來就逐欄位即時寫回 forms state,不需要額外的
-  // 存檔動作,這顆鈕純粹是「我改完了,回清單」的退出路徑)。viewer 無編輯權限時不顯示。
-  const formsHeaderRight: ReactNode =
-    section !== 'forms' || !selectedForm || formView === 'submissions'
-      ? null
-      : canForm(formRole, 'editForm')
-        ? <Button variant="primary" size="sm" onClick={() => openForm(null)}>保存</Button>
-        : null
+  const formsHeaderRight: ReactNode = null
 
   return (
     <SidebarProvider activeId={section === 'forms' ? 'forms' : tab} onActiveChange={handleSidebarChange}>

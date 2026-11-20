@@ -7,6 +7,11 @@ import {
   Button,
   DataTable,
   type DataTableProps,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogBody,
 } from '@qijenchen/design-system'
 import { Eye, Settings } from 'lucide-react'
 import {
@@ -132,19 +137,12 @@ export function FormManagementView({
 
   return (
     <div className="flex flex-col h-full">
-      {/* 主體:清單 / 表單內容 / 送審清單 */}
+      {/* 主體:送審清單維持獨立子頁(查看所有簽核單,量大需要自己的頁面空間);
+          表單設定(2026-11-20 user 拍板)改走 Modal,清單本身維持顯示在背景,
+          不整頁跳走。 */}
       <div className="flex-1 min-h-0 flex flex-col">
-        {selectedForm ? (
-          view === 'submissions' ? (
-            <FormSubmissionsView key={selectedForm.id} form={selectedForm} records={records} role={role} stub={stub} />
-          ) : (
-            <FormDetailView
-              key={selectedForm.id}
-              form={selectedForm}
-              canEdit={canEdit}
-              onUpdateForm={(patch) => onUpdateForm(selectedForm.id, patch)}
-            />
-          )
+        {selectedForm && view === 'submissions' ? (
+          <FormSubmissionsView key={selectedForm.id} form={selectedForm} records={records} role={role} stub={stub} />
         ) : (
           <div className="h-full px-[var(--layout-space-loose)] pt-4 pb-4">
             <DataTable
@@ -160,6 +158,24 @@ export function FormManagementView({
           </div>
         )}
       </div>
+
+      <Dialog open={!!selectedForm && view === 'content'} onOpenChange={(o: boolean) => !o && onSelectForm(null)}>
+        <DialogContent maxWidth="480px">
+          <DialogHeader>
+            <DialogTitle>{selectedForm?.name || '表單設定'}</DialogTitle>
+          </DialogHeader>
+          <DialogBody className="flex flex-col">
+            {selectedForm && (
+              <FormDetailView
+                key={selectedForm.id}
+                form={selectedForm}
+                canEdit={canEdit}
+                onUpdateForm={(patch) => onUpdateForm(selectedForm.id, patch)}
+              />
+            )}
+          </DialogBody>
+        </DialogContent>
+      </Dialog>
 
       {/* 底部固定「檢視身分」demo 列 — 弱化(muted 底 + caption),不隨捲動 */}
       <div className="shrink-0 border-t border-divider bg-muted px-[var(--layout-space-loose)] py-2 flex items-center gap-3 flex-wrap">
