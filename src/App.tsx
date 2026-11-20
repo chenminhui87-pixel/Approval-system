@@ -806,8 +806,13 @@ function ApprovalPage() {
     <div className={`flex flex-col h-full ${section === 'forms' ? 'hidden' : ''}`}>
       {/* 內容 body row:左側清單欄 + 右側詳情面板(面板長在內容 header 下方,非 AppShell 頂天 aside)*/}
       <div className="flex flex-1 min-h-0">
-      {/* 左側:搜尋/篩選 toolbar + 清單 + 批次操作列 */}
-      <div className="flex flex-col flex-1 min-w-0 min-h-0">
+      {/* 左側:搜尋/篩選 toolbar + 清單 + 批次操作列。
+          min-w-[360px](2026-11-20 user 回報修正):原本 min-w-0 讓 flex 可以把這欄壓到 0,
+          右側詳情面板(DetailAside)是 shrink-0 固定寬(380/420),視窗變窄時擠壓全部由這欄
+          吸收 —— 壓到比 pinned 的「詳情」欄本身(48px)+ 標題欄還窄,pinned 欄位看起來就像
+          「消失」了。跟 AppShell 的 mainMinWidth(360)用同一個樓地板值,保證清單欄(含它
+          自己 pinned 的詳情欄)不會被側欄擠到低於這個可用寬度。 */}
+      <div className="flex flex-col flex-1 min-w-[360px] min-h-0">
       {/* 主導覽改左側 sidebar(見 ApprovalSidebar);此處只剩搜尋 + 篩選 toolbar。
           Search + filter bar — 內部 gap-3;pt 改跟 px 同一顆 --layout-space-loose token
           (2026-10-29 user 回報頂距看起來跟左距不一樣)—— 原本 pt-6 是寫死 24px,只在
