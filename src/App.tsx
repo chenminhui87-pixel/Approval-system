@@ -746,11 +746,19 @@ function ApprovalPage() {
     <SidebarProvider activeId={section === 'forms' ? 'forms' : tab} onActiveChange={handleSidebarChange}>
     <AppShell
       layout="primary-sidebar"
-      // DS beta.148 破壞性變更:mainMinWidth 從可選變必填(「版面規則」§1)。DS 本身不挑預設,
-      // 由 consumer 依內容決定——600 是 DS 自己 anatomy / stories 範例值,本頁 main 是
-      // DataTable(表頭最窄也要容納單號/申請人/狀態等欄位),同一個數字夠用,之後若發現
-      // 表格被壓到需要水平捲軸再調大。
-      mainMinWidth={600}
+      // DS beta.148 破壞性變更:mainMinWidth 從可選變必填(「版面規則」§1)。
+      // 2026-11-20 user 回報:拖拉視窗變窄時,右側固定的「詳情」pinned 欄位整個不見了
+      // ——根因是 mainMinWidth 原本設 600(抄 DS anatomy/stories 範例值,沒有照 spec
+      // 「Main 最小寬 + 細列寬 + Right 最小寬 ≤ 要支援的最窄桌面寬」驗算)。視窗寬度一旦
+      // 小於 mainMinWidth + sidebar 寬度,AppShell 的因應是讓**整個外殼**(含 sidebar)
+      // 一起橫向捲動,而不是只有 DataTable 本身內部捲動(DataTable 的 pinnedRightColumns
+      // 本來就有自己的內部水平捲動 + sticky 機制,在 mainMinWidth 之內運作正常)——這個
+      // 外殼層級的 fallback 捲軸不明顯(看起來像內容消失),而且會把 sidebar 一起拖走。
+      // 改小到 360:DataTable 真正需要固定顯示的只有標題欄(280)+ pinned 的詳情欄(48),
+      // 其餘欄位本來就該交給 DataTable 自己的內部水平捲動處理,不需要 main 保留到 600
+      // 才夠用;400(sidebar 收合寬)+360 遠低於常見視窗寬度,外殼 fallback 捲軸幾乎不會
+      // 再被觸發到。
+      mainMinWidth={360}
       header={
         section === 'forms'
           ? <PageHeader title="表單管理" breadcrumb={formsBreadcrumb} rightSlot={formsHeaderRight} />
